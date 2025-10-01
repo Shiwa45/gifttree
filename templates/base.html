@@ -20,6 +20,7 @@
     <link href="{% static 'css/mobile.css' %}" rel="stylesheet">
     <link href="{% static 'css/components.css' %}" rel="stylesheet">
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <link href="{% static 'css/search.css' %}" rel="stylesheet">
 
     <!-- Meta Tags -->
     <meta name="description" content="{% block meta_description %}Send beautiful flowers, delicious cakes and amazing gifts online. Same day delivery available across India.{% endblock %}">
@@ -528,6 +529,9 @@ a:focus {
             });
         });
     </script>
+    <script src="{% static 'js/wishlist.js' %}"></script>
+    <script src="{% static 'js/search.js' %}"></script>
+    
     
     <!-- Page-specific JavaScript -->
     {% block page_js %}{% endblock %}

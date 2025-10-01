@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Checkout - Complete Your Order | GiftTree{% endblock %}
+
+{% block content %}
+<!-- Mobile Header -->
+{% include 'includes/mobile_header.html' with show_back_button=True page_title="Checkout" %}
+
+<div class="checkout-container">
+    <div class="checkout-content">
+        <!-- Left Column: Forms -->
+        <div class="checkout-forms">
+            <!-- Step 1: Delivery Address -->
+            <div class="checkout-section active" id="addressSection">
+                <div class="section-header">
+                    <div class="step-number">1</div>
+                    <div class="section-title">
+                        <h3>Delivery Address</h3>
+                        <p>Where should we deliver your order?</p>
+                    </div>
+                </div>
+                
+                <div class="section-content">
+                    {% if addresses %}
+                        <!-- Saved Addresses -->
+                        <div class="address-list">
+                            {% for address in addresses %}
+                                <div class="address-card {% if address.is_default %}selected{% endif %}" 
+                                     data-address-id="{{ address.id }}"
+                                     onclick="selectAddress({{ address.id }})">
+                                    <input type="radio" 
+                                           name="selected_address" 
+                                           value="{{ address.id }}"
+                                           {% if address.is_default %}checked{% endif %}>
+                                    <div class="address-details">
+                                        <div class="address-title">
+                                            <strong>{{ address.title }}</strong>
+                                            {% if address.is_default %}
+                                                <span class="default-badge">Default</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="address-name">{{ address.full_name }}</div>
+                                        <div class="address-text">
+                                            {{ address.address_line_1 }}
+                                            {% if address.address_line_2 %}
+                                                , {{ address.address_line_2 }}
+                                            {% endif %}
+                                        </div>
+                                        <div class="address-text">
+                                            {{ address.city }}, {{ address.state }} - {{ address.pincode }}
+                                        </div>
+                                        <div class="address-phone">
+                                            <i class="fas fa-phone"></i> {{ address.phone }}
+                                        </div>
+                                    </div>
+                                    <button class="edit-address" onclick="event.stopPropagation(); editAddress({{ address.id }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <button class="btn-secondary" onclick="showAddressForm()">
+                            <i class="fas fa-plus"></i> Add New Address
+                        </button>
+                    {% else %}
+                        <p class="no-address-text">No saved addresses found. Please add a delivery address.</p>
+                    {% endif %}
+                    
+                    <!-- Add New Address Form -->
+                    <div class="address-form" id="addressForm" style="display: {% if not addresses %}block{% else %}none{% endif %};">
+                        <h4>Add New Address</h4>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Full Name *</label>
+                                <input type="text" id="fullName" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Phone Number *</label>
+                                <input type="tel" id="phone" required>
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label>Address Line 1 *</label>
+                                <input type="text" id="addressLine1" required>
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label>Address Line 2</label>
+                                <input type="text" id="addressLine2">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>City *</label>
+                                <input type="text" id="city" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>State *</label>
+                                <input type="text" id="state" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Pincode *</label>
+                                <input type="text" id="pincode" maxlength="6" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Address Type</label>
+                                <select id="addressTitle">
+                                    <option value="Home">Home</option>
+                                    <option value="Office">Office</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="setDefault">
+                                    <span>Set as default address</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button class="btn-secondary" onclick="hideAddressForm()">Cancel</button>
+                            <button class="btn-primary" onclick="saveAddress()">Save Address</button>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-continue" onclick="continueToDelivery()">
+                        Continue to Delivery Options
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 2: Delivery Options -->
+            <div class="checkout-section" id="deliverySection">
+                <div class="section-header">
+                    <div class="step-number">2</div>
+                    <div class="section-title">
+                        <h3>Delivery Options</h3>
+                        <p>When should we deliver?</p>
+                    </div>
+                </div>
+                
+                <div class="section-content">
+                    <div class="delivery-options">
+                        <div class="delivery-option selected" onclick="selectDelivery(this, 0)">
+                            <input type="radio" name="delivery" checked>
+                            <div class="delivery-icon"><i class="fas fa-shipping-fast"></i></div>
+                            <div class="delivery-details">
+                                <div class="delivery-name">Standard Delivery</div>
+                                <div class="delivery-time">2-3 Business Days</div>
+                            </div>
+                            <div class="delivery-price">FREE</div>
+                        </div>
+                        
+                        <div class="delivery-option" onclick="selectDelivery(this, 99)">
+                            <input type="radio" name="delivery">
+                            <div class="delivery-icon"><i class="fas fa-clock"></i></div>
+                            <div class="delivery-details">
+                                <div class="delivery-name">Same Day Delivery</div>
+                                <div class="delivery-time">Within 3-6 hours</div>
+                            </div>
+                            <div class="delivery-price">₹99</div>
+                        </div>
+                        
+                        <div class="delivery-option" onclick="selectDelivery(this, 149)">
+                            <input type="radio" name="delivery">
+                            <div class="delivery-icon"><i class="fas fa-moon"></i></div>
+                            <div class="delivery-details">
+                                <div class="delivery-name">Midnight Delivery</div>
+                                <div class="delivery-time">12:00 AM - 12:30 AM</div>
+                            </div>
+                            <div class="delivery-price">₹149</div>
+                        </div>
+                    </div>
+                    
+                    <div class="delivery-date">
+                        <label>Preferred Delivery Date</label>
+                        <input type="date" 
+                               id="deliveryDate" 
+                               min="{{ min_delivery_date|date:'Y-m-d' }}">
+                    </div>
+                    
+                    <div class="special-instructions">
+                        <label>Special Instructions (Optional)</label>
+                        <textarea id="specialInstructions" 
+                                  rows="3" 
+                                  placeholder="Any special delivery instructions..."></textarea>
+                    </div>
+                    
+                    <button class="btn-continue" onclick="continueToPayment()">
+                        Continue to Payment
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 3: Payment -->
+            <div class="checkout-section" id="paymentSection">
+                <div class="section-header">
+                    <div class="step-number">3</div>
+                    <div class="section-title">
+                        <h3>Payment Method</h3>
+                        <p>How would you like to pay?</p>
+                    </div>
+                </div>
+                
+                <div class="section-content">
+                    <div class="payment-methods">
+                        <div class="payment-method selected" onclick="selectPayment(this, 'card')">
+                            <input type="radio" name="payment" value="card" checked>
+                            <div class="payment-icon"><i class="fas fa-credit-card"></i></div>
+                            <div class="payment-name">Credit/Debit Card</div>
+                        </div>
+                        
+                        <div class="payment-method" onclick="selectPayment(this, 'upi')">
+                            <input type="radio" name="payment" value="upi">
+                            <div class="payment-icon"><i class="fas fa-mobile-alt"></i></div>
+                            <div class="payment-name">UPI</div>
+                        </div>
+                        
+                        <div class="payment-method" onclick="selectPayment(this, 'netbanking')">
+                            <input type="radio" name="payment" value="netbanking">
+                            <div class="payment-icon"><i class="fas fa-university"></i></div>
+                            <div class="payment-name">Net Banking</div>
+                        </div>
+                        
+                        <div class="payment-method" onclick="selectPayment(this, 'wallet')">
+                            <input type="radio" name="payment" value="wallet">
+                            <div class="payment-icon"><i class="fas fa-wallet"></i></div>
+                            <div class="payment-name">Wallets</div>
+                        </div>
+                        
+                        <div class="payment-method" onclick="selectPayment(this, 'cod')">
+                            <input type="radio" name="payment" value="cod">
+                            <div class="payment-icon"><i class="fas fa-money-bill-wave"></i></div>
+                            <div class="payment-name">Cash on Delivery</div>
+                        </div>
+                    </div>
+                    
+                    <div class="secure-payment">
+                        <i class="fas fa-lock"></i>
+                        Your payment information is secure and encrypted
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column: Order Summary -->
+        <div class="order-summary-sidebar">
+            <div class="summary-card sticky">
+                <h3>Order Summary</h3>
+                
+                <div class="summary-items">
+                    {% for item in cart_items %}
+                        <div class="summary-item">
+                            <img src="{{ item.product.primary_image.image.url }}" 
+                                 alt="{{ item.product.name }}"
+                                 onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                            <div class="item-info">
+                                <div class="item-name">{{ item.product.name }}</div>
+                                <div class="item-qty">Qty: {{ item.quantity }}</div>
+                            </div>
+                            <div class="item-price">₹{{ item.total_price }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="summary-totals">
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="summarySubtotal">₹{{ subtotal }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Delivery</span>
+                        <span id="summaryDelivery">₹{{ delivery_charge }}</span>
+                    </div>
+                    <div class="summary-divider"></div>
+                    <div class="summary-total">
+                        <span>Total Amount</span>
+                        <span id="summaryTotal">₹{{ total }}</span>
+                    </div>
+                </div>
+                
+                <button class="btn-place-order" onclick="placeOrder()">
+                    <i class="fas fa-lock"></i> Place Secure Order
+                </button>
+                
+                <div class="trust-badges">
+                    <div class="badge">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secure Payment</span>
+                    </div>
+                    <div class="badge">
+                        <i class="fas fa-truck"></i>
+                        <span>Safe Delivery</span>
+                    </div>
+                    <div class="badge">
+                        <i class="fas fa-undo"></i>
+                        <span>Easy Returns</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay" style="display: none;">
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Processing your order...</p>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/checkout.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'js/checkout.js' %}"></script>
+<script>
+    const checkoutData = {
+        subtotal: {{ subtotal }},
+        deliveryCharge: {{ delivery_charge }},
+        total: {{ total }},
+        selectedAddressId: {{ default_address.id|default:'null' }},
+        selectedDeliveryCharge: 0,
+        selectedPaymentMethod: 'card'
+    };
+</script>
+{% endblock %}

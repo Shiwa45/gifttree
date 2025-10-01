@@ -1,0 +1,435 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register - Create Your Account | GiftTree{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>Create Account</h1>
+            <p>Join GiftTree and start sending happiness</p>
+        </div>
+        
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <form method="POST" class="auth-form" id="registerForm">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" 
+                       id="email" 
+                       name="email" 
+                       class="form-control" 
+                       value="{{ email }}"
+                       required>
+                <span class="error-message" id="emailError"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="username">Username *</label>
+                <input type="text" 
+                       id="username" 
+                       name="username" 
+                       class="form-control"
+                       value="{{ username }}"
+                       required>
+                <span class="error-message" id="usernameError"></span>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="first_name">First Name</label>
+                    <input type="text" 
+                           id="first_name" 
+                           name="first_name" 
+                           class="form-control"
+                           value="{{ first_name }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="last_name">Last Name</label>
+                    <input type="text" 
+                           id="last_name" 
+                           name="last_name" 
+                           class="form-control"
+                           value="{{ last_name }}">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" 
+                       id="phone" 
+                       name="phone" 
+                       class="form-control"
+                       value="{{ phone }}"
+                       placeholder="+91-">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password *</label>
+                <div class="password-input">
+                    <input type="password" 
+                           id="password" 
+                           name="password" 
+                           class="form-control"
+                           required>
+                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password')">
+                        <i class="far fa-eye"></i>
+                    </button>
+                </div>
+                <span class="help-text">Minimum 8 characters</span>
+                <span class="error-message" id="passwordError"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="password_confirm">Confirm Password *</label>
+                <div class="password-input">
+                    <input type="password" 
+                           id="password_confirm" 
+                           name="password_confirm" 
+                           class="form-control"
+                           required>
+                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password_confirm')">
+                        <i class="far fa-eye"></i>
+                    </button>
+                </div>
+                <span class="error-message" id="passwordConfirmError"></span>
+            </div>
+            
+            <button type="submit" class="btn-submit" id="submitBtn">
+                Create Account
+            </button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>Already have an account? <a href="{% url 'users:login' %}">Login here</a></p>
+        </div>
+        
+        <div class="divider">
+            <span>OR</span>
+        </div>
+        
+        <div class="social-login">
+            <button class="social-btn google">
+                <i class="fab fa-google"></i>
+                Continue with Google
+            </button>
+            <button class="social-btn facebook">
+                <i class="fab fa-facebook"></i>
+                Continue with Facebook
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .auth-card {
+        background: white;
+        border-radius: 16px;
+        padding: 40px;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    .auth-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .auth-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 8px;
+    }
+    
+    .auth-header p {
+        color: var(--text-light);
+        font-size: 14px;
+    }
+    
+    .messages {
+        margin-bottom: 20px;
+    }
+    
+    .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+    
+    .alert-error {
+        background: #ffebee;
+        color: #c62828;
+        border: 1px solid #ef5350;
+    }
+    
+    .alert-success {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #66bb6a;
+    }
+    
+    .auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 14px;
+    }
+    
+    .form-control {
+        padding: 12px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+    }
+    
+    .password-input {
+        position: relative;
+    }
+    
+    .toggle-password {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--text-light);
+        cursor: pointer;
+        padding: 4px;
+    }
+    
+    .help-text {
+        font-size: 12px;
+        color: var(--text-light);
+    }
+    
+    .error-message {
+        font-size: 12px;
+        color: #f44336;
+        display: none;
+    }
+    
+    .error-message.show {
+        display: block;
+    }
+    
+    .btn-submit {
+        background: var(--pink-gradient);
+        color: white;
+        border: none;
+        padding: 14px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(233, 30, 99, 0.4);
+    }
+    
+    .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .auth-footer {
+        text-align: center;
+        margin-top: 24px;
+        font-size: 14px;
+        color: var(--text-light);
+    }
+    
+    .auth-footer a {
+        color: var(--primary-color);
+        font-weight: 600;
+        text-decoration: none;
+    }
+    
+    .divider {
+        display: flex;
+        align-items: center;
+        margin: 24px 0;
+    }
+    
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #e0e0e0;
+    }
+    
+    .divider span {
+        padding: 0 16px;
+        color: var(--text-light);
+        font-size: 12px;
+    }
+    
+    .social-login {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .social-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        background: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .social-btn:hover {
+        border-color: var(--primary-color);
+        background: rgba(233, 30, 99, 0.05);
+    }
+    
+    .social-btn i {
+        font-size: 18px;
+    }
+    
+    @media (max-width: 768px) {
+        .auth-container {
+            padding: 20px;
+        }
+        
+        .auth-card {
+            padding: 30px 20px;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_js %}
+<script>
+    // Toggle password visibility
+    function togglePasswordVisibility(inputId) {
+        const input = document.getElementById(inputId);
+        const button = input.parentElement.querySelector('.toggle-password i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            button.className = 'fas fa-eye-slash';
+        } else {
+            input.type = 'password';
+            button.className = 'far fa-eye';
+        }
+    }
+    
+    // Form validation
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        let hasError = false;
+        
+        // Clear previous errors
+        document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
+        
+        // Email validation
+        const email = document.getElementById('email').value;
+        if (!email || !email.includes('@')) {
+            showError('emailError', 'Please enter a valid email address');
+            hasError = true;
+        }
+        
+        // Username validation
+        const username = document.getElementById('username').value;
+        if (!username || username.length < 3) {
+            showError('usernameError', 'Username must be at least 3 characters');
+            hasError = true;
+        }
+        
+        // Password validation
+        const password = document.getElementById('password').value;
+        if (!password || password.length < 8) {
+            showError('passwordError', 'Password must be at least 8 characters');
+            hasError = true;
+        }
+        
+        // Password confirmation
+        const passwordConfirm = document.getElementById('password_confirm').value;
+        if (password !== passwordConfirm) {
+            showError('passwordConfirmError', 'Passwords do not match');
+            hasError = true;
+        }
+        
+        if (hasError) {
+            e.preventDefault();
+        } else {
+            // Disable submit button
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating Account...';
+        }
+    });
+    
+    function showError(elementId, message) {
+        const errorElement = document.getElementById(elementId);
+        errorElement.textContent = message;
+        errorElement.classList.add('show');
+    }
+</script>
+{% endblock %}

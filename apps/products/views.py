@@ -239,3 +239,133 @@ def product_search(request):
     }
 
     return render(request, 'products/product_list.html', context)
+
+
+# Add these to existing apps/products/views.py
+
+from django.http import JsonResponse
+from django.db.models import Q, Count
+from django.core.paginator import Paginator
+
+
+def search_suggestions(request):
+    """Auto-complete search suggestions via Ajax"""
+    try:
+        query = request.GET.get('q', '').strip()
+        
+        if len(query) < 2:
+            return JsonResponse({
+                'success': True,
+                'suggestions': []
+            })
+        
+        # Search products
+        products = Product.objects.filter(
+            Q(name__icontains=query) |
+            Q(description__icontains=query) |
+            Q(category__name__icontains=query),
+            is_active=True
+        ).select_related('category').prefetch_related('images')[:10]
+        
+        # Search categories
+        categories = Category.objects.filter(
+            name__icontains=query,
+            is_active=True
+        )[:5]
+        
+        suggestions = {
+            'products': [
+                {
+                    'id': p.id,
+                    'name': p.name,
+                    'slug': p.slug,
+                    'category': p.category.name,
+                    'price': float(p.current_price),
+                    'image': p.primary_image.image.url if p.primary_image else None
+                }
+                for p in products
+            ],
+            'categories': [
+                {
+                    'id': c.id,
+                    'name': c.name,
+                    'slug': c.slug
+                }
+                for c in categories
+            ]
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'query': query,
+            'suggestions': suggestions
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=400)
+
+
+def quick_view_product(request, product_id):
+    """Get product data for quick view modal"""
+    try:
+        product = get_object_or_404(
+            Product.objects.prefetch_related('images', 'variants'),
+            id=product_id,
+            is_active=True
+        )
+        
+        data = {
+            'id': product.id,
+            'name': product.name,
+            'slug': product.slug,
+            'description': product.description,
+            'current_price': float(product.current_price),
+            'base_price': float(product.base_price),
+            'discount_price': float(product.discount_price) if product.discount_price else None,
+            'discount_percentage': product.discount_percentage,
+            'is_in_stock': product.is_in_stock,
+            'stock_quantity': product.stock_quantity,
+            'category': {
+                'id': product.category.id,
+                'name': product.category.name,
+                'slug': product.category.slug
+            },
+            'images': [
+                {
+                    'id': img.id,
+                    'url': img.image.url,
+                    'alt_text': img.alt_text,
+                    'is_primary': img.is_primary
+                }
+                for img in product.all_images
+            ],
+            'variants': [
+                {
+                    'id': var.id,
+                    'name': var.name,
+                    'price_adjustment': float(var.price_adjustment),
+                    'final_price': float(var.final_price),
+                    'stock_quantity': var.stock_quantity
+                }
+                for var in product.variants.filter(is_active=True)
+            ]
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'product': data
+        })
+        
+    except Product.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Product not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=400)

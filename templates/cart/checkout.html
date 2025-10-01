@@ -1,0 +1,705 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Checkout - GiftTree{% endblock %}
+
+{% block content %}
+<!-- Mobile Header with Back Button -->
+{% include 'includes/mobile_header.html' with show_back_button=True page_title="Checkout" %}
+
+<!-- Checkout Form -->
+<div class="checkout-container">
+    <form id="checkoutForm" method="post">
+        {% csrf_token %}
+        
+        <!-- Delivery Address Section -->
+        <div class="checkout-section">
+            <h2 class="section-title">
+                <i class="fas fa-map-marker-alt"></i>
+                Delivery Address
+            </h2>
+            
+            {% if addresses %}
+                <div class="address-list">
+                    {% for address in addresses %}
+                        <div class="address-card {% if address.is_default %}selected{% endif %}" 
+                             onclick="selectAddress({{ address.id }})">
+                            <input type="radio" name="address_id" value="{{ address.id }}" 
+                                   {% if address.is_default %}checked{% endif %}>
+                            <div class="address-details">
+                                <div class="address-title">{{ address.title }}</div>
+                                <div class="address-name">{{ address.full_name }}</div>
+                                <div class="address-text">
+                                    {{ address.address_line_1 }}{% if address.address_line_2 %}, {{ address.address_line_2 }}{% endif %}
+                                </div>
+                                <div class="address-text">
+                                    {{ address.city }}, {{ address.state }} - {{ address.pincode }}
+                                </div>
+                                <div class="address-phone">Phone: {{ address.phone }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <button type="button" class="add-address-btn" onclick="showAddressForm()">
+                <i class="fas fa-plus"></i> Add New Address
+            </button>
+            
+            <!-- New Address Form (Hidden by default) -->
+            <div id="newAddressForm" style="display: none;" class="new-address-form">
+                <div class="form-group">
+                    <label>Address Type</label>
+                    <select name="title" class="form-control" required>
+                        <option value="Home">Home</option>
+                        <option value="Office">Office</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" name="full_name" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" name="phone" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Address Line 1 *</label>
+                    <input type="text" name="address_line_1" class="form-control" 
+                           placeholder="House No., Building Name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Address Line 2</label>
+                    <input type="text" name="address_line_2" class="form-control" 
+                           placeholder="Road Name, Area, Colony">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>City *</label>
+                        <input type="text" name="city" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>State *</label>
+                        <input type="text" name="state" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Pincode *</label>
+                    <input type="text" name="pincode" class="form-control" 
+                           pattern="[0-9]{6}" required>
+                </div>
+                
+                <div class="form-check">
+                    <input type="checkbox" name="is_default" id="isDefault" class="form-check-input">
+                    <label for="isDefault" class="form-check-label">Set as default address</label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Order Items Section -->
+        <div class="checkout-section">
+            <h2 class="section-title">
+                <i class="fas fa-shopping-bag"></i>
+                Order Items ({{ cart_items.count }})
+            </h2>
+            
+            <div class="order-items-list">
+                {% for item in cart_items %}
+                    <div class="order-item">
+                        <img src="{% if item.product.primary_image %}{{ item.product.primary_image.image.url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}" 
+                             alt="{{ item.product.name }}" class="item-image">
+                        <div class="item-details">
+                            <div class="item-name">{{ item.product.name }}</div>
+                            {% if item.variant %}
+                                <div class="item-variant">{{ item.variant.name }}</div>
+                            {% endif %}
+                            <div class="item-price">₹{{ item.unit_price }} × {{ item.quantity }}</div>
+                        </div>
+                        <div class="item-total">₹{{ item.total_price }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Delivery Options Section -->
+        <div class="checkout-section">
+            <h2 class="section-title">
+                <i class="fas fa-truck"></i>
+                Delivery Options
+            </h2>
+            
+            <div class="delivery-options">
+                <div class="delivery-option">
+                    <input type="radio" name="delivery_type" value="same_day" id="sameDay" checked>
+                    <label for="sameDay">
+                        <div class="option-title">Same Day Delivery</div>
+                        <div class="option-subtitle">Order before 5 PM</div>
+                    </label>
+                </div>
+                
+                <div class="delivery-option">
+                    <input type="radio" name="delivery_type" value="midnight" id="midnight">
+                    <label for="midnight">
+                        <div class="option-title">Midnight Delivery</div>
+                        <div class="option-subtitle">12:00 AM - 12:30 AM (₹99 extra)</div>
+                    </label>
+                </div>
+                
+                <div class="delivery-option">
+                    <input type="radio" name="delivery_type" value="scheduled" id="scheduled">
+                    <label for="scheduled">
+                        <div class="option-title">Scheduled Delivery</div>
+                        <div class="option-subtitle">Choose your date and time</div>
+                    </label>
+                </div>
+            </div>
+            
+            <div id="scheduledOptions" style="display: none;">
+                <div class="form-group">
+                    <label>Delivery Date</label>
+                    <input type="date" name="delivery_date" class="form-control" 
+                           min="{{ today }}">
+                </div>
+                
+                <div class="form-group">
+                    <label>Delivery Time Slot</label>
+                    <select name="delivery_time_slot" class="form-control">
+                        <option value="9am-12pm">9:00 AM - 12:00 PM</option>
+                        <option value="12pm-3pm">12:00 PM - 3:00 PM</option>
+                        <option value="3pm-6pm">3:00 PM - 6:00 PM</option>
+                        <option value="6pm-9pm">6:00 PM - 9:00 PM</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Special Instructions Section -->
+        <div class="checkout-section">
+            <h2 class="section-title">
+                <i class="fas fa-comment-alt"></i>
+                Special Instructions
+            </h2>
+            
+            <textarea name="special_instructions" class="form-control" 
+                      rows="3" placeholder="Add any special delivery instructions here..."></textarea>
+        </div>
+        
+        <!-- Payment Summary Section -->
+        <div class="checkout-section payment-summary">
+            <h2 class="section-title">
+                <i class="fas fa-receipt"></i>
+                Payment Summary
+            </h2>
+            
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <span>₹{{ cart_subtotal }}</span>
+            </div>
+            
+            <div class="summary-row">
+                <span>Delivery Charges</span>
+                <span>{% if delivery_charge > 0 %}₹{{ delivery_charge }}{% else %}FREE{% endif %}</span>
+            </div>
+            
+            <div class="summary-divider"></div>
+            
+            <div class="summary-total">
+                <span>Total Amount</span>
+                <span>₹{{ cart_total }}</span>
+            </div>
+        </div>
+        
+        <!-- Place Order Button -->
+        <button type="submit" class="place-order-btn" id="placeOrderBtn">
+            <i class="fas fa-lock"></i>
+            Place Order
+        </button>
+    </form>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.checkout-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px 16px 100px;
+}
+
+.checkout-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: var(--primary-color);
+}
+
+/* Address Cards */
+.address-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.address-card {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    gap: 12px;
+}
+
+.address-card:hover {
+    border-color: var(--primary-color);
+    background: rgba(233, 30, 99, 0.02);
+}
+
+.address-card.selected {
+    border-color: var(--primary-color);
+    background: rgba(233, 30, 99, 0.05);
+}
+
+.address-card input[type="radio"] {
+    margin-top: 4px;
+}
+
+.address-details {
+    flex: 1;
+}
+
+.address-title {
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 4px;
+}
+
+.address-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.address-text {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.address-phone {
+    color: #666;
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+.add-address-btn {
+    width: 100%;
+    background: white;
+    border: 2px dashed #e0e0e0;
+    color: var(--primary-color);
+    padding: 14px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.add-address-btn:hover {
+    border-color: var(--primary-color);
+    background: rgba(233, 30, 99, 0.05);
+}
+
+/* New Address Form */
+.new-address-form {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.form-check-input {
+    width: 18px;
+    height: 18px;
+}
+
+/* Order Items */
+.order-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.order-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.item-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.item-details {
+    flex: 1;
+}
+
+.item-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.item-variant {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.item-price {
+    font-size: 13px;
+    color: #666;
+}
+
+.item-total {
+    font-weight: 700;
+    color: var(--primary-color);
+    align-self: center;
+}
+
+/* Delivery Options */
+.delivery-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.delivery-option {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.delivery-option:hover {
+    border-color: var(--primary-color);
+    background: rgba(233, 30, 99, 0.02);
+}
+
+.delivery-option input[type="radio"]:checked + label {
+    color: var(--primary-color);
+}
+
+.delivery-option label {
+    cursor: pointer;
+    flex: 1;
+}
+
+.option-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.option-subtitle {
+    font-size: 13px;
+    color: #666;
+}
+
+/* Payment Summary */
+.payment-summary {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    color: #666;
+}
+
+.summary-divider {
+    height: 1px;
+    background: #dee2e6;
+    margin: 12px 0;
+}
+
+.summary-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+}
+
+/* Place Order Button */
+.place-order-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #E91E63 0%, #FF4081 100%);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.place-order-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(233, 30, 99, 0.4);
+}
+
+.place-order-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Desktop Responsive */
+@media (min-width: 992px) {
+    .checkout-container {
+        padding: 40px 20px;
+    }
+    
+    .checkout-section {
+        padding: 30px;
+    }
+    
+    .address-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block page_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkoutForm = document.getElementById('checkoutForm');
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    const scheduledRadio = document.getElementById('scheduled');
+    const scheduledOptions = document.getElementById('scheduledOptions');
+    
+    // Show/hide scheduled delivery options
+    document.querySelectorAll('input[name="delivery_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'scheduled') {
+                scheduledOptions.style.display = 'block';
+            } else {
+                scheduledOptions.style.display = 'none';
+            }
+        });
+    });
+    
+    // Handle form submission
+    checkoutForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Validate address selection
+        const selectedAddress = document.querySelector('input[name="address_id"]:checked');
+        const newAddressForm = document.getElementById('newAddressForm');
+        
+        if (!selectedAddress && newAddressForm.style.display === 'none') {
+            showToast('Please select or add a delivery address');
+            return;
+        }
+        
+        // Disable button and show loading
+        placeOrderBtn.disabled = true;
+        placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        
+        try {
+            // Prepare form data
+            const formData = new FormData(checkoutForm);
+            const data = {};
+            
+            // Get address data
+            if (selectedAddress) {
+                data.address_id = selectedAddress.value;
+            } else {
+                // Get new address data
+                data.address = {
+                    title: formData.get('title'),
+                    full_name: formData.get('full_name'),
+                    phone: formData.get('phone'),
+                    address_line_1: formData.get('address_line_1'),
+                    address_line_2: formData.get('address_line_2') || '',
+                    city: formData.get('city'),
+                    state: formData.get('state'),
+                    pincode: formData.get('pincode'),
+                    is_default: formData.get('is_default') === 'on'
+                };
+            }
+            
+            // Get delivery data
+            data.delivery_type = formData.get('delivery_type');
+            if (data.delivery_type === 'scheduled') {
+                data.delivery_date = formData.get('delivery_date');
+                data.delivery_time_slot = formData.get('delivery_time_slot');
+            }
+            
+            // Get special instructions
+            data.special_instructions = formData.get('special_instructions') || '';
+            
+            // Submit order
+            const response = await fetch('{% url "orders:place_order" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showToast('Order placed successfully!');
+                // Redirect to success page
+                setTimeout(() => {
+                    window.location.href = result.redirect_url;
+                }, 1000);
+            } else {
+                throw new Error(result.message);
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            showToast(error.message || 'Error placing order. Please try again.');
+            
+            // Re-enable button
+            placeOrderBtn.disabled = false;
+            placeOrderBtn.innerHTML = '<i class="fas fa-lock"></i> Place Order';
+        }
+    });
+});
+
+function selectAddress(addressId) {
+    // Deselect all addresses
+    document.querySelectorAll('.address-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Select clicked address
+    const selectedCard = document.querySelector(`input[value="${addressId}"]`).closest('.address-card');
+    selectedCard.classList.add('selected');
+    
+    // Check the radio button
+    document.querySelector(`input[value="${addressId}"]`).checked = true;
+    
+    // Hide new address form
+    document.getElementById('newAddressForm').style.display = 'none';
+}
+
+function showAddressForm() {
+    const form = document.getElementById('newAddressForm');
+    
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+        
+        // Deselect all addresses
+        document.querySelectorAll('.address-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        document.querySelectorAll('input[name="address_id"]').forEach(radio => {
+            radio.checked = false;
+        });
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    if (toast) {
+        toast.textContent = message;
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+}
+</script>
+{% endblock %}
