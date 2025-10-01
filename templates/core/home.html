@@ -1,0 +1,1505 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load product_tags %}
+
+{% block title %}{{ site_settings.site_name|default:"GiftTree" }} - Send Flowers, Cakes & Gifts Online{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+<style>
+    :root {
+        --primary-color: #E91E63;
+        --secondary-color: #FF4081;
+        --text-dark: #2C3E50;
+        --text-light: #7F8C8D;
+        --bg-light: #F8F9FA;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #f5f5f5;
+    }
+
+    /* Hero Slider */
+    .hero-slider {
+        margin: 0;
+        padding: 0;
+    }
+
+    .swiper {
+        width: 100%;
+        height: 200px;
+    }
+
+    .swiper-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .swiper-pagination-bullet {
+        width: 8px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.6);
+        opacity: 1;
+    }
+
+    .swiper-pagination-bullet-active {
+        background: white;
+        width: 20px;
+        border-radius: 10px;
+    }
+
+    /* Filter Section */
+    .filter-section {
+        background: #e8f5e9;
+        padding: 16px;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .filter-dropdown {
+        flex: 1;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .filter-dropdown:hover {
+        border-color: #4CAF50;
+    }
+
+    .filter-label {
+        flex: 1;
+        margin: 0 8px;
+    }
+
+    .filter-text {
+        font-weight: 600;
+        color: #333;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .filter-subtext {
+        font-size: 11px;
+        color: #999;
+    }
+
+    .filter-arrow {
+        transition: transform 0.3s ease;
+    }
+
+    .filter-dropdown.active .filter-arrow {
+        transform: rotate(180deg);
+    }
+
+    /* Dropdown Menu */
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+
+    .dropdown-menu.show {
+        display: block;
+    }
+
+    .dropdown-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .dropdown-item:hover {
+        background: #f5f5f5;
+    }
+
+    .dropdown-item:active {
+        background: #e8f5e9;
+    }
+
+    .find-gifts-btn {
+        width: 100%;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    .find-gifts-btn:hover {
+        background: #45a049;
+    }
+
+    /* Category Circles */
+    .category-circles {
+        background: white;
+        padding: 20px 16px;
+        margin-bottom: 8px;
+    }
+
+    .circles-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    .circle-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        transition: transform 0.3s ease;
+    }
+
+    .circle-item:hover {
+        transform: translateY(-5px);
+    }
+
+    .circle-icon {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin-bottom: 12px;
+        transition: box-shadow 0.3s ease;
+    }
+
+    .circle-item:hover .circle-icon {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .circle-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .circle-label {
+        font-size: 13px;
+        font-weight: 600;
+        text-align: center;
+        color: #333;
+    }
+
+    /* Section Headers */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: white;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .view-all-btn {
+        background: #FF9800;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.3s ease;
+    }
+
+    .view-all-btn:hover {
+        background: #F57C00;
+    }
+
+    /* Product Sections */
+    .products-section {
+        background: white;
+        padding: 0 0 20px 0;
+        margin-bottom: 8px;
+    }
+
+    .section-subtitle {
+        padding: 0 16px 12px;
+        color: #666;
+        font-size: 13px;
+    }
+
+    .products-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .products-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    .products-row {
+        display: flex;
+        gap: 12px;
+        padding: 0 16px;
+    }
+
+    /* Product Card */
+    .product-card {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        min-width: 140px;
+        max-width: 140px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .product-image-wrapper {
+        position: relative;
+        width: 100%;
+        height: 140px;
+        background: #f5f5f5;
+    }
+
+    .product-image-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .product-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #4CAF50;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .product-details {
+        padding: 12px;
+    }
+
+    .product-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        line-height: 1.3;
+        height: 34px;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .product-price {
+        font-size: 16px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 4px;
+    }
+
+    .product-delivery {
+        font-size: 11px;
+        color: #4CAF50;
+        font-weight: 600;
+    }
+
+    /* Cake Circles */
+    .cake-circles-section {
+        background: white;
+        padding: 20px 0;
+        margin-bottom: 8px;
+    }
+
+    .cake-header {
+        padding: 0 16px 16px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .cake-scroll {
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .cake-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    .cake-row {
+        display: flex;
+        gap: 20px;
+        padding: 0 16px;
+    }
+
+    .cake-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 90px;
+        text-decoration: none;
+        transition: transform 0.3s ease;
+    }
+
+    .cake-item:hover {
+        transform: translateY(-5px);
+    }
+
+    .cake-circle {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        margin-bottom: 10px;
+        transition: box-shadow 0.3s ease;
+    }
+
+    .cake-item:hover .cake-circle {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+    }
+
+    .cake-circle img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .cake-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+        text-align: center;
+    }
+
+    /* Banners */
+    .delivery-banner {
+        background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+        padding: 16px;
+        margin: 8px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .banner-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .banner-icon {
+        font-size: 40px;
+    }
+
+    .banner-text h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 4px;
+    }
+
+    .banner-text p {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .banner-btn {
+        background: #1976D2;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    .banner-btn:hover {
+        background: #1565C0;
+    }
+
+    /* Features Section */
+    .features-section {
+        background: white;
+        padding: 30px 16px;
+        margin: 8px 0;
+    }
+
+    .features-header {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+    .features-header h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .features-header p {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .feature-card {
+        text-align: center;
+        padding: 20px 12px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #E91E63 0%, #FF4081 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+        color: white;
+        font-size: 24px;
+    }
+
+    .feature-card h4 {
+        font-size: 14px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 6px;
+    }
+
+    .feature-card p {
+        font-size: 12px;
+        color: #666;
+        line-height: 1.4;
+    }
+
+    /* Reviews Section */
+    .reviews-section {
+        background: white;
+        padding: 30px 16px;
+        margin: 8px 0;
+    }
+
+    .reviews-header {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+    .reviews-header h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 12px;
+    }
+
+    .rating-summary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .rating-stars {
+        color: #FFC107;
+        font-size: 20px;
+    }
+
+    .rating-text {
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .rating-count {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .reviews-scroll {
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .reviews-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    .reviews-row {
+        display: flex;
+        gap: 16px;
+    }
+
+    .review-card {
+        min-width: 280px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        flex-shrink: 0;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .review-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .review-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .reviewer-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .reviewer-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .reviewer-location {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .review-rating {
+        color: #FFC107;
+        margin-bottom: 12px;
+    }
+
+    .review-text {
+        font-size: 13px;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    /* Price Range Section */
+    .price-range-section {
+        background: white;
+        padding: 30px 16px;
+        margin: 8px 0;
+    }
+
+    .price-range-header {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+    .price-range-header h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .price-range-header p {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .price-range-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .price-range-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 24px 16px;
+        text-align: center;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .price-range-card:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(233, 30, 99, 0.2);
+    }
+
+    .price-range-card:active {
+        transform: scale(0.98);
+    }
+
+    .price-label {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 8px;
+    }
+
+    .price-count {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 16px;
+    }
+
+    .price-cta {
+        background: linear-gradient(135deg, #E91E63 0%, #FF4081 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        width: 100%;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .price-cta:hover {
+        transform: scale(1.05);
+    }
+
+    /* Newsletter */
+    .newsletter-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 30px 16px;
+        margin: 8px 0;
+        text-align: center;
+        color: white;
+    }
+
+    .newsletter-section h2 {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .newsletter-section p {
+        font-size: 13px;
+        margin-bottom: 20px;
+        opacity: 0.9;
+    }
+
+    .newsletter-form {
+        display: flex;
+        gap: 8px;
+    }
+
+    .newsletter-form input {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .newsletter-form button {
+        background: white;
+        color: #667eea;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    .newsletter-form button:hover {
+        background: #f5f5f5;
+    }
+
+    /* Desktop Responsive */
+    @media (min-width: 768px) {
+        .swiper {
+            height: 400px;
+        }
+
+        .filter-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 40px;
+        }
+
+        .filter-row {
+            max-width: 800px;
+            margin: 0 auto 16px;
+        }
+
+        .find-gifts-btn {
+            max-width: 300px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .circles-grid {
+            grid-template-columns: repeat(6, 1fr);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px 40px;
+        }
+
+        .circle-icon {
+            width: 110px;
+            height: 110px;
+        }
+
+        .section-header {
+            padding: 24px 40px 16px;
+        }
+
+        .section-subtitle {
+            padding: 0 40px 20px;
+        }
+
+        .products-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 0 40px 20px;
+        }
+
+        .product-card {
+            min-width: auto;
+            max-width: none;
+        }
+
+        .product-image-wrapper {
+            height: 200px;
+        }
+
+        .cake-header {
+            padding: 0 40px 20px;
+        }
+
+        .cake-row {
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 0 40px;
+        }
+
+        .cake-circle {
+            width: 110px;
+            height: 110px;
+        }
+
+        .delivery-banner {
+            max-width: 1200px;
+            margin: 16px auto;
+            padding: 24px 40px;
+            border-radius: 12px;
+        }
+
+        .features-section {
+            padding: 50px 40px;
+            max-width: 1200px;
+            margin: 16px auto;
+        }
+
+        .features-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        .reviews-section {
+            padding: 50px 40px;
+            max-width: 1200px;
+            margin: 16px auto;
+        }
+
+        .reviews-row {
+            justify-content: center;
+            flex-wrap: nowrap;
+        }
+
+        .price-range-section {
+            padding: 50px 40px;
+            max-width: 1200px;
+            margin: 16px auto;
+        }
+
+        .price-range-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .newsletter-section {
+            max-width: 1200px;
+            margin: 16px auto;
+            padding: 50px 40px;
+            border-radius: 12px;
+        }
+
+        .newsletter-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .products-row {
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        }
+    }
+
+    /* --- Desktop circles like screenshot --- */
+    @media (min-width: 1024px) {
+        .category-circles {
+            background: transparent;
+            padding: 28px 0 8px;
+        }
+
+        /* 8 neat circles in one row, centered */
+        .circles-grid {
+            max-width: 1600px;
+            margin: 0 auto;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 28px;
+            align-items: start;
+            justify-items: center;
+            padding: 0 24px;
+        }
+
+        /* card feel on hover but very subtle */
+        .circle-item {
+            gap: 10px;
+            transform: translateY(0);
+            transition: transform .25s ease, filter .25s ease;
+        }
+
+        .circle-item:hover {
+            transform: translateY(-3px);
+        }
+
+        /* outer ring + inner image fully round */
+        .circle-icon {
+            width: 160px;
+            height: 160px;
+            padding: 6px;
+            /* space for white rim */
+            background: #fff;
+            border-radius: 50%;
+            border: 1px solid #e6e9ef;
+            /* thin grey ring */
+            box-shadow:
+                0 0 0 6px #fff inset,
+                /* crisp white inner rim */
+                0 2px 10px rgba(0, 0, 0, .06);
+            /* soft depth */
+            overflow: hidden;
+        }
+
+        .circle-item:hover .circle-icon {
+            box-shadow:
+                0 0 0 6px #fff inset,
+                0 6px 18px rgba(0, 0, 0, .10);
+        }
+
+        .circle-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+        }
+
+        /* label style like the mock: bigger, bolder, centered */
+        .circle-label {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            text-align: center;
+            line-height: 1.2;
+            margin-top: 6px;
+            white-space: nowrap;
+            /* single line like screenshot */
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Slider -->
+<div class="hero-slider">
+    <div class="swiper">
+        <div class="swiper-wrapper">
+            {% for banner in banner_images %}
+            <div class="swiper-slide">
+                <img src="{{ banner.image.url }}" alt="{{ banner.title|default:'Banner' }}">
+            </div>
+            {% empty %}
+            <div class="swiper-slide">
+                <img src="{% static 'images/banner/banner.jpeg' %}" alt="Banner 1">
+            </div>
+            <div class="swiper-slide">
+                <img src="{% static 'images/banner/banner2.jpg' %}" alt="Banner 2">
+            </div>
+            <div class="swiper-slide">
+                <img src="{% static 'images/banner/banner3.jpg' %}" alt="Banner 3">
+            </div>
+            {% endfor %}
+        </div>
+        <div class="swiper-pagination"></div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <div class="filter-row">
+        <div class="filter-dropdown" id="occasionsDropdown">
+            <span>⭐</span>
+            <div class="filter-label">
+                <span class="filter-text">Occasions</span>
+                <span class="filter-subtext">Wife Day, Daughters Day etc</span>
+            </div>
+            <span class="filter-arrow">▼</span>
+            <div class="dropdown-menu" id="occasionsMenu">
+                <div class="dropdown-item" data-value="birthday">Birthday</div>
+                <div class="dropdown-item" data-value="anniversary">Anniversary</div>
+                <div class="dropdown-item" data-value="wedding">Wedding</div>
+                <div class="dropdown-item" data-value="valentines">Valentine's Day</div>
+                <div class="dropdown-item" data-value="mothers-day">Mother's Day</div>
+                <div class="dropdown-item" data-value="fathers-day">Father's Day</div>
+            </div>
+        </div>
+        <div class="filter-dropdown" id="giftTypesDropdown">
+            <span>🎁</span>
+            <div class="filter-label">
+                <span class="filter-text">Gift Types</span>
+                <span class="filter-subtext">Flowers, Cakes, Gifts etc</span>
+            </div>
+            <span class="filter-arrow">▼</span>
+            <div class="dropdown-menu" id="giftTypesMenu">
+                <div class="dropdown-item" data-value="flowers">Flowers</div>
+                <div class="dropdown-item" data-value="cakes">Cakes</div>
+                <div class="dropdown-item" data-value="gifts">Gifts</div>
+                <div class="dropdown-item" data-value="plants">Plants</div>
+                <div class="dropdown-item" data-value="combos">Combos</div>
+                <div class="dropdown-item" data-value="personalized">Personalized</div>
+            </div>
+        </div>
+    </div>
+    <button class="find-gifts-btn" onclick="findGifts()">Find Gifts</button>
+</div>
+
+<!-- Category Circles -->
+<div class="category-circles">
+    <div class="circles-grid">
+        {% for category in quick_categories|slice:":9" %}
+        <a href="{% url 'products:category_detail' category.slug %}" class="circle-item">
+            <div class="circle-icon">
+                {% if category.image %}
+                <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                {% else %}
+                <img src="{% static 'images/category/default.png' %}" alt="{{ category.name }}">
+                {% endif %}
+            </div>
+            <span class="circle-label">{{ category.name }}</span>
+        </a>
+        {% empty %}
+        <a href="#" class="circle-item">
+            <div class="circle-icon"><img src="{% static 'images/category/birthday.png' %}" alt="Birthday"></div>
+            <span class="circle-label">Birthday</span>
+        </a>
+        <a href="#" class="circle-item">
+            <div class="circle-icon"><img src="{% static 'images/category/Anniversary.jpg' %}" alt="Anniversary"></div>
+            <span class="circle-label">Anniversary</span>
+        </a>
+        <a href="#" class="circle-item">
+            <div class="circle-icon"><img src="{% static 'images/category/flowers.webp' %}" alt="Flowers"></div>
+            <span class="circle-label">Flowers</span>
+        </a>
+        <a href="#" class="circle-item">
+            <div class="circle-icon"><img src="{% static 'images/category/cake.webp' %}" alt="Cakes"></div>
+            <span class="circle-label">Cakes</span>
+        </a>
+        <a href="#" class="circle-item">
+            <div class="circle-icon"><img src="{% static 'images/category/combo.webp' %}" alt="Combos"></div>
+            <span class="circle-label">Combos</span>
+        </a>
+        <a href="#" class="circle-item">
+            <div class="circle-icon"><img src="{% static 'images/category/plant.webp' %}" alt="Plants"></div>
+            <span class="circle-label">Plants</span>
+        </a>
+        <a href="#" class="circle-item">
+            <div class="circle-icon"><img src="{% static 'images/category/gifts.webp' %}" alt="Personalised"></div>
+            <span class="circle-label">Personalised</span>
+        </a>
+        <a href="#" class="circle-item">
+            <div class="circle-icon"><img src="{% static 'images/category/default.png' %}" alt="New Arrivals"></div>
+            <span class="circle-label">New Arrivals</span>
+        </a>
+        <a href="#" class="circle-item">
+            <div class="circle-icon"><img src="{% static 'images/category/default.png' %}" alt="Luxe"></div>
+            <span class="circle-label">MFT Luxe</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Best Seller Products -->
+<div class="products-section">
+    <div class="section-header">
+        <h2 class="section-title">
+            <span>🚚</span>Best Seller Products
+        </h2>
+        <a href="{% url 'products:product_list' %}" class="view-all-btn">View All</a>
+    </div>
+    <p class="section-subtitle">A Perfect Way to send Wishes</p>
+    <div class="products-scroll">
+        <div class="products-row">
+            {% for product in bestseller_products|slice:":10" %}
+            <div class="product-card" onclick="window.location.href='{{ product.get_absolute_url }}'">
+                <div class="product-image-wrapper">
+                    <img src="{{ product|product_image_url }}" alt="{{ product.name }}" onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                </div>
+                <div class="product-details">
+                    <div class="product-name">{{ product.name }}</div>
+                    <div class="product-price">Rs. {{ product.current_price|floatformat:0 }}</div>
+                    <div class="product-delivery">Earliest Delivery: <strong>Today</strong></div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="{% static 'images/products/default.jpg' %}" alt="Product">
+                </div>
+                <div class="product-details">
+                    <div class="product-name">Red Love</div>
+                    <div class="product-price">Rs. 695</div>
+                    <div class="product-delivery">Earliest Delivery: <strong>Today</strong></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Send Cakes -->
+<div class="cake-circles-section">
+    <h2 class="cake-header">Send Cakes</h2>
+    <div class="cake-scroll">
+        <div class="cake-row">
+            <a href="#" class="cake-item">
+                <div class="cake-circle"><img src="{% static 'images/cakes/chocolate.jpg' %}" alt="Chocolate Cake">
+                </div>
+                <span class="cake-name">Chocolate Cake</span>
+            </a>
+            <a href="#" class="cake-item">
+                <div class="cake-circle"><img src="{% static 'images/cakes/black-forest.jpg' %}" alt="Black Forest">
+                </div>
+                <span class="cake-name">Black Forest</span>
+            </a>
+            <a href="#" class="cake-item">
+                <div class="cake-circle"><img src="{% static 'images/cakes/red-velvet.jpg' %}" alt="Red Velvet"></div>
+                <span class="cake-name">Red Velvet</span>
+            </a>
+            <a href="#" class="cake-item">
+                <div class="cake-circle"><img src="{% static 'images/cakes/pineapple.jpg' %}" alt="Pineapple"></div>
+                <span class="cake-name">Pineapple</span>
+            </a>
+            <a href="#" class="cake-item">
+                <div class="cake-circle"><img src="{% static 'images/cakes/butterscotch.jpg' %}" alt="Butterscotch">
+                </div>
+                <span class="cake-name">Butterscotch</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 90 Min Delivery Banner -->
+<div class="delivery-banner">
+    <div class="banner-content">
+        <div class="banner-icon">🎁</div>
+        <div class="banner-text">
+            <h3>90 Min Delivery*</h3>
+            <p>Fast & Fresh Guaranteed</p>
+        </div>
+    </div>
+    <button class="banner-btn">Order Now</button>
+</div>
+
+<!-- Same Day Delivery -->
+<div class="products-section">
+    <div class="section-header">
+        <h2 class="section-title">Same Day Delivery</h2>
+        <a href="{% url 'products:product_list' %}" class="view-all-btn">View All</a>
+    </div>
+    <div class="products-scroll">
+        <div class="products-row">
+            {% for product in featured_products|slice:":10" %}
+            <div class="product-card" onclick="window.location.href='{{ product.get_absolute_url }}'">
+                <div class="product-image-wrapper">
+                    <img src="{{ product|product_image_url }}" alt="{{ product.name }}" onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                    <div class="product-badge">SAME DAY</div>
+                </div>
+                <div class="product-details">
+                    <div class="product-name">{{ product.name }}</div>
+                    <div class="product-price">Rs. {{ product.current_price|floatformat:0 }}</div>
+                    <div class="product-delivery">Earliest Delivery: <strong>Today</strong></div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="{% static 'images/products/default.jpg' %}" alt="Product">
+                    <div class="product-badge">SAME DAY</div>
+                </div>
+                <div class="product-details">
+                    <div class="product-name">Celestial Floral Treas</div>
+                    <div class="product-price">Rs. 2,430</div>
+                    <div class="product-delivery">Earliest Delivery: <strong>Today</strong></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Featured Products -->
+<div class="products-section">
+    <div class="section-header">
+        <h2 class="section-title">Featured Products</h2>
+        <a href="{% url 'products:product_list' %}" class="view-all-btn">View All</a>
+    </div>
+    <div class="products-scroll">
+        <div class="products-row">
+            {% for product in featured_products|slice:":10" %}
+            <div class="product-card" onclick="window.location.href='{{ product.get_absolute_url }}'">
+                <div class="product-image-wrapper">
+                    <img src="{{ product|product_image_url }}" alt="{{ product.name }}" onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                </div>
+                <div class="product-details">
+                    <div class="product-name">{{ product.name }}</div>
+                    <div class="product-price">Rs. {{ product.current_price|floatformat:0 }}</div>
+                    <div class="product-delivery">Earliest Delivery: <strong>Today</strong></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Why Choose Us -->
+<div class="features-section">
+    <div class="features-header">
+        <h2>Why Choose GiftTree?</h2>
+        <p>Delivering happiness with every order</p>
+    </div>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-shipping-fast"></i></div>
+            <h4>Same Day Delivery</h4>
+            <p>Order before 5 PM for same day delivery</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon" style="background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);"><i
+                    class="fas fa-leaf"></i></div>
+            <h4>100% Fresh</h4>
+            <p>Premium quality products guaranteed</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon" style="background: linear-gradient(135deg, #FF9800 0%, #FFC107 100%);"><i
+                    class="fas fa-shield-alt"></i></div>
+            <h4>Secure Payment</h4>
+            <p>100% encrypted transactions</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i
+                    class="fas fa-headset"></i></div>
+            <h4>24/7 Support</h4>
+            <p>Round the clock customer support</p>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Reviews -->
+<div class="reviews-section">
+    <div class="reviews-header">
+        <h2>What Our Customers Say</h2>
+        <div class="rating-summary">
+            <div class="rating-stars">
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star-half-alt"></i>
+            </div>
+            <span class="rating-text">4.8</span>
+            <span class="rating-count">(12,547 reviews)</span>
+        </div>
+    </div>
+    <div class="reviews-scroll">
+        <div class="reviews-row">
+            <div class="review-card">
+                <div class="review-header">
+                    <img src="{% static 'images/avatars/user1.jpg' %}" alt="Customer" class="reviewer-avatar"
+                        onerror="this.src='{% static 'images/category/default.png' %}'">
+                    <div>
+                        <div class="reviewer-name">Priya Sharma</div>
+                        <div class="reviewer-location">Mumbai, India</div>
+                    </div>
+                </div>
+                <div class="review-rating">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <p class="review-text">"Absolutely beautiful! The flowers arrived fresh and perfectly arranged. Same day
+                    delivery was prompt."</p>
+            </div>
+            <div class="review-card">
+                <div class="review-header">
+                    <img src="{% static 'images/avatars/user2.jpg' %}" alt="Customer" class="reviewer-avatar"
+                        onerror="this.src='{% static 'images/category/default.png' %}'">
+                    <div>
+                        <div class="reviewer-name">Rahul Verma</div>
+                        <div class="reviewer-location">Delhi, India</div>
+                    </div>
+                </div>
+                <div class="review-rating">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <p class="review-text">"Made my wife's birthday extra special with midnight delivery. The cake was
+                    delicious!"</p>
+            </div>
+            <div class="review-card">
+                <div class="review-header">
+                    <img src="{% static 'images/avatars/user3.jpg' %}" alt="Customer" class="reviewer-avatar"
+                        onerror="this.src='{% static 'images/category/default.png' %}'">
+                    <div>
+                        <div class="reviewer-name">Sneha Patel</div>
+                        <div class="reviewer-location">Bangalore, India</div>
+                    </div>
+                </div>
+                <div class="review-rating">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <p class="review-text">"Excellent service! Ordered personalized gifts and they turned out perfect."</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Shop by Price Range -->
+<div class="price-range-section">
+    <div class="price-range-header">
+        <h2>Shop by Your Budget</h2>
+        <p>Perfect gifts for every price range</p>
+    </div>
+    <div class="price-range-grid">
+        <div class="price-range-card" onclick="window.location.href='{% url 'products:product_list' %}?price_max=500'">
+            <div class="price-label">Under ₹500</div>
+            <div class="price-count">200+ Options</div>
+            <button class="price-cta">Shop Now</button>
+        </div>
+        <div class="price-range-card"
+            onclick="window.location.href='{% url 'products:product_list' %}?price_min=500&price_max=1000'">
+            <div class="price-label">₹500 - ₹1000</div>
+            <div class="price-count">350+ Options</div>
+            <button class="price-cta">Shop Now</button>
+        </div>
+        <div class="price-range-card"
+            onclick="window.location.href='{% url 'products:product_list' %}?price_min=1000&price_max=2000'">
+            <div class="price-label">₹1000 - ₹2000</div>
+            <div class="price-count">280+ Options</div>
+            <button class="price-cta">Shop Now</button>
+        </div>
+        <div class="price-range-card" onclick="window.location.href='{% url 'products:product_list' %}?price_min=2000'">
+            <div class="price-label">Above ₹2000</div>
+            <div class="price-count">150+ Premium</div>
+            <button class="price-cta">Shop Now</button>
+        </div>
+    </div>
+</div>
+
+<!-- Newsletter -->
+<div class="newsletter-section">
+    <h2>Join Our Newsletter</h2>
+    <p>Get exclusive deals and be the first to know about new arrivals</p>
+    <form class="newsletter-form" onsubmit="return subscribeNewsletter(event);">
+        <input type="email" placeholder="Enter your email address" required>
+        <button type="submit">Subscribe</button>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Swiper
+        const swiper = new Swiper('.swiper', {
+            loop: true,
+            autoplay: {
+                delay: 3500,
+                disableOnInteraction: false,
+            },
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            speed: 600,
+        });
+
+        // Filter Dropdowns Functionality
+        const occasionsDropdown = document.getElementById('occasionsDropdown');
+        const giftTypesDropdown = document.getElementById('giftTypesDropdown');
+        const occasionsMenu = document.getElementById('occasionsMenu');
+        const giftTypesMenu = document.getElementById('giftTypesMenu');
+
+        let selectedOccasion = '';
+        let selectedGiftType = '';
+
+        // Toggle Occasions Dropdown
+        occasionsDropdown.addEventListener('click', function (e) {
+            e.stopPropagation();
+            occasionsMenu.classList.toggle('show');
+            giftTypesMenu.classList.remove('show');
+            this.classList.toggle('active');
+            giftTypesDropdown.classList.remove('active');
+        });
+
+        // Toggle Gift Types Dropdown
+        giftTypesDropdown.addEventListener('click', function (e) {
+            e.stopPropagation();
+            giftTypesMenu.classList.toggle('show');
+            occasionsMenu.classList.remove('show');
+            this.classList.toggle('active');
+            occasionsDropdown.classList.remove('active');
+        });
+
+        // Select Occasion
+        occasionsMenu.addEventListener('click', function (e) {
+            if (e.target.classList.contains('dropdown-item')) {
+                selectedOccasion = e.target.dataset.value;
+                const filterText = occasionsDropdown.querySelector('.filter-text');
+                filterText.textContent = e.target.textContent;
+                occasionsMenu.classList.remove('show');
+                occasionsDropdown.classList.remove('active');
+            }
+        });
+
+        // Select Gift Type
+        giftTypesMenu.addEventListener('click', function (e) {
+            if (e.target.classList.contains('dropdown-item')) {
+                selectedGiftType = e.target.dataset.value;
+                const filterText = giftTypesDropdown.querySelector('.filter-text');
+                filterText.textContent = e.target.textContent;
+                giftTypesMenu.classList.remove('show');
+                giftTypesDropdown.classList.remove('active');
+            }
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function () {
+            occasionsMenu.classList.remove('show');
+            giftTypesMenu.classList.remove('show');
+            occasionsDropdown.classList.remove('active');
+            giftTypesDropdown.classList.remove('active');
+        });
+
+        // Find Gifts Function
+        window.findGifts = function () {
+            let url = "{% url 'products:product_list' %}?";
+            if (selectedOccasion) {
+                url += `occasion=${selectedOccasion}&`;
+            }
+            if (selectedGiftType) {
+                url += `category=${selectedGiftType}&`;
+            }
+            window.location.href = url;
+        };
+
+        // Newsletter Subscription
+        window.subscribeNewsletter = function (event) {
+            event.preventDefault();
+            const email = event.target.querySelector('input[type="email"]').value;
+
+            // You can add AJAX call here to submit to backend
+            alert('Thank you for subscribing! Check your email for confirmation.');
+            event.target.reset();
+
+            return false;
+        };
+    });
+</script>
+{% endblock %}

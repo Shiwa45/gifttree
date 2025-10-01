@@ -1,0 +1,705 @@
+{% load static %}
+{% load product_tags %}
+<!-- Desktop Header (Hidden on Mobile) -->
+<div class="desktop-only">
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container">
+            <div class="left-info">
+                <span><i class="fas fa-truck"></i> Free Delivery Available</span>
+                <span><i class="fas fa-clock"></i> Same Day Delivery</span>
+            </div>
+            <div class="right-info">
+                <span><i class="fas fa-phone"></i> Call: +91-9876543210</span>
+                <span><i class="fas fa-envelope"></i> support@gifttree.com</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <header class="main-header desktop-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h2>
+                        <a href="{% url 'core:home' %}" style="text-decoration: none; color: var(--primary-color);">
+                            GiftTree
+                        </a>
+                    </h2>
+                </div>
+                
+                <div class="search-container">
+                    <form method="GET" action="{% url 'products:search' %}">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" name="q" class="search-bar" 
+                               placeholder="Search for flowers, cakes, gifts..." 
+                               value="{{ request.GET.q }}">
+                    </form>
+                </div>
+                
+                <div class="header-actions">
+                    <a href="#" class="header-btn" onclick="showLocationModal()">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Select City
+                    </a>
+                    
+                    {% if user.is_authenticated %}
+                        <div class="user-dropdown">
+                            <button class="header-btn user-menu-btn" onclick="toggleUserMenu()">
+                                <i class="fas fa-user"></i>
+                                {{ user.first_name|default:user.username }}
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="user-menu" id="userMenu">
+                                <a href="{% url 'users:profile' %}">
+                                    <i class="fas fa-user"></i> My Profile
+                                </a>
+                                <a href="{% url 'orders:order_list' %}">
+                                    <i class="fas fa-shopping-bag"></i> My Orders
+                                </a>
+                                <a href="#">
+                                    <i class="fas fa-heart"></i> Wishlist
+                                </a>
+                                <a href="#">
+                                    <i class="fas fa-map-marker-alt"></i> Addresses
+                                </a>
+                                <hr>
+                                <a href="{% url 'users:logout' %}">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'users:login' %}" class="header-btn">
+                            <i class="fas fa-user"></i>
+                            Account
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'cart:cart' %}" class="header-btn">
+                        <i class="fas fa-shopping-cart"></i>
+                        Cart
+                        {% if cart_count %}
+                            <span class="cart-badge">{{ cart_count }}</span>
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Desktop Navigation with Mega Menu -->
+    <nav class="main-nav">
+        <div class="container">
+            <ul class="nav-menu">
+                {% for category in main_categories %}
+                    <li class="nav-dropdown mega-menu-item">
+                        <a href="{% url 'products:category_detail' category.slug %}" class="nav-link">
+                            {{ category.name }}
+                            <i class="fas fa-chevron-down"></i>
+                        </a>
+                        <div class="mega-menu">
+                            <div class="mega-menu-content">
+                                <div class="mega-menu-section">
+                                    <h6>{{ category.name }}</h6>
+                                    <div class="mega-menu-links">
+                                        <a href="{% url 'products:category_detail' category.slug %}" class="view-all-link">
+                                            <i class="fas fa-th-large"></i>
+                                            View All {{ category.name }}
+                                        </a>
+                                        {% if category.children.all %}
+                                            {% for subcategory in category.children.all %}
+                                                <a href="{% url 'products:category_detail' subcategory.slug %}">{{ subcategory.name }}</a>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="mega-menu-section">
+                                    <h6>Shop {{ category.name }}</h6>
+                                    <div class="mega-menu-links">
+                                        <a href="{% url 'products:product_list' %}?filter=featured&category={{ category.slug }}">Featured {{ category.name }}</a>
+                                        <a href="{% url 'products:product_list' %}?filter=bestseller&category={{ category.slug }}">Best Selling {{ category.name }}</a>
+                                        <a href="{% url 'products:product_list' %}?filter=under_500&category={{ category.slug }}">{{ category.name }} Under ₹500</a>
+                                        <a href="{% url 'products:product_list' %}?filter=same_day&category={{ category.slug }}">Same Day {{ category.name }}</a>
+                                        <a href="{% url 'products:product_list' %}?price_range=500-1000&category={{ category.slug }}">Premium {{ category.name }} (₹500-1000)</a>
+                                        <a href="{% url 'products:product_list' %}?price_range=1000-2000&category={{ category.slug }}">Luxury {{ category.name }} (₹1000+)</a>
+                                    </div>
+                                </div>
+                                
+                                <div class="mega-menu-section">
+                                    <h6>By Occasion</h6>
+                                    <div class="mega-menu-links">
+                                        {% if category.category_occasions %}
+                                            {% for occasion in category.category_occasions|slice:":6" %}
+                                                <a href="{% url 'products:product_list' %}?occasions={{ occasion.slug }}&category={{ category.slug }}">{{ occasion.name }} {{ category.name }}</a>
+                                            {% endfor %}
+                                        {% else %}
+                                            <a href="{% url 'products:product_list' %}?category={{ category.slug }}">Birthday {{ category.name }}</a>
+                                            <a href="{% url 'products:product_list' %}?category={{ category.slug }}">Anniversary {{ category.name }}</a>
+                                            <a href="{% url 'products:product_list' %}?category={{ category.slug }}">Valentine {{ category.name }}</a>
+                                            <a href="{% url 'products:product_list' %}?category={{ category.slug }}">Wedding {{ category.name }}</a>
+                                            <a href="{% url 'products:product_list' %}?category={{ category.slug }}">Celebration {{ category.name }}</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="mega-menu-featured">
+                                    <h6>Featured {{ category.name }}</h6>
+                                    <div class="featured-products-grid">
+                                        {% if category.featured_products %}
+                                            {% for product in category.featured_products %}
+                                                <div class="featured-product-item" onclick="window.location.href='{{ product.get_absolute_url }}'">
+                                                    <img src="{{ product|product_image_url }}" alt="{{ product.name }}" onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                                                    <div class="featured-product-info">
+                                                        <span class="product-name">{{ product.name|truncatechars:20 }}</span>
+                                                        <span class="product-price">₹{{ product.current_price }}</span>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <!-- Show category-specific products from database -->
+                                            {% for product in category.products.all|slice:":3" %}
+                                                {% if product.is_active %}
+                                                    <div class="featured-product-item" onclick="window.location.href='{{ product.get_absolute_url }}'">
+                                                        <img src="{{ product|product_image_url }}" alt="{{ product.name }}" onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                                                        <div class="featured-product-info">
+                                                            <span class="product-name">{{ product.name|truncatechars:20 }}</span>
+                                                            <span class="product-price">₹{{ product.current_price }}</span>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            {% empty %}
+                                                <!-- Fallback if no products in category -->
+                                                <div class="featured-product-item">
+                                                    <img src="{% static 'images/products/default.jpg' %}" alt="Coming Soon">
+                                                    <div class="featured-product-info">
+                                                        <span class="product-name">{{ category.name }} Coming Soon</span>
+                                                        <span class="product-price">₹999</span>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+
+                <li class="nav-dropdown mega-menu-item">
+                    <a href="{% url 'products:product_list' %}" class="nav-link">
+                        All Products
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="mega-menu">
+                        <div class="mega-menu-content">
+                            <div class="mega-menu-section">
+                                <h6>Browse All</h6>
+                                <div class="mega-menu-links">
+                                    <a href="{% url 'products:product_list' %}" class="view-all-link">
+                                        <i class="fas fa-th-large"></i>
+                                        View All Products
+                                    </a>
+                                    <a href="{% url 'products:product_list' %}?filter=featured">Featured Products</a>
+                                    <a href="{% url 'products:product_list' %}?filter=bestseller">Best Sellers</a>
+                                    <a href="{% url 'products:product_list' %}?filter=under_500">Under ₹500</a>
+                                    <a href="{% url 'products:product_list' %}?filter=same_day">Same Day Delivery</a>
+                                </div>
+                            </div>
+                            
+                            <div class="mega-menu-section">
+                                <h6>Categories</h6>
+                                <div class="mega-menu-links">
+                                    {% for category in main_categories %}
+                                        <a href="{% url 'products:category_detail' category.slug %}">{{ category.name }}</a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="mega-menu-section">
+                                <h6>Price Range</h6>
+                                <div class="mega-menu-links">
+                                    <a href="{% url 'products:product_list' %}?price_range=0-500">Under ₹500</a>
+                                    <a href="{% url 'products:product_list' %}?price_range=500-1000">₹500 - ₹1000</a>
+                                    <a href="{% url 'products:product_list' %}?price_range=1000-2000">₹1000 - ₹2000</a>
+                                    <a href="{% url 'products:product_list' %}?price_range=2000+">Above ₹2000</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                
+                <li>
+                    <a href="#" class="nav-link">About Us</a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">Contact</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</div>
+
+<style>
+/* Simple Dropdown Styles */
+.user-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.user-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    min-width: 220px;
+    z-index: 9999;
+    padding: 10px 0;
+    margin-top: 5px;
+}
+
+.user-menu.show {
+    display: block;
+}
+
+.user-menu a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    color: var(--text-dark);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.user-menu a:hover {
+    background: rgba(233, 30, 99, 0.1);
+    color: var(--primary-color);
+}
+
+.user-menu hr {
+    margin: 10px 0;
+    border: none;
+    height: 1px;
+    background: #f0f0f0;
+}
+
+/* Navigation Menu */
+.nav-menu {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-menu li {
+    position: relative;
+}
+
+.nav-menu .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 15px 20px;
+    color: var(--text-dark);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 15px;
+    transition: all 0.3s;
+}
+
+.nav-menu .nav-link:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Mega Menu Styles */
+.mega-menu {
+    display: none;
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 3px solid var(--primary-color);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.mega-menu-item:hover .mega-menu {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.mega-menu-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+    padding: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.mega-menu-section {
+    min-width: 180px;
+}
+
+.mega-menu-section h6 {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 8px;
+}
+
+.mega-menu-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mega-menu-links a {
+    color: var(--text-dark);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 6px 0;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    padding-left: 8px;
+}
+
+.mega-menu-links a:hover {
+    color: var(--primary-color);
+    border-left-color: var(--primary-color);
+    padding-left: 12px;
+}
+
+.mega-menu-links .view-all-link {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mega-menu-links .view-all-link:hover {
+    background: rgba(233, 30, 99, 0.1);
+    border-radius: 4px;
+    padding: 8px 12px;
+}
+
+/* Featured Products in Mega Menu */
+.mega-menu-featured {
+    grid-column: span 2;
+    border-left: 1px solid #f0f0f0;
+    padding-left: 30px;
+}
+
+.featured-products-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.featured-product-item {
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.featured-product-item:hover {
+    background: rgba(233, 30, 99, 0.05);
+    transform: translateY(-2px);
+}
+
+.featured-product-item img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.featured-product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.featured-product-info .product-name {
+    font-size: 12px;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.featured-product-info .product-price {
+    font-size: 12px;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Responsive Mega Menu */
+@media (max-width: 1400px) {
+    .mega-menu-content {
+        max-width: 1000px;
+        grid-template-columns: repeat(3, 1fr);
+        padding: 25px;
+    }
+    
+    .mega-menu-featured {
+        grid-column: span 3;
+        border-left: none;
+        border-top: 1px solid #f0f0f0;
+        padding-left: 0;
+        padding-top: 20px;
+        margin-top: 20px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .mega-menu-content {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 20px;
+        max-width: 800px;
+    }
+    
+    .mega-menu-featured {
+        grid-column: span 2;
+    }
+    
+    .featured-products-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 992px) {
+    .main-nav {
+        display: none;
+    }
+    
+    .mega-menu {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .mega-menu {
+        display: none !important;
+    }
+}
+
+.menu-section h6 {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 14px;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 5px;
+}
+
+.menu-section a {
+    display: block;
+    padding: 8px 0;
+    color: var(--text-dark);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.menu-section a:hover {
+    color: var(--primary-color);
+}
+
+.menu-section hr {
+    margin: 10px 0;
+    border: none;
+    height: 1px;
+    background: #f0f0f0;
+}
+
+.header-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+</style>
+
+<script>
+// Location modal function
+function showLocationModal() {
+    showToast('Location selection feature coming soon!');
+}
+
+// Toggle category menu function
+function toggleCategoryMenu(event, menuId) {
+    event.preventDefault();
+    
+    // Close all other category menus
+    const allMenus = document.querySelectorAll('.category-menu');
+    allMenus.forEach(menu => {
+        if (menu.id !== menuId) {
+            menu.classList.remove('show');
+        }
+    });
+    
+    // Toggle the clicked menu
+    const menu = document.getElementById(menuId);
+    if (menu) {
+        menu.classList.toggle('show');
+    }
+}
+
+// Toggle user menu function
+function toggleUserMenu() {
+    const userMenu = document.getElementById('userMenu');
+    if (userMenu) {
+        userMenu.classList.toggle('show');
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    // Close category menus
+    if (!event.target.closest('.nav-dropdown')) {
+        const categoryMenus = document.querySelectorAll('.category-menu');
+        categoryMenus.forEach(menu => menu.classList.remove('show'));
+    }
+    
+    // Close user menu
+    if (!event.target.closest('.user-dropdown')) {
+        const userMenu = document.getElementById('userMenu');
+        if (userMenu) {
+            userMenu.classList.remove('show');
+        }
+    }
+});
+
+// Enhanced mega menu functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Mega menu hover effects
+    const megaMenuItems = document.querySelectorAll('.mega-menu-item');
+    const mainNav = document.querySelector('.main-nav');
+    let activeMenu = null;
+
+    megaMenuItems.forEach(item => {
+        const megaMenu = item.querySelector('.mega-menu');
+        let hoverTimer;
+
+        if (megaMenu) {
+            // Show on hover
+            item.addEventListener('mouseenter', function() {
+                clearTimeout(hoverTimer);
+                
+                // Close other menus
+                if (activeMenu && activeMenu !== megaMenu) {
+                    activeMenu.style.display = 'none';
+                    activeMenu.style.opacity = '0';
+                }
+                
+                // Position the mega menu properly
+                const navRect = mainNav.getBoundingClientRect();
+                megaMenu.style.top = (navRect.bottom) + 'px';
+                
+                // Show current menu
+                megaMenu.style.display = 'block';
+                setTimeout(() => {
+                    megaMenu.style.opacity = '1';
+                    megaMenu.style.transform = 'translateY(0)';
+                }, 10);
+                
+                activeMenu = megaMenu;
+            });
+
+            // Hide on mouse leave
+            item.addEventListener('mouseleave', function() {
+                hoverTimer = setTimeout(() => {
+                    if (megaMenu) {
+                        megaMenu.style.opacity = '0';
+                        megaMenu.style.transform = 'translateY(-10px)';
+                        setTimeout(() => {
+                            megaMenu.style.display = 'none';
+                        }, 300);
+                    }
+                    
+                    if (activeMenu === megaMenu) {
+                        activeMenu = null;
+                    }
+                }, 150);
+            });
+
+            // Prevent menu from closing when hovering over it
+            megaMenu.addEventListener('mouseenter', function() {
+                clearTimeout(hoverTimer);
+            });
+
+            megaMenu.addEventListener('mouseleave', function() {
+                hoverTimer = setTimeout(() => {
+                    megaMenu.style.opacity = '0';
+                    megaMenu.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        megaMenu.style.display = 'none';
+                    }, 300);
+                    
+                    if (activeMenu === megaMenu) {
+                        activeMenu = null;
+                    }
+                }, 150);
+            });
+        }
+    });
+
+    // Close mega menu when clicking outside or scrolling
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.mega-menu-item')) {
+            closeAllMegaMenus();
+        }
+    });
+
+    document.addEventListener('scroll', function() {
+        closeAllMegaMenus();
+    });
+
+    function closeAllMegaMenus() {
+        megaMenuItems.forEach(item => {
+            const megaMenu = item.querySelector('.mega-menu');
+            if (megaMenu) {
+                megaMenu.style.opacity = '0';
+                megaMenu.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    megaMenu.style.display = 'none';
+                }, 300);
+            }
+        });
+        activeMenu = null;
+    }
+
+    // Featured product click handlers
+    document.addEventListener('click', function(event) {
+        if (event.target.closest('.featured-product-item')) {
+            const productItem = event.target.closest('.featured-product-item');
+            const productName = productItem.querySelector('.product-name').textContent;
+            console.log('Clicked on product:', productName);
+            // Add navigation logic here if needed
+        }
+    });
+});
+</script>

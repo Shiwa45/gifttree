@@ -1,0 +1,15 @@
+{% load pricing_tags %}
+<div class="price-display {{ css_class }}">
+    {% if has_discount and show_discount %}
+        <span class="current-price">₹{{ current_price|floatformat:0 }}</span>
+        <span class="original-price">₹{{ base_price|floatformat:0 }}</span>
+        {% if show_savings and discount_percentage > 0 %}
+            <span class="discount-badge">{{ discount_percentage }}% OFF</span>
+            {% if savings_amount > 0 %}
+                <div class="savings-text">You save ₹{{ savings_amount|floatformat:0 }}</div>
+            {% endif %}
+        {% endif %}
+    {% else %}
+        <span class="current-price">₹{{ current_price|floatformat:0 }}</span>
+    {% endif %}
+</div>

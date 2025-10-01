@@ -1,0 +1,469 @@
+{% load static %}
+<!-- Mobile Header (Hidden on Desktop) -->
+<header class="mobile-header mobile-only">
+    <div class="mobile-top-bar">
+        {% if show_back_button %}
+            <button class="back-btn" onclick="history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+        {% else %}
+            <button class="menu-toggle" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+        {% endif %}
+        
+        <div class="mobile-logo">
+            <a href="{% url 'core:home' %}" style="text-decoration: none; color: var(--primary-color);">
+                {{ page_title|default:"GiftTree" }}
+            </a>
+        </div>
+        
+        <div class="header-actions">
+            {% if show_search_button %}
+                <button class="header-btn" onclick="toggleMobileSearch()">
+                    <i class="fas fa-search"></i>
+                </button>
+            {% endif %}
+            
+            {% if show_share_button %}
+                <button class="header-btn" onclick="shareProduct()">
+                    <i class="fas fa-share"></i>
+                </button>
+            {% endif %}
+            
+            <a href="{% url 'cart:cart' %}" class="header-btn">
+                <i class="fas fa-shopping-cart"></i>
+                {% if cart_count %}
+                    <span class="cart-badge">{{ cart_count }}</span>
+                {% endif %}
+            </a>
+        </div>
+    </div>
+    
+    {% if show_search_bar %}
+        <div class="mobile-search">
+            <form method="GET" action="{% url 'products:search' %}">
+                <div style="position: relative;">
+                    <i class="fas fa-search mobile-search-icon"></i>
+                    <input type="text" name="q" class="mobile-search-bar" 
+                           placeholder="Search flowers, cakes, gifts..." 
+                           value="{{ request.GET.q }}">
+                </div>
+            </form>
+        </div>
+    {% endif %}
+    
+    {% if show_location_bar %}
+        <div class="location-bar">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Deliver to: {{ user_location|default:"Delhi 110001" }}</span>
+            </div>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    {% endif %}
+</header>
+
+{% if show_category_pills %}
+    <!-- Category Pills Mobile -->
+    <div class="category-pills mobile-only">
+        <div class="pill-container">
+            <button class="category-pill active" data-category="all">All {{ category_type|default:"Products" }}</button>
+            {% for category in categories %}
+                <button class="category-pill" data-category="{{ category.slug }}">{{ category.name }}</button>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+
+<!-- Mobile Menu Overlay -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="toggleMenu()"></div>
+
+<!-- Mobile Menu Drawer -->
+<div class="mobile-menu-drawer" id="mobileMenuDrawer">
+    <div class="mobile-menu-header">
+        <div class="mobile-menu-logo">
+            <h3>GiftTree</h3>
+        </div>
+        <button class="mobile-menu-close" onclick="toggleMenu()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <div class="mobile-menu-content">
+        {% if user.is_authenticated %}
+            <div class="mobile-user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name">{{ user.first_name|default:user.username }}</span>
+                    <span class="user-email">{{ user.email }}</span>
+                </div>
+            </div>
+        {% endif %}
+        
+        <div class="mobile-menu-categories">
+            {% for category in main_categories %}
+                <div class="mobile-category-item">
+                    <div class="mobile-category-header" onclick="toggleMobileCategory('{{ category.id }}')">
+                        <span>{{ category.name }}</span>
+                        <i class="fas fa-chevron-right mobile-chevron" id="chevron-{{ category.id }}"></i>
+                    </div>
+                    <div class="mobile-category-submenu" id="submenu-{{ category.id }}">
+                        <a href="{% url 'products:category_detail' category.slug %}" class="mobile-submenu-item view-all">
+                            <i class="fas fa-th-large"></i>
+                            View All {{ category.name }}
+                        </a>
+                        {% if category.children.all %}
+                            {% for subcategory in category.children.all %}
+                                <a href="{% url 'products:category_detail' subcategory.slug %}" class="mobile-submenu-item">
+                                    {{ subcategory.name }}
+                                </a>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="mobile-submenu-section">
+                            <span class="mobile-submenu-title">Shop {{ category.name }}</span>
+                            <a href="{% url 'products:product_list' %}?filter=featured&category={{ category.slug }}" class="mobile-submenu-item">Featured {{ category.name }}</a>
+                            <a href="{% url 'products:product_list' %}?filter=bestseller&category={{ category.slug }}" class="mobile-submenu-item">Best Selling {{ category.name }}</a>
+                            <a href="{% url 'products:product_list' %}?filter=under_500&category={{ category.slug }}" class="mobile-submenu-item">{{ category.name }} Under ₹500</a>
+                            <a href="{% url 'products:product_list' %}?filter=same_day&category={{ category.slug }}" class="mobile-submenu-item">Same Day {{ category.name }}</a>
+                        </div>
+                        {% if category.category_occasions %}
+                        <div class="mobile-submenu-section">
+                            <span class="mobile-submenu-title">By Occasion</span>
+                            {% for occasion in category.category_occasions|slice:":4" %}
+                                <a href="{% url 'products:product_list' %}?occasions={{ occasion.slug }}&category={{ category.slug }}" class="mobile-submenu-item">{{ occasion.name }} {{ category.name }}</a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+            
+            <div class="mobile-category-item">
+                <div class="mobile-category-header" onclick="toggleMobileCategory('all-products')">
+                    <span>All Products</span>
+                    <i class="fas fa-chevron-right mobile-chevron" id="chevron-all-products"></i>
+                </div>
+                <div class="mobile-category-submenu" id="submenu-all-products">
+                    <a href="{% url 'products:product_list' %}" class="mobile-submenu-item view-all">
+                        <i class="fas fa-th-large"></i>
+                        View All Products
+                    </a>
+                    <a href="{% url 'products:product_list' %}?filter=featured" class="mobile-submenu-item">Featured Products</a>
+                    <a href="{% url 'products:product_list' %}?filter=bestseller" class="mobile-submenu-item">Best Sellers</a>
+                    <a href="{% url 'products:product_list' %}?filter=under_500" class="mobile-submenu-item">Under ₹500</a>
+                    <a href="{% url 'products:product_list' %}?filter=same_day" class="mobile-submenu-item">Same Day Delivery</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mobile-menu-footer">
+            {% if user.is_authenticated %}
+                <a href="{% url 'users:profile' %}" class="mobile-menu-link">
+                    <i class="fas fa-user"></i> My Profile
+                </a>
+                <a href="{% url 'orders:order_list' %}" class="mobile-menu-link">
+                    <i class="fas fa-shopping-bag"></i> My Orders
+                </a>
+                <a href="#" class="mobile-menu-link">
+                    <i class="fas fa-heart"></i> Wishlist
+                </a>
+                <a href="{% url 'users:logout' %}" class="mobile-menu-link">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            {% else %}
+                <a href="{% url 'users:login' %}" class="mobile-menu-link">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+                <a href="{% url 'users:register' %}" class="mobile-menu-link">
+                    <i class="fas fa-user-plus"></i> Register
+                </a>
+            {% endif %}
+            
+            <div class="mobile-menu-contact">
+                <p><i class="fas fa-phone"></i> +91-9876543210</p>
+                <p><i class="fas fa-envelope"></i> support@gifttree.com</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Mobile Menu Styles */
+.mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.mobile-menu-drawer {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 85%;
+    max-width: 350px;
+    height: 100%;
+    background: white;
+    z-index: 9999;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+}
+
+.mobile-menu-drawer.active {
+    left: 0;
+}
+
+.mobile-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: var(--primary-color);
+    color: white;
+}
+
+.mobile-menu-logo h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.mobile-menu-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.mobile-user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.user-email {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.mobile-category-item {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.mobile-category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.mobile-chevron {
+    transition: transform 0.3s ease;
+    color: var(--text-light);
+}
+
+.mobile-chevron.rotated {
+    transform: rotate(90deg);
+}
+
+.mobile-category-submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: #f8f9fa;
+}
+
+.mobile-category-submenu.active {
+    max-height: 500px;
+}
+
+.mobile-submenu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 30px;
+    color: var(--text-dark);
+    text-decoration: none;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.mobile-submenu-item:hover {
+    background: rgba(233, 30, 99, 0.1);
+    color: var(--primary-color);
+}
+
+.mobile-submenu-item.view-all {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.mobile-submenu-section {
+    padding: 10px 0;
+}
+
+.mobile-submenu-title {
+    display: block;
+    padding: 8px 30px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mobile-menu-footer {
+    padding: 20px;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 20px;
+}
+
+.mobile-menu-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    color: var(--text-dark);
+    text-decoration: none;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.mobile-menu-link:hover {
+    color: var(--primary-color);
+}
+
+.mobile-menu-contact {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.mobile-menu-contact p {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+    font-size: 12px;
+    color: var(--text-light);
+}
+</style>
+
+<script>
+// Mobile search toggle
+function toggleMobileSearch() {
+    const searchDiv = document.querySelector('.mobile-search');
+    const searchInput = document.querySelector('.mobile-search-bar');
+    
+    if (searchDiv) {
+        if (searchDiv.style.display === 'none' || !searchDiv.style.display) {
+            searchDiv.style.display = 'block';
+            if (searchInput) {
+                searchInput.focus();
+            }
+        } else {
+            searchDiv.style.display = 'none';
+        }
+    }
+}
+
+// Mobile menu toggle
+function toggleMenu() {
+    const overlay = document.getElementById('mobileMenuOverlay');
+    const drawer = document.getElementById('mobileMenuDrawer');
+    
+    if (overlay && drawer) {
+        overlay.classList.toggle('active');
+        drawer.classList.toggle('active');
+        
+        // Prevent body scroll when menu is open
+        if (drawer.classList.contains('active')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
+        }
+    }
+}
+
+// Mobile category toggle
+function toggleMobileCategory(categoryId) {
+    const submenu = document.getElementById('submenu-' + categoryId);
+    const chevron = document.getElementById('chevron-' + categoryId);
+    
+    if (submenu && chevron) {
+        // Close all other submenus
+        const allSubmenus = document.querySelectorAll('.mobile-category-submenu');
+        const allChevrons = document.querySelectorAll('.mobile-chevron');
+        
+        allSubmenus.forEach(menu => {
+            if (menu !== submenu) {
+                menu.classList.remove('active');
+            }
+        });
+        
+        allChevrons.forEach(chev => {
+            if (chev !== chevron) {
+                chev.classList.remove('rotated');
+            }
+        });
+        
+        // Toggle current submenu
+        submenu.classList.toggle('active');
+        chevron.classList.toggle('rotated');
+    }
+}
+
+// Close mobile menu when clicking on links
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuLinks = document.querySelectorAll('.mobile-submenu-item, .mobile-menu-link');
+    mobileMenuLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            // Close menu after a short delay to allow navigation
+            setTimeout(() => {
+                toggleMenu();
+            }, 100);
+        });
+    });
+});
+</script>

@@ -1,0 +1,436 @@
+{% load static %}
+{% load product_tags %}
+<!-- Product Card Component -->
+<!-- Usage: include 'includes/product_card.html' with product=product card_type='mobile' show_wishlist=True show_rating=True -->
+<!-- For card_type, use one of: 'mobile', 'desktop', or 'grid' -->
+
+{% if card_type == 'mobile' %}
+    <!-- Mobile Product Card -->
+    <div class="product-card-mobile" data-product-id="{{ product.id }}" data-product-url="{% product_url product %}">
+        <div style="position: relative;">
+            <img src="{{ product|product_image_url }}" 
+                 alt="{{ product.name }}" 
+                 class="product-image"
+                 loading="lazy"
+                 onerror="this.src='{% static 'images/products/default.jpg' %}'">
+            
+            {% if product.badge %}
+                <div class="product-badge {{ product.badge_type|default:'primary' }}">{{ product.badge }}</div>
+            {% endif %}
+            
+            {% if show_wishlist %}
+                <button class="wishlist-btn" onclick="toggleProductWishlist({{ product.id }})" 
+                        data-product-id="{{ product.id }}"
+                        {% if product.is_wishlisted %}class="active"{% endif %}>
+                    <i class="{% if product.is_wishlisted %}fas{% else %}far{% endif %} fa-heart"></i>
+                </button>
+            {% endif %}
+        </div>
+        
+        <div class="product-info">
+            <div class="product-name" title="{{ product.name }}">{{ product.name }}</div>
+            
+            {% if show_rating and product.average_rating %}
+                <div class="product-rating">
+                    <div class="rating-stars">
+                        {% for i in "12345" %}
+                            <i class="{% if forloop.counter <= product.average_rating %}fas{% else %}far{% endif %} fa-star"></i>
+                        {% endfor %}
+                    </div>
+                    <span class="rating-text">({{ product.review_count }})</span>
+                </div>
+            {% endif %}
+            
+            <div class="product-price">
+                {{ product|product_price_display }}
+                {% if product|has_discount %}
+                    <span class="original-price">₹{{ product.base_price }}</span>
+                    <span class="discount">{{ product.discount_percentage }}% OFF</span>
+                {% endif %}
+            </div>
+            
+            <button class="add-btn" onclick="addProductToCart({{ product.id }}, '{{ product.name|escapejs }}', {{ product.current_price }})">
+                ADD
+            </button>
+        </div>
+    </div>
+
+{% elif card_type == 'grid' %}
+    <!-- Grid Product Card (for product list pages) -->
+    <div class="product-card" data-product-id="{{ product.id }}" data-product-url="{% product_url product %}">
+        <div style="position: relative;">
+            <img src="{{ product|product_image_url }}" 
+                 alt="{{ product.name }}" 
+                 class="product-image"
+                 loading="lazy"
+                 onerror="this.src='{% static 'images/products/default.jpg' %}'">
+            
+            {% if product.badge %}
+                <div class="product-badge {{ product.badge_type|default:'primary' }}">{{ product.badge }}</div>
+            {% endif %}
+            
+            {% if show_wishlist %}
+                <button class="wishlist-btn" onclick="toggleProductWishlist({{ product.id }})" 
+                        data-product-id="{{ product.id }}"
+                        {% if product.is_wishlisted %}class="active"{% endif %}>
+                    <i class="{% if product.is_wishlisted %}fas{% else %}far{% endif %} fa-heart"></i>
+                </button>
+            {% endif %}
+        </div>
+        
+        <div class="product-info">
+            <div class="product-name" title="{{ product.name }}">{{ product.name }}</div>
+            
+            {% if show_rating and product.average_rating %}
+                <div class="product-rating">
+                    <div class="rating-stars">
+                        {% for i in "12345" %}
+                            <i class="{% if forloop.counter <= product.average_rating %}fas{% else %}far{% endif %} fa-star"></i>
+                        {% endfor %}
+                    </div>
+                    <span class="rating-text">{{ product.average_rating }} ({{ product.review_count }})</span>
+                </div>
+            {% endif %}
+            
+            <div class="product-price">
+                <span class="current-price">{{ product|product_price_display }}</span>
+                {% if product|has_discount %}
+                    <span class="original-price">₹{{ product.base_price }}</span>
+                    <span class="discount">{{ product.discount_percentage }}% OFF</span>
+                {% endif %}
+            </div>
+            
+            <button class="add-to-cart" onclick="addProductToCart({{ product.id }}, '{{ product.name|escapejs }}', {{ product.current_price }})">
+                ADD TO CART
+            </button>
+        </div>
+    </div>
+
+{% else %}
+    <!-- Default Desktop Product Card -->
+    <div class="product-card-mobile" data-product-id="{{ product.id }}" data-product-url="{% product_url product %}">
+        <div style="position: relative;">
+            <img src="{{ product|product_image_url }}" 
+                 alt="{{ product.name }}" 
+                 class="product-image"
+                 loading="lazy"
+                 onerror="this.src='{% static 'images/products/default.jpg' %}'">
+            
+            {% if product.badge %}
+                <div class="product-badge {{ product.badge_type|default:'primary' }}">{{ product.badge }}</div>
+            {% endif %}
+            
+            {% if show_wishlist %}
+                <button class="wishlist-btn" onclick="toggleProductWishlist({{ product.id }})" 
+                        data-product-id="{{ product.id }}"
+                        {% if product.is_wishlisted %}class="active"{% endif %}>
+                    <i class="{% if product.is_wishlisted %}fas{% else %}far{% endif %} fa-heart"></i>
+                </button>
+            {% endif %}
+        </div>
+        
+        <div class="product-info">
+            <div class="product-name" title="{{ product.name }}">{{ product.name }}</div>
+            
+            {% if show_rating and product.average_rating %}
+                <div class="product-rating">
+                    <div class="rating-stars">
+                        {% for i in "12345" %}
+                            <i class="{% if forloop.counter <= product.average_rating %}fas{% else %}far{% endif %} fa-star"></i>
+                        {% endfor %}
+                    </div>
+                    <span class="rating-text">{{ product.average_rating }} ({{ product.review_count }})</span>
+                </div>
+            {% endif %}
+            
+            <div class="product-price">
+                {{ product|product_price_display }}
+                {% if product|has_discount %}
+                    <span class="original-price">₹{{ product.base_price }}</span>
+                    <span class="discount">{{ product.discount_percentage }}% OFF</span>
+                {% endif %}
+            </div>
+            
+            <button class="add-btn" onclick="addProductToCart({{ product.id }}, '{{ product.name|escapejs }}', {{ product.current_price }})">
+                ADD TO CART
+            </button>
+        </div>
+    </div>
+{% endif %}
+
+<script>
+// Product card specific functions
+function toggleProductWishlist(productId) {
+    const wishlistBtn = document.querySelector(`[data-product-id="${productId}"] .wishlist-btn`);
+    const icon = wishlistBtn.querySelector('i');
+    
+    if (wishlistBtn.classList.contains('active')) {
+        // Remove from wishlist
+        wishlistBtn.classList.remove('active');
+        icon.className = 'far fa-heart';
+        showToast('Removed from wishlist');
+        
+        // Make AJAX call to remove from wishlist
+        if (typeof removeFromWishlist === 'function') {
+            removeFromWishlist(productId);
+        }
+    } else {
+        // Add to wishlist
+        wishlistBtn.classList.add('active');
+        icon.className = 'fas fa-heart';
+        showToast('Added to wishlist');
+        
+        // Make AJAX call to add to wishlist
+        if (typeof addToWishlist === 'function') {
+            addToWishlist(productId);
+        }
+    }
+    
+    // Haptic feedback
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+}
+
+function addProductToCart(productId, productName, price) {
+    // Create cart item object
+    const cartItem = {
+        id: productId,
+        name: productName,
+        price: price,
+        quantity: 1,
+        addons: [],
+        image: document.querySelector(`[data-product-id="${productId}"] .product-image`).src,
+        total: price
+    };
+    
+    // Add to cart (if cart.js is loaded)
+    if (typeof addItemToCart === 'function') {
+        addItemToCart(cartItem);
+    } else {
+        // Fallback for pages without cart.js
+        showToast(`${productName} added to cart!`);
+        
+        // Update cart badge
+        const cartBadges = document.querySelectorAll('.cart-badge, .cart-count');
+        cartBadges.forEach(badge => {
+            const currentCount = parseInt(badge.textContent) || 0;
+            badge.textContent = currentCount + 1;
+        });
+    }
+    
+    // Haptic feedback
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+}
+
+// Add click handler to navigate to product detail
+document.addEventListener('DOMContentLoaded', function() {
+    const productCards = document.querySelectorAll('.product-card, .product-card-mobile');
+    productCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Prevent navigation if clicking on buttons
+            if (e.target.closest('.wishlist-btn') || 
+                e.target.closest('.add-to-cart') || 
+                e.target.closest('.add-btn')) {
+                return;
+            }
+            
+            const productUrl = this.dataset.productUrl;
+            if (productUrl && productUrl !== '#') {
+                window.location.href = productUrl;
+            }
+        });
+        
+        // Add hover effect for desktop
+        if (window.innerWidth >= 992) {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+                this.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.15)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+            });
+        }
+    });
+});
+</script>
+
+<style>
+/* Product card enhancements */
+.product-card, .product-card-mobile {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+}
+
+.product-card:hover, .product-card-mobile:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.product-card::before, .product-card-mobile::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(233, 30, 99, 0.05) 0%, rgba(255, 96, 144, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: inherit;
+    z-index: 1;
+}
+
+.product-card:hover::before, .product-card-mobile:hover::before {
+    opacity: 1;
+}
+
+.product-image {
+    transition: transform 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.product-card:hover .product-image, .product-card-mobile:hover .product-image {
+    transform: scale(1.05);
+}
+
+.product-info {
+    position: relative;
+    z-index: 3;
+}
+
+.product-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    z-index: 4;
+}
+
+.product-badge.primary {
+    background: var(--primary-color);
+}
+
+.product-badge.success {
+    background: var(--secondary-color);
+}
+
+.product-badge.warning {
+    background: var(--accent-color);
+}
+
+.product-badge.new {
+    background: var(--secondary-color);
+}
+
+.product-badge.limited {
+    background: var(--accent-color);
+}
+
+.product-badge.bestseller {
+    background: var(--primary-color);
+}
+
+/* Price styling */
+.product-price .original-price {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 0.9em;
+    margin-left: 8px;
+}
+
+.product-price .discount {
+    background: #ff4444;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    margin-left: 8px;
+}
+
+/* Wishlist button enhancements */
+.wishlist-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    color: #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    backdrop-filter: blur(10px);
+    z-index: 5;
+    cursor: pointer;
+}
+
+.wishlist-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    color: var(--primary-color);
+}
+
+.wishlist-btn.active {
+    color: var(--primary-color);
+    background: rgba(233, 30, 99, 0.1);
+}
+
+/* Add to cart button loading state */
+.add-btn:disabled, .add-to-cart:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.add-btn.loading::after, .add-to-cart.loading::after {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .product-card-mobile {
+        width: 120px;
+    }
+    
+    .product-name {
+        font-size: 12px;
+    }
+    
+    .product-price {
+        font-size: 13px;
+    }
+    
+    .add-btn {
+        font-size: 11px;
+        padding: 6px;
+    }
+}
+</style>

@@ -1,0 +1,537 @@
+    {% extends 'base.html' %}
+    {% load static %}
+
+    {% block title %}{{ product.name }} - GiftTree{% endblock %}
+
+    {% block extra_css %}
+    <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #f5f5f5;
+    }
+
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 15px;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+        background: white;
+        padding: 15px;
+        font-size: 14px;
+    }
+
+    .breadcrumb a {
+        color: #666;
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        color: #E91E63;
+    }
+
+    /* Product Section */
+    .product-section {
+        background: white;
+        padding: 20px 15px;
+        margin: 10px 0;
+    }
+
+    .product-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    /* Image Gallery */
+    .gallery-main {
+        width: 100%;
+        height: 350px;
+        background: #f5f5f5;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 15px;
+    }
+
+    .gallery-main img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .gallery-thumbs {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+    }
+
+    .thumb {
+        height: 80px;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+
+    .thumb.active {
+        border-color: #E91E63;
+    }
+
+    .thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Product Info */
+    .product-info h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .product-rating {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+
+    .stars {
+        color: #FFC107;
+    }
+
+    .reviews {
+        color: #666;
+    }
+
+    .product-price {
+        font-size: 28px;
+        font-weight: 700;
+        color: #E91E63;
+        margin-bottom: 10px;
+    }
+
+    .original-price {
+        font-size: 18px;
+        color: #999;
+        text-decoration: line-through;
+        margin-left: 10px;
+    }
+
+    .discount {
+        display: inline-block;
+        background: #4CAF50;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-left: 10px;
+    }
+
+    .delivery-info {
+        background: #E8F5E9;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+
+    .delivery-info strong {
+        color: #4CAF50;
+    }
+
+    /* Variants */
+    .variants-section {
+        margin: 25px 0;
+    }
+
+    .variants-section label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .variant-options {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .variant-btn {
+        padding: 10px 20px;
+        border: 2px solid #ddd;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .variant-btn.active,
+    .variant-btn:hover {
+        border-color: #E91E63;
+        color: #E91E63;
+    }
+
+    /* Quantity */
+    .quantity-section {
+        margin: 25px 0;
+    }
+
+    .quantity-section label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .qty-btn {
+        width: 40px;
+        height: 40px;
+        border: 2px solid #ddd;
+        background: white;
+        border-radius: 8px;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    .qty-display {
+        font-size: 18px;
+        font-weight: 700;
+        min-width: 30px;
+        text-align: center;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin: 25px 0;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 15px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #E91E63, #FF4081);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #E91E63;
+        border: 2px solid #E91E63;
+    }
+
+    .btn:active {
+        transform: scale(0.98);
+    }
+
+    /* Product Description */
+    .description-section {
+        margin: 30px 0;
+    }
+
+    .description-section h2 {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .description-section p {
+        line-height: 1.6;
+        color: #666;
+    }
+
+    /* Features */
+    .features-list {
+        list-style: none;
+        margin: 20px 0;
+    }
+
+    .features-list li {
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .features-list li:before {
+        content: "✓";
+        color: #4CAF50;
+        font-weight: 700;
+        font-size: 18px;
+    }
+
+    /* Related Products */
+    .related-section {
+        background: white;
+        padding: 30px 15px;
+        margin: 10px 0;
+    }
+
+    .related-section h2 {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    .related-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .related-card {
+        border: 1px solid #eee;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .related-card img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+    }
+
+    .related-card-info {
+        padding: 12px;
+    }
+
+    .related-card-name {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .related-card-price {
+        font-size: 16px;
+        font-weight: 700;
+        color: #E91E63;
+    }
+
+    /* Desktop */
+    @media (min-width: 768px) {
+        .product-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+        }
+        
+        .gallery-main {
+            height: 500px;
+        }
+        
+        .gallery-thumbs {
+            grid-template-columns: repeat(5, 1fr);
+        }
+        
+        .product-info h1 {
+            font-size: 32px;
+        }
+        
+        .action-buttons {
+            flex-direction: row;
+        }
+        
+        .related-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        
+        .related-card img {
+            height: 200px;
+        }
+    }
+    </style>
+    {% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+    <div class="container">
+        <a href="{% url 'core:home' %}">Home</a> / 
+        <a href="{% url 'products:category_detail' product.category.slug %}">{{ product.category.name }}</a> / 
+        <span>{{ product.name }}</span>
+    </div>
+</div>
+
+<!-- Product Detail -->
+<div class="product-section">
+    <div class="container">
+        <div class="product-grid">
+            <!-- Gallery -->
+            <div class="gallery">
+                <div class="gallery-main" id="mainImage">
+                    {% if product.primary_image %}
+                    <img src="{{ product.primary_image.url }}" alt="{{ product.name }}" id="mainImg">
+                    {% elif product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" id="mainImg">
+                    {% else %}
+                    <img src="{% static 'images/products/default.jpg' %}" alt="{{ product.name }}" id="mainImg">
+                    {% endif %}
+                </div>
+                
+                <div class="gallery-thumbs">
+                    {% if product.primary_image %}
+                    <div class="thumb active" onclick="changeImage('{{ product.primary_image.url }}')">
+                        <img src="{{ product.primary_image.url }}" alt="View 1">
+                    </div>
+                    {% endif %}
+                    {% if product.gallery_images.all %}
+                        {% for img in product.gallery_images.all|slice:":4" %}
+                        <div class="thumb" onclick="changeImage('{{ img.image.url }}')">
+                            <img src="{{ img.image.url }}" alt="View {{ forloop.counter }}">
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Info -->
+            <div class="product-info">
+                <h1>{{ product.name }}</h1>
+                
+                <div class="product-rating">
+                    <span class="stars">★★★★★</span>
+                    <span class="reviews">(4.8) 120 reviews</span>
+                </div>
+                
+                <div class="product-price">
+                    Rs. {{ product.current_price|floatformat:0 }}
+                    {% if product.original_price %}
+                    <span class="original-price">Rs. {{ product.original_price|floatformat:0 }}</span>
+                    <span class="discount">{{ product.discount_percentage|floatformat:0 }}% OFF</span>
+                    {% endif %}
+                </div>
+                
+                <div class="delivery-info">
+                    <strong>✓ Same Day Delivery Available</strong><br>
+                    Order before 5 PM for delivery today
+                </div>
+                
+                <!-- Variants -->
+                {% if product.variants %}
+                <div class="variants-section">
+                    <label>Select Size:</label>
+                    <div class="variant-options">
+                        <button class="variant-btn active">Regular</button>
+                        <button class="variant-btn">Large</button>
+                        <button class="variant-btn">Premium</button>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Quantity -->
+                <div class="quantity-section">
+                    <label>Quantity:</label>
+                    <div class="quantity-controls">
+                        <button class="qty-btn" onclick="updateQty(-1)">−</button>
+                        <span class="qty-display" id="quantity">1</span>
+                        <button class="qty-btn" onclick="updateQty(1)">+</button>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="addToCart()">Add to Cart</button>
+                    <button class="btn btn-secondary">Buy Now</button>
+                </div>
+                
+                <!-- Description -->
+                <div class="description-section">
+                    <h2>Description</h2>
+                    <p>{{ product.description|default:"Beautiful product perfect for any occasion. High quality guaranteed." }}</p>
+                </div>
+                
+                <!-- Features -->
+                <div class="description-section">
+                    <h2>Features</h2>
+                    <ul class="features-list">
+                        <li>100% Fresh and Premium Quality</li>
+                        <li>Same Day Delivery Available</li>
+                        <li>Free Greeting Card Included</li>
+                        <li>Secure Packaging</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Related Products -->
+<div class="related-section">
+    <div class="container">
+        <h2>You May Also Like</h2>
+        <div class="related-grid">
+            {% for related in related_products|slice:":4" %}
+            <div class="related-card" onclick="window.location.href='{{ related.get_absolute_url }}'">
+                {% if related.primary_image %}
+                <img src="{{ related.primary_image.url }}" alt="{{ related.name }}">
+                {% else %}
+                <img src="{% static 'images/products/default.jpg' %}" alt="{{ related.name }}">
+                {% endif %}
+                <div class="related-card-info">
+                    <div class="related-card-name">{{ related.name }}</div>
+                    <div class="related-card-price">Rs. {{ related.current_price|floatformat:0 }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script>
+let quantity = 1;
+
+function changeImage(src) {
+    document.getElementById('mainImg').src = src;
+    document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+}
+
+function updateQty(change) {
+    quantity = Math.max(1, Math.min(10, quantity + change));
+    document.getElementById('quantity').textContent = quantity;
+}
+
+function addToCart() {
+    alert(`Added ${quantity} item(s) to cart!`);
+    // Add your cart logic here
+}
+
+// Variant selection
+document.querySelectorAll('.variant-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,437 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Shopping Cart - Review Your Order | GiftTree{% endblock %}
+
+{% block meta_description %}Review your shopping cart and proceed to checkout. Fresh flowers, cakes and gifts with same day delivery available.{% endblock %}
+
+{% block content %}
+<!-- Mobile Header with Back Button -->
+{% include 'includes/mobile_header.html' with show_back_button=True page_title="Shopping Cart" %}
+
+<!-- Empty Cart State -->
+<div class="empty-cart" id="emptyCart" {% if cart_items %}style="display: none;"{% endif %}>
+    <div class="empty-icon">
+        <i class="fas fa-shopping-cart"></i>
+    </div>
+    <h2 class="empty-title">Your cart is empty</h2>
+    <p class="empty-subtitle">Add some beautiful flowers and gifts to brighten someone's day!</p>
+    <a href="{% url 'products:product_list' %}" class="shop-now-btn">Start Shopping</a>
+</div>
+
+<!-- Cart Content -->
+<div id="cartContent" {% if not cart_items %}style="display: none;"{% endif %}>
+    <!-- Cart Items Section -->
+    <div class="cart-section">
+        <h2 class="section-title">Your Items</h2>
+        <div class="cart-items" id="cartItems">
+            {% for item in cart_items %}
+                <div class="cart-item" data-item-id="{{ item.id }}">
+                    <img src="{% if item.product.primary_image %}{{ item.product.primary_image.url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}" 
+                         alt="{{ item.product.name }}" class="item-image">
+                    <div class="item-details">
+                        <div class="item-name">{{ item.product.name }}</div>
+                        {% if item.addons %}
+                            <div class="item-addons">+ {{ item.addons|join:", " }}</div>
+                        {% endif %}
+                        <div class="item-price-section">
+                            <div class="item-price">₹{{ item.total_price }}</div>
+                            <div class="quantity-controls">
+                                <button class="qty-btn" onclick="updateQuantity('{{ item.id }}', -1)" 
+                                        {% if item.quantity <= 1 %}disabled{% endif %}>
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <div class="qty-display">{{ item.quantity }}</div>
+                                <button class="qty-btn" onclick="updateQuantity('{{ item.id }}', 1)" 
+                                        {% if item.quantity >= 10 %}disabled{% endif %}>
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="remove-item" onclick="removeItem('{{ item.id }}')" title="Remove item">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            {% empty %}
+                <!-- This will be hidden by JavaScript if cart is empty -->
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Delivery Options -->
+    <div class="delivery-section">
+        <h3 class="delivery-title">Delivery Options</h3>
+        <div class="delivery-options">
+            <div class="delivery-option selected" onclick="selectDelivery(this, 0)">
+                <input type="radio" name="delivery" class="delivery-radio" checked>
+                <div class="delivery-icon">
+                    <i class="fas fa-shipping-fast"></i>
+                </div>
+                <div class="delivery-details">
+                    <div class="delivery-name">Same Day Delivery</div>
+                    <div class="delivery-time">Within 3-6 hours</div>
+                </div>
+                <div class="delivery-price free-delivery">FREE</div>
+            </div>
+            <div class="delivery-option" onclick="selectDelivery(this, 99)">
+                <input type="radio" name="delivery" class="delivery-radio">
+                <div class="delivery-icon">
+                    <i class="fas fa-moon"></i>
+                </div>
+                <div class="delivery-details">
+                    <div class="delivery-name">Midnight Delivery</div>
+                    <div class="delivery-time">12:00 AM - 12:30 AM</div>
+                </div>
+                <div class="delivery-price">₹99</div>
+            </div>
+            <div class="delivery-option" onclick="selectDelivery(this, 49)">
+                <input type="radio" name="delivery" class="delivery-radio">
+                <div class="delivery-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="delivery-details">
+                    <div class="delivery-name">Fixed Time Delivery</div>
+                    <div class="delivery-time">Choose your preferred slot</div>
+                </div>
+                <div class="delivery-price">₹49</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coupon Section -->
+    <div class="coupon-section">
+        <h3 class="coupon-title">Apply Coupon</h3>
+        <div class="coupon-input-group">
+            <input type="text" class="coupon-input" placeholder="Enter coupon code" id="couponInput">
+            <button class="apply-coupon-btn" onclick="applyCoupon()">APPLY</button>
+        </div>
+        <div class="available-coupons">
+            <div class="coupon-chip" onclick="applyCouponCode('SAVE10')">SAVE10</div>
+            <div class="coupon-chip" onclick="applyCouponCode('FLOWER20')">FLOWER20</div>
+            <div class="coupon-chip" onclick="applyCouponCode('FIRST15')">FIRST15</div>
+        </div>
+        <div id="appliedCoupon" style="display: none; margin-top: 12px;">
+            <!-- Applied coupon will appear here -->
+        </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="order-summary">
+        <h3 class="summary-title">Order Summary</h3>
+        <div class="summary-row">
+            <span class="summary-label">Subtotal (<span id="itemCount">{{ cart_items.count }}</span> items)</span>
+            <span class="summary-value">₹<span id="subtotal">{{ cart_subtotal }}</span></span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-label">Delivery Charges</span>
+            <span class="summary-value" id="deliveryCharges">FREE</span>
+        </div>
+        <div class="summary-row" id="couponDiscountRow" style="display: none;">
+            <span class="summary-label">Coupon Discount</span>
+            <span class="summary-value" style="color: var(--secondary-color);">-₹<span id="couponDiscount">0</span></span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-total">
+            <span>Total Amount</span>
+            <span>₹<span id="totalAmount">{{ cart_total }}</span></span>
+        </div>
+        <div class="savings-highlight" id="savingsText" style="display: none;">
+            You saved ₹<span id="totalSavings">0</span> on this order!
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="recommendations">
+        <h3 class="rec-title">Frequently Bought Together</h3>
+        <div class="rec-scroll">
+            <div class="rec-row">
+                {% for product in recommended_products %}
+                    <div class="rec-card" onclick="window.location.href='{{ product.get_absolute_url }}'">
+                        {% if product.primary_image %}
+                            <img src="{{ product.primary_image.url }}" alt="{{ product.name }}" class="rec-image">
+                        {% else %}
+                            <img src="{% static 'images/products/default.jpg' %}" alt="{{ product.name }}" class="rec-image">
+                        {% endif %}
+                        <div class="rec-info">
+                            <div class="rec-name">{{ product.name|truncatechars:15 }}</div>
+                            <div class="rec-price">₹{{ product.current_price }}</div>
+                            <button class="add-rec-btn" onclick="event.stopPropagation(); addRecommendation('{{ product.name|escapejs }}', {{ product.current_price }})">ADD</button>
+                        </div>
+                    </div>
+                {% empty %}
+                    <!-- Default recommendations -->
+                    <div class="rec-card">
+                        <img src="{% static 'images/products/chocko cake.jpg' %}" alt="Chocolate Cake" class="rec-image">
+                        <div class="rec-info">
+                            <div class="rec-name">Chocolate Cake</div>
+                            <div class="rec-price">₹299</div>
+                            <button class="add-rec-btn" onclick="addRecommendation('Chocolate Cake', 299)">ADD</button>
+                        </div>
+                    </div>
+                    <div class="rec-card">
+                        <img src="{% static 'images/products/teddy.webp' %}" alt="Teddy Bear" class="rec-image">
+                        <div class="rec-info">
+                            <div class="rec-name">Teddy Bear</div>
+                            <div class="rec-price">₹199</div>
+                            <button class="add-rec-btn" onclick="addRecommendation('Teddy Bear', 199)">ADD</button>
+                        </div>
+                    </div>
+                    <div class="rec-card">
+                        <img src="{% static 'images/products/default.jpg' %}" alt="Greeting Card" class="rec-image">
+                        <div class="rec-info">
+                            <div class="rec-name">Greeting Card</div>
+                            <div class="rec-price">₹149</div>
+                            <button class="add-rec-btn" onclick="addRecommendation('Greeting Card', 149)">ADD</button>
+                        </div>
+                    </div>
+                    <div class="rec-card">
+                        <img src="{% static 'images/products/default.jpg' %}" alt="Premium Chocolates" class="rec-image">
+                        <div class="rec-info">
+                            <div class="rec-name">Premium Chocolates</div>
+                            <div class="rec-price">₹399</div>
+                            <button class="add-rec-btn" onclick="addRecommendation('Premium Chocolates', 399)">ADD</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sticky Bottom -->
+<div class="sticky-bottom">
+    <div class="bottom-summary">
+        <span>Total: ₹<span id="bottomTotal">{{ cart_total }}</span></span>
+        <span><span id="bottomItemCount">{{ cart_items.count }}</span> items</span>
+    </div>
+    <button class="checkout-btn" onclick="proceedToCheckout()" id="checkoutButton" 
+            {% if not cart_items %}disabled{% endif %}>
+        PROCEED TO CHECKOUT
+    </button>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Cart specific styles */
+.empty-cart {
+    background: white;
+    padding: 40px 20px;
+    text-align: center;
+    margin: 20px 16px;
+    border-radius: 12px;
+}
+
+.empty-icon {
+    font-size: 64px;
+    color: #E0E0E0;
+    margin-bottom: 20px;
+}
+
+.empty-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+}
+
+.empty-subtitle {
+    color: var(--text-light);
+    margin-bottom: 24px;
+}
+
+.shop-now-btn {
+    background: var(--pink-gradient);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s;
+}
+
+.shop-now-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+    color: white;
+}
+
+.cart-section {
+    margin: 0 16px 20px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 16px;
+    background: white;
+    padding: 20px 16px 0;
+    border-radius: 12px 12px 0 0;
+}
+
+.cart-items {
+    background: white;
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+}
+
+/* Desktop adjustments */
+@media (min-width: 992px) {
+    body {
+        padding-bottom: 0;
+    }
+
+    .cart-section,
+    .delivery-section,
+    .coupon-section,
+    .order-summary,
+    .recommendations {
+        margin: 0 40px 30px;
+        padding: 30px;
+    }
+
+    .sticky-bottom {
+        display: none;
+    }
+
+    .cart-item {
+        padding: 20px;
+    }
+
+    .item-image {
+        width: 100px;
+        height: 100px;
+    }
+
+    .empty-cart {
+        margin: 40px;
+        padding: 60px 40px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block page_js %}
+<script src="{% static 'js/cart.js' %}"></script>
+<script>
+// Cart page specific JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize cart with Django data
+    {% if cart_items %}
+        const djangoCartItems = [
+            {% for item in cart_items %}
+            {
+                id: '{{ item.id }}',
+                name: '{{ item.product.name|escapejs }}',
+                price: {{ item.product.current_price }},
+                quantity: {{ item.quantity }},
+                addons: [{% for addon in item.addons %}'{{ addon|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                image: '{% if item.product.primary_image %}{{ item.product.primary_image.url }}{% else %}{% static "images/products/default.jpg" %}{% endif %}',
+                total: {{ item.total_price }}
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        // Update global cart items
+        if (typeof window.cartItems !== 'undefined') {
+            window.cartItems = djangoCartItems;
+        }
+    {% endif %}
+    
+    // Update cart display
+    updateCartDisplay();
+});
+
+// Django-specific cart functions
+function updateQuantity(itemId, change) {
+    // Make AJAX request to update quantity
+    fetch(`/cart/update/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            change: change 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // Reload to update cart display
+        } else {
+            showToast('Error updating quantity');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error updating quantity');
+    });
+}
+
+function removeItem(itemId) {
+    if (confirm('Are you sure you want to remove this item?')) {
+        // Make AJAX request to remove item
+        fetch(`/cart/remove/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload(); // Reload to update cart display
+            } else {
+                showToast('Error removing item');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error removing item');
+        });
+    }
+}
+
+function proceedToCheckout() {
+    const checkoutButton = document.getElementById('checkoutButton');
+    if (checkoutButton) {
+        checkoutButton.disabled = true;
+        checkoutButton.textContent = 'Processing...';
+    }
+
+    showToast('Proceeding to checkout...');
+    
+    // Redirect to checkout page
+    setTimeout(() => {
+        window.location.href = '#'; // TODO: Add checkout URL when implemented
+    }, 1000);
+}
+
+function updateCartDisplay() {
+    // Update cart count in header
+    const cartCount = {{ cart_items.count }};
+    const cartBadges = document.querySelectorAll('.cart-badge, .cart-count');
+    cartBadges.forEach(badge => {
+        badge.textContent = cartCount;
+    });
+    
+    // Show/hide empty cart state
+    if (cartCount === 0) {
+        document.getElementById('emptyCart').style.display = 'block';
+        document.getElementById('cartContent').style.display = 'none';
+    } else {
+        document.getElementById('emptyCart').style.display = 'none';
+        document.getElementById('cartContent').style.display = 'block';
+    }
+}
+</script>
+{% endblock %}
