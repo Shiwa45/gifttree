@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Status Update - GiftTree</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+        }
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .status-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+        .header h1 {
+            margin: 20px 0 10px;
+            font-size: 28px;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .status-message {
+            background: #E8F5E9;
+            border-left: 4px solid #4CAF50;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .status-message p {
+            margin: 0;
+            color: #2E7D32;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .order-info {
+            background: #F8F9FA;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #E0E0E0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .info-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .timeline {
+            margin: 30px 0;
+            padding: 0 20px;
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 40px;
+            padding-bottom: 30px;
+        }
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            background: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        .timeline-dot.inactive {
+            background: #E0E0E0;
+        }
+        .timeline-line {
+            position: absolute;
+            left: 11px;
+            top: 24px;
+            width: 2px;
+            height: calc(100% - 24px);
+            background: #E0E0E0;
+        }
+        .timeline-item.active .timeline-line {
+            background: #4CAF50;
+        }
+        .timeline-content h4 {
+            margin: 0 0 5px;
+            color: #333;
+            font-size: 15px;
+        }
+        .timeline-content p {
+            margin: 0;
+            color: #666;
+            font-size: 13px;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #E91E63 0%, #FF6090 100%);
+            color: white;
+            padding: 16px 40px;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
+        }
+        .help-box {
+            background: #FFF3E0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .help-box h3 {
+            margin-top: 0;
+            color: #F57C00;
+            font-size: 16px;
+        }
+        .help-box p {
+            margin: 10px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .contact-links {
+            margin-top: 15px;
+        }
+        .contact-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #E91E63;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .footer {
+            background: #333;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .footer-links {
+            margin: 20px 0;
+        }
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 14px;
+        }
+        .footer p {
+            margin: 10px 0;
+            font-size: 13px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">🎁 GiftTree</div>
+            <div class="status-icon">📦</div>
+            <h1>Order Status Update</h1>
+            <p>Your order is on its way!</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <p class="greeting">Hi {{ order.billing_name }},</p>
+            
+            <!-- Status Message -->
+            <div class="status-message">
+                <p><strong>{{ status_message }}</strong></p>
+            </div>
+            
+            <p style="color: #666; font-size: 15px; line-height: 1.6;">
+                We're excited to let you know that your order has been updated. You can track your order anytime using the link below.
+            </p>
+            
+            <!-- Order Details -->
+            <div class="order-info">
+                <h3 style="margin-top: 0; color: #333; font-size: 18px;">Order Details</h3>
+                <div class="info-row">
+                    <span class="info-label">Order Number:</span>
+                    <span class="info-value">#{{ order.order_number }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Order Date:</span>
+                    <span class="info-value">{{ order.created_at|date:"d M, Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Current Status:</span>
+                    <span class="info-value">{{ order.get_status_display }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Total Amount:</span>
+                    <span class="info-value">₹{{ order.total_amount }}</span>
+                </div>
+            </div>
+            
+            <!-- Order Timeline -->
+            <h3 style="color: #333;">Order Progress</h3>
+            <div class="timeline">
+                <div class="timeline-item active">
+                    <div class="timeline-dot">✓</div>
+                    <div class="timeline-line"></div>
+                    <div class="timeline-content">
+                        <h4>Order Placed</h4>
+                        <p>{{ order.created_at|date:"d M, Y - h:i A" }}</p>
+                    </div>
+                </div>
+                
+                <div class="timeline-item {% if order.status != 'pending' %}active{% else %}inactive{% endif %}">
+                    <div class="timeline-dot {% if order.status == 'pending' %}inactive{% endif %}">✓</div>
+                    <div class="timeline-line"></div>
+                    <div class="timeline-content">
+                        <h4>Order Confirmed</h4>
+                        <p>Your order has been confirmed</p>
+                    </div>
+                </div>
+                
+                <div class="timeline-item {% if order.status == 'shipped' or order.status == 'delivered' %}active{% else %}inactive{% endif %}">
+                    <div class="timeline-dot {% if order.status not in 'shipped,delivered' %}inactive{% endif %}">✓</div>
+                    <div class="timeline-line"></div>
+                    <div class="timeline-content">
+                        <h4>Shipped</h4>
+                        <p>Your order is on the way</p>
+                    </div>
+                </div>
+                
+                <div class="timeline-item {% if order.status == 'delivered' %}active{% else %}inactive{% endif %}">
+                    <div class="timeline-dot {% if order.status != 'delivered' %}inactive{% endif %}">✓</div>
+                    <div class="timeline-content">
+                        <h4>Delivered</h4>
+                        <p>Order delivered successfully</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Track Order Button -->
+            <center>
+                <a href="http://{{ site_url }}/orders/{{ order.order_number }}/" class="button">
+                    Track Your Order
+                </a>
+            </center>
+            
+            <!-- Help Section -->
+            <div class="help-box">
+                <h3>Need Help?</h3>
+                <p>If you have any questions or concerns about your order, our customer support team is here to help.</p>
+                <div class="contact-links">
+                    <a href="tel:+919876543210">📞 Call Us</a>
+                    <a href="mailto:support@gifttree.com">✉️ Email Us</a>
+                </div>
+            </div>
+            
+            <p style="color: #666; font-size: 14px; line-height: 1.6;">
+                Thank you for shopping with GiftTree. We hope you love your order!
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="logo">🎁 GiftTree</div>
+            <p>Spreading happiness, one gift at a time</p>
+            
+            <div class="footer-links">
+                <a href="http://{{ site_url }}/">Home</a>
+                <a href="http://{{ site_url }}/products/">Shop</a>
+                <a href="http://{{ site_url }}/account/profile/">My Account</a>
+                <a href="#">Contact Us</a>
+            </div>
+            
+            <p>© 2025 GiftTree. All rights reserved.</p>
+            <p style="font-size: 11px;">
+                You received this email because you placed an order on GiftTree.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

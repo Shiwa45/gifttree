@@ -1,0 +1,806 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order #{{ order.order_number }} - GiftTree{% endblock %}
+
+{% block meta_description %}View details of your order #{{ order.order_number }} on GiftTree. Track delivery status and manage your order.{% endblock %}
+
+{% block content %}
+<!-- Mobile Header with Back Button -->
+{% include 'includes/mobile_header.html' with show_back_button=True page_title="Order Details" %}
+
+<style>
+/* Order Detail Styles */
+.order-detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+    min-height: 100vh;
+    background: #f5f5f5;
+}
+
+.order-header-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.order-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.order-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+}
+
+.order-number {
+    font-size: 16px;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.order-status-badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-pending {
+    background: #FFF3E0;
+    color: #F57C00;
+}
+
+.status-confirmed {
+    background: #E3F2FD;
+    color: #1976D2;
+}
+
+.status-processing {
+    background: #F3E5F5;
+    color: #7B1FA2;
+}
+
+.status-shipped {
+    background: #E8F5E9;
+    color: #388E3C;
+}
+
+.status-delivered {
+    background: #C8E6C9;
+    color: #2E7D32;
+}
+
+.status-cancelled {
+    background: #FFEBEE;
+    color: #C62828;
+}
+
+.order-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    padding-top: 20px;
+    border-top: 1px solid #F0F0F0;
+}
+
+.meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.meta-label {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.meta-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+/* Order Tracking Timeline */
+.tracking-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-title i {
+    color: var(--primary-color);
+}
+
+.tracking-timeline {
+    position: relative;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 40px;
+    padding-bottom: 30px;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-icon {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 32px;
+    height: 32px;
+    background: white;
+    border: 3px solid #E0E0E0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.timeline-item.active .timeline-icon {
+    background: var(--pink-gradient);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.timeline-item.completed .timeline-icon {
+    background: var(--green-gradient);
+    border-color: #4CAF50;
+    color: white;
+}
+
+.timeline-line {
+    position: absolute;
+    left: 15px;
+    top: 32px;
+    width: 2px;
+    height: calc(100% - 32px);
+    background: #E0E0E0;
+}
+
+.timeline-item.completed .timeline-line {
+    background: #4CAF50;
+}
+
+.timeline-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.timeline-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.timeline-description {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.timeline-time {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-top: 4px;
+}
+
+/* Order Items */
+.items-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.order-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.order-item-row {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: #F8F9FA;
+    border-radius: 12px;
+}
+
+.item-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.item-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+}
+
+.item-variant {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.item-pricing {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.item-quantity {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.item-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* Address Card */
+.address-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.address-content {
+    display: flex;
+    gap: 12px;
+}
+
+.address-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(233, 30, 99, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.address-details {
+    flex: 1;
+}
+
+.address-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+}
+
+.address-text {
+    font-size: 13px;
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+
+.address-phone {
+    font-size: 13px;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Payment Summary */
+.summary-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.summary-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+.summary-label {
+    color: var(--text-light);
+}
+
+.summary-value {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.summary-divider {
+    height: 1px;
+    background: #E0E0E0;
+    margin: 12px 0;
+}
+
+.summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 2px solid var(--primary-color);
+}
+
+.total-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.total-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.payment-method {
+    margin-top: 16px;
+    padding: 12px;
+    background: #F0F7FF;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.payment-method i {
+    color: #1976D2;
+    font-size: 18px;
+}
+
+.payment-info {
+    flex: 1;
+}
+
+.payment-label {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.payment-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.btn-action {
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: var(--pink-gradient);
+    color: white;
+    border: none;
+    box-shadow: 0 2px 8px rgba(233, 30, 99, 0.3);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: white;
+    color: var(--text-dark);
+    border: 2px solid #E0E0E0;
+}
+
+.btn-secondary:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-danger {
+    background: white;
+    color: #DC3545;
+    border: 2px solid #DC3545;
+}
+
+.btn-danger:hover {
+    background: #DC3545;
+    color: white;
+}
+
+.help-section {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+.help-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(233, 30, 99, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 24px;
+    color: var(--primary-color);
+}
+
+.help-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+}
+
+.help-text {
+    font-size: 14px;
+    color: var(--text-light);
+    margin-bottom: 16px;
+}
+
+.contact-options {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.contact-btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.contact-btn.phone {
+    background: var(--green-gradient);
+    color: white;
+}
+
+.contact-btn.email {
+    background: white;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+@media (min-width: 768px) {
+    .order-detail-container {
+        padding: 40px 20px;
+    }
+    
+    .order-title {
+        font-size: 24px;
+    }
+    
+    .item-image {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .action-buttons {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+</style>
+
+<div class="order-detail-container">
+    <!-- Order Header Card -->
+    <div class="order-header-card">
+        <div class="order-header-top">
+            <div>
+                <h1 class="order-title">Order Details</h1>
+                <div class="order-number">#{{ order.order_number }}</div>
+            </div>
+            <div class="order-status-badge status-{{ order.status|lower }}">
+                <i class="fas fa-{% if order.status == 'delivered' %}check-circle{% elif order.status == 'cancelled' %}times-circle{% elif order.status == 'shipped' %}truck{% else %}clock{% endif %}"></i>
+                {{ order.get_status_display }}
+            </div>
+        </div>
+        
+        <div class="order-meta">
+            <div class="meta-item">
+                <div class="meta-label">Order Date</div>
+                <div class="meta-value">{{ order.created_at|date:"d M, Y" }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">Order Time</div>
+                <div class="meta-value">{{ order.created_at|date:"h:i A" }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">Payment Status</div>
+                <div class="meta-value">{{ order.get_payment_status_display }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">Total Items</div>
+                <div class="meta-value">{{ order.items.count }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Tracking Timeline -->
+    <div class="tracking-card">
+        <h2 class="card-title">
+            <i class="fas fa-map-marker-alt"></i>
+            Order Tracking
+        </h2>
+        
+        <div class="tracking-timeline">
+            {% for track in tracking %}
+                <div class="timeline-item {% if forloop.first %}active{% elif not forloop.last %}completed{% endif %}">
+                    <div class="timeline-icon">
+                        <i class="fas fa-{% if track.status == 'delivered' %}check{% elif track.status == 'shipped' %}truck{% elif track.status == 'confirmed' %}box{% else %}clock{% endif %}"></i>
+                    </div>
+                    {% if not forloop.last %}
+                        <div class="timeline-line"></div>
+                    {% endif %}
+                    <div class="timeline-content">
+                        <div class="timeline-title">{{ track.status|title }}</div>
+                        <div class="timeline-description">{{ track.message }}</div>
+                        <div class="timeline-time">{{ track.created_at|date:"d M, Y - h:i A" }}</div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="timeline-item active">
+                    <div class="timeline-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Order Placed</div>
+                        <div class="timeline-description">Your order has been placed successfully</div>
+                        <div class="timeline-time">{{ order.created_at|date:"d M, Y - h:i A" }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="items-card">
+        <h2 class="card-title">
+            <i class="fas fa-shopping-bag"></i>
+            Order Items ({{ order.items.count }})
+        </h2>
+        
+        <div class="order-items-list">
+            {% for item in order_items %}
+                <div class="order-item-row">
+                    <img src="{% if item.product.primary_image %}{{ item.product.primary_image.image.url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}" 
+                         alt="{{ item.product.name }}" 
+                         class="item-image"
+                         onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                    
+                    <div class="item-info">
+                        <div>
+                            <div class="item-name">{{ item.product.name }}</div>
+                            {% if item.variant %}
+                                <div class="item-variant">Size: {{ item.variant.name }}</div>
+                            {% endif %}
+                            {% if item.addons %}
+                                <div class="item-variant">Add-ons: {{ item.addons }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="item-pricing">
+                            <div class="item-quantity">Qty: {{ item.quantity }}</div>
+                            <div class="item-price">₹{{ item.price }}</div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Delivery Address -->
+    <div class="address-card">
+        <h2 class="card-title">
+            <i class="fas fa-map-marker-alt"></i>
+            Delivery Address
+        </h2>
+        
+        <div class="address-content">
+            <div class="address-icon">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="address-details">
+                <div class="address-name">{{ order.billing_name }}</div>
+                <div class="address-text">
+                    {{ order.billing_address }}<br>
+                    {{ order.billing_city }}, {{ order.billing_state }} - {{ order.billing_pincode }}
+                </div>
+                <div class="address-phone">
+                    <i class="fas fa-phone"></i>
+                    {{ order.billing_phone }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Summary -->
+    <div class="summary-card">
+        <h2 class="card-title">
+            <i class="fas fa-receipt"></i>
+            Payment Summary
+        </h2>
+        
+        <div class="summary-rows">
+            <div class="summary-row">
+                <span class="summary-label">Subtotal</span>
+                <span class="summary-value">₹{{ order.subtotal|default:order.total_amount }}</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Delivery Charges</span>
+                <span class="summary-value">₹{{ order.delivery_charge|default:"0" }}</span>
+            </div>
+            {% if order.discount_amount %}
+                <div class="summary-row">
+                    <span class="summary-label">Discount</span>
+                    <span class="summary-value" style="color: #4CAF50;">- ₹{{ order.discount_amount }}</span>
+                </div>
+            {% endif %}
+            
+            <div class="summary-divider"></div>
+            
+            <div class="summary-total">
+                <span class="total-label">Total Amount</span>
+                <span class="total-value">₹{{ order.total_amount }}</span>
+            </div>
+        </div>
+        
+        <div class="payment-method">
+            <i class="fas fa-{% if order.payment_method == 'card' %}credit-card{% elif order.payment_method == 'upi' %}mobile-alt{% elif order.payment_method == 'wallet' %}wallet{% else %}money-bill-wave{% endif %}"></i>
+            <div class="payment-info">
+                <div class="payment-label">Payment Method</div>
+                <div class="payment-value">{{ order.get_payment_method_display|default:"Cash on Delivery" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        {% if order.status != 'cancelled' and order.status != 'delivered' %}
+            <a href="#" class="btn-action btn-primary">
+                <i class="fas fa-redo"></i>
+                Reorder
+            </a>
+            <a href="#" class="btn-action btn-secondary">
+                <i class="fas fa-download"></i>
+                Invoice
+            </a>
+            <button class="btn-action btn-danger" onclick="confirmCancel()">
+                <i class="fas fa-times"></i>
+                Cancel
+            </button>
+        {% elif order.status == 'delivered' %}
+            <a href="#" class="btn-action btn-primary">
+                <i class="fas fa-star"></i>
+                Rate Order
+            </a>
+            <a href="#" class="btn-action btn-primary">
+                <i class="fas fa-redo"></i>
+                Reorder
+            </a>
+            <a href="#" class="btn-action btn-secondary">
+                <i class="fas fa-download"></i>
+                Invoice
+            </a>
+        {% else %}
+            <a href="#" class="btn-action btn-primary">
+                <i class="fas fa-redo"></i>
+                Reorder
+            </a>
+            <a href="#" class="btn-action btn-secondary">
+                <i class="fas fa-download"></i>
+                Invoice
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Help Section -->
+    <div class="help-section">
+        <div class="help-icon">
+            <i class="fas fa-headset"></i>
+        </div>
+        <h3 class="help-title">Need Help?</h3>
+        <p class="help-text">
+            Our customer support team is here to help you with any questions about your order.
+        </p>
+        <div class="contact-options">
+            <a href="tel:+919876543210" class="contact-btn phone">
+                <i class="fas fa-phone"></i>
+                Call Us
+            </a>
+            <a href="mailto:support@gifttree.com" class="contact-btn email">
+                <i class="fas fa-envelope"></i>
+                Email Us
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmCancel() {
+    if (confirm('Are you sure you want to cancel this order?')) {
+        // Handle order cancellation
+        alert('Order cancellation request submitted. You will be notified shortly.');
+        // Add actual cancellation logic here
+    }
+}
+</script>
+{% endblock %}

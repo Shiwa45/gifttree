@@ -86,11 +86,51 @@ class Command(BaseCommand):
             
             for row in reader:
                 try:
-                    # Get or create category
-                    category_name = row.get('Type', 'Uncategorized').strip()
-                    if not category_name:
+                    # Get or create category with smart categorization
+                    category_name = row.get('Type', '').strip()
+
+                    # Smart categorization based on product name if category is empty
+                    if not category_name and title:
+                        name_lower = title.lower()
+
+                        # Cake-related keywords
+                        if any(word in name_lower for word in ['cake', 'pastry', 'truffle', 'fondant', 'cupcake', 'bento', 'pinata']):
+                            category_name = 'Cakes'
+                        # Plant-related keywords
+                        elif any(word in name_lower for word in ['plant', 'bamboo', 'bonsai', 'terrarium', 'succulent', 'indoor', 'fern', 'palm', 'jade', 'money plant']):
+                            category_name = 'Plants'
+                        # Flower-related keywords
+                        elif any(word in name_lower for word in ['flower', 'rose', 'orchid', 'lily', 'tulip', 'bouquet', 'carnation', 'gerbera', 'chrysanthemum']):
+                            category_name = 'Flowers'
+                        # Chocolate and sweets
+                        elif any(word in name_lower for word in ['chocolate', 'ferrero', 'cadbury', 'lindt', 'toblerone', 'candy', 'sweet']):
+                            category_name = 'Chocolates & Sweets'
+                        # Gift hampers and combos
+                        elif any(word in name_lower for word in ['hamper', 'combo', 'basket', 'gift box', 'gift set']):
+                            category_name = 'Gift Hampers'
+                        # Personalized items
+                        elif any(word in name_lower for word in ['personalized', 'customized', 'custom', 'photo', 'name', 'engraved']):
+                            category_name = 'Personalized Gifts'
+                        # Home decor
+                        elif any(word in name_lower for word in ['showpiece', 'decor', 'decorative', 'figurine', 'statue', 'wall', 'frame']):
+                            category_name = 'Home Decor'
+                        # Jewelry and accessories
+                        elif any(word in name_lower for word in ['jewellery', 'jewelry', 'bracelet', 'necklace', 'ring', 'earring', 'pendant']):
+                            category_name = 'Jewelry & Accessories'
+                        # Clothing and apparel
+                        elif any(word in name_lower for word in ['t-shirt', 'tshirt', 'shirt', 'hoodie', 'sweatshirt', 'jacket', 'cap', 'dress']):
+                            category_name = 'Clothing & Apparel'
+                        # Mugs and drinkware
+                        elif any(word in name_lower for word in ['mug', 'cup', 'sipper', 'bottle', 'flask', 'tumbler']):
+                            category_name = 'Mugs & Drinkware'
+                        # Toys and games
+                        elif any(word in name_lower for word in ['toy', 'teddy', 'soft toy', 'plush', 'game', 'puzzle']):
+                            category_name = 'Toys & Games'
+                        else:
+                            category_name = 'Uncategorized'
+                    elif not category_name:
                         category_name = 'Uncategorized'
-                    
+
                     category, _ = Category.objects.get_or_create(
                         name=category_name,
                         defaults={
@@ -177,96 +217,183 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def import_mygifttree_format(self, csv_file, download_images):
-        """Import MyGiftTree format CSV"""
+        """Import MyGiftTree format CSV with variant support"""
         self.stdout.write('Importing MyGiftTree format...')
-        
+
+        # Read all rows
         with open(csv_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
-            
-            products_created = 0
-            products_updated = 0
-            images_added = 0
-            
-            for row in reader:
-                try:
-                    # Skip if not to show online
-                    show_online = str(row.get('Show Online', 'FALSE')).upper()
-                    if show_online != 'TRUE':
-                        continue
+            all_rows = list(reader)
 
-                    # Get or create category
-                    category_name = row.get('Category', 'Uncategorized').strip()
-                    if not category_name:
-                        category_name = 'Uncategorized'
-                    
-                    category, _ = Category.objects.get_or_create(
-                        name=category_name,
-                        defaults={
-                            'slug': slugify(category_name),
-                            'description': f'{category_name} products'
-                        }
-                    )
+        # Group rows by Common Product Id
+        products_data = {}
+        for row in all_rows:
+            common_id = row.get('Common Product Id', '').strip()
+            if common_id and row.get('Show Online', '').upper() == 'TRUE':
+                if common_id not in products_data:
+                    products_data[common_id] = []
+                products_data[common_id].append(row)
 
-                    # Get prices
-                    try:
-                        sale_price = Decimal(str(row.get('Sale Price', 0) or 0))
-                        mrp = Decimal(str(row.get('MRP', 0) or 0))
-                    except:
-                        sale_price = Decimal('0.00')
-                        mrp = Decimal('0.00')
+        products_created = 0
+        products_updated = 0
+        images_added = 0
+        variants_created = 0
 
-                    # Get product name
-                    name = row.get('Name', '').strip()
-                    if not name:
-                        continue
+        # Process each unique product
+        for common_id, product_rows in products_data.items():
+            try:
+                # Use first row as master data
+                master_row = product_rows[0]
 
-                    # Create or update product
-                    sku = row.get('SKU', f'SKU-{slugify(name)}').strip()
-                    
-                    product, created = Product.objects.update_or_create(
-                        sku=sku,
-                        defaults={
-                            'name': name,
-                            'slug': slugify(name),
-                            'category': category,
-                            'description': row.get('Description', name) or name,
-                            'base_price': mrp or sale_price,
-                            'discount_price': sale_price if mrp and sale_price < mrp else None,
-                            'stock_quantity': int(float(row.get('Quantity', 0) or 0)),
-                            'is_active': True,
-                            'meta_title': name[:160],
-                            'meta_description': (row.get('SEO Description') or name)[:320],
-                        }
-                    )
-                    
-                    if created:
-                        products_created += 1
-                        self.stdout.write(f'Created: {name}')
-                    else:
-                        products_updated += 1
-                        self.stdout.write(f'Updated: {name}')
-
-                    # Handle variants (Size, Color)
-                    size = row.get('Size', '').strip()
-                    if size:
-                        self.create_simple_variant(product, 'Size', size)
-
-                    # Handle images
-                    if download_images:
-                        for i in range(1, 7):
-                            image_url = row.get(f'Image{i}', '').strip()
-                            if image_url:
-                                if self.download_product_image(product, image_url, i):
-                                    images_added += 1
-
-                except Exception as e:
-                    self.stdout.write(self.style.ERROR(f'Error processing row: {str(e)}'))
+                name = master_row.get('Name', '').strip()
+                if not name:
                     continue
+
+                # Get or create category with smart categorization
+                category_name = master_row.get('Category', '').strip()
+
+                # Smart categorization based on product name if category is empty
+                if not category_name:
+                    name_lower = name.lower()
+
+                    # Cake-related keywords
+                    if any(word in name_lower for word in ['cake', 'pastry', 'truffle', 'fondant', 'cupcake', 'bento', 'pinata']):
+                        category_name = 'Cakes'
+                    # Plant-related keywords
+                    elif any(word in name_lower for word in ['plant', 'bamboo', 'bonsai', 'terrarium', 'succulent', 'indoor', 'fern', 'palm', 'jade', 'money plant']):
+                        category_name = 'Plants'
+                    # Flower-related keywords
+                    elif any(word in name_lower for word in ['flower', 'rose', 'orchid', 'lily', 'tulip', 'bouquet', 'carnation', 'gerbera', 'chrysanthemum']):
+                        category_name = 'Flowers'
+                    # Chocolate and sweets
+                    elif any(word in name_lower for word in ['chocolate', 'ferrero', 'cadbury', 'lindt', 'toblerone', 'candy', 'sweet']):
+                        category_name = 'Chocolates & Sweets'
+                    # Gift hampers and combos
+                    elif any(word in name_lower for word in ['hamper', 'combo', 'basket', 'gift box', 'gift set']):
+                        category_name = 'Gift Hampers'
+                    # Personalized items
+                    elif any(word in name_lower for word in ['personalized', 'customized', 'custom', 'photo', 'name', 'engraved']):
+                        category_name = 'Personalized Gifts'
+                    # Home decor
+                    elif any(word in name_lower for word in ['showpiece', 'decor', 'decorative', 'figurine', 'statue', 'wall', 'frame']):
+                        category_name = 'Home Decor'
+                    # Jewelry and accessories
+                    elif any(word in name_lower for word in ['jewellery', 'jewelry', 'bracelet', 'necklace', 'ring', 'earring', 'pendant']):
+                        category_name = 'Jewelry & Accessories'
+                    # Clothing and apparel
+                    elif any(word in name_lower for word in ['t-shirt', 'tshirt', 'shirt', 'hoodie', 'sweatshirt', 'jacket', 'cap', 'dress']):
+                        category_name = 'Clothing & Apparel'
+                    # Mugs and drinkware
+                    elif any(word in name_lower for word in ['mug', 'cup', 'sipper', 'bottle', 'flask', 'tumbler']):
+                        category_name = 'Mugs & Drinkware'
+                    # Toys and games
+                    elif any(word in name_lower for word in ['toy', 'teddy', 'soft toy', 'plush', 'game', 'puzzle']):
+                        category_name = 'Toys & Games'
+                    else:
+                        category_name = 'Uncategorized'
+
+                category, _ = Category.objects.get_or_create(
+                    name=category_name,
+                    defaults={
+                        'slug': slugify(category_name),
+                        'description': f'{category_name} products'
+                    }
+                )
+
+                # Get base prices (use first variant's prices as base)
+                try:
+                    sale_price = Decimal(str(master_row.get('Sale Price', 0) or 0))
+                    mrp = Decimal(str(master_row.get('MRP', 0) or 0))
+                except:
+                    sale_price = Decimal('0.00')
+                    mrp = Decimal('0.00')
+
+                # Create or update product by Common Product Id
+                product, created = Product.objects.get_or_create(
+                    common_product_id=common_id,
+                    defaults={
+                        'sku': master_row.get('SKU', f'SKU-{slugify(name)}').strip(),
+                        'name': name,
+                        'slug': slugify(name),
+                        'category': category,
+                        'description': master_row.get('Description', name) or name,
+                        'base_price': mrp or sale_price,
+                        'discount_price': sale_price if mrp and sale_price < mrp else None,
+                        'stock_quantity': int(float(master_row.get('Quantity', 0) or 0)),
+                        'is_active': True,
+                        'meta_title': name[:160],
+                        'meta_description': (master_row.get('SEO Description') or name)[:320],
+                    }
+                )
+
+                if created:
+                    products_created += 1
+                    self.stdout.write(f'Created: {name}')
+                else:
+                    products_updated += 1
+
+                # Handle images (only once per product, not per variant)
+                if created or product.images.count() == 0:
+                    for i in range(1, 7):
+                        image_url = master_row.get(f'Image{i}', '').strip()
+                        if image_url:
+                            if not ProductImage.objects.filter(product=product, image_url=image_url).exists():
+                                ProductImage.objects.create(
+                                    product=product,
+                                    image_url=image_url,
+                                    position=i,
+                                    sort_order=i,
+                                    is_primary=(i == 1),
+                                    is_active=True
+                                )
+                                images_added += 1
+
+                # Create variants for each row (Size/Weight options)
+                for variant_row in product_rows:
+                    size = variant_row.get('Size', '').strip()
+                    sku = variant_row.get('SKU', '').strip()
+
+                    if size:
+                        try:
+                            variant_price = Decimal(str(variant_row.get('Sale Price', 0) or 0))
+                            variant_mrp = Decimal(str(variant_row.get('MRP', 0) or 0))
+                            variant_stock = int(float(variant_row.get('Quantity', 0) or 0))
+                        except:
+                            variant_price = Decimal('0.00')
+                            variant_mrp = Decimal('0.00')
+                            variant_stock = 0
+
+                        # Create or update variant
+                        variant, variant_created = ProductVariant.objects.get_or_create(
+                            product=product,
+                            variant_sku=sku,
+                            defaults={
+                                'name': size,
+                                'option1_name': 'Size',
+                                'option1_value': size,
+                                'price': variant_price,
+                                'compare_at_price': variant_mrp if variant_mrp > variant_price else None,
+                                'inventory_quantity': variant_stock,
+                                'stock_quantity': variant_stock,
+                                'is_active': True,
+                            }
+                        )
+
+                        if variant_created:
+                            variants_created += 1
+                            print(f"  ✓ Added variant: {size} - Rs.{variant_price}")
+
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f'Error processing product {common_id}: {str(e)}'))
+                import traceback
+                traceback.print_exc()
+                continue
 
         self.stdout.write(self.style.SUCCESS(
             f'\nImport complete!\n'
             f'Products created: {products_created}\n'
             f'Products updated: {products_updated}\n'
+            f'Variants created: {variants_created}\n'
             f'Images added: {images_added}'
         ))
 

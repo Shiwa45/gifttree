@@ -9,24 +9,33 @@ register = template.Library()
 def product_image_url(product, default_image='images/products/default.jpg'):
     """
     Get the product image URL with fallback handling
+    Supports both uploaded images (image field) and external URLs (image_url field)
     """
     if product and hasattr(product, 'primary_image') and product.primary_image:
         try:
-            # primary_image returns a ProductImage object, so we need to access its image field
-            if hasattr(product.primary_image, 'image') and product.primary_image.image:
+            # First check for image_url (CSV imported products)
+            if hasattr(product.primary_image, 'image_url') and product.primary_image.image_url:
+                return product.primary_image.image_url
+            # Then check for uploaded image file
+            elif hasattr(product.primary_image, 'image') and product.primary_image.image:
                 return product.primary_image.image.url
         except (ValueError, AttributeError):
             pass
-    
+
     # Fallback to first image if primary doesn't exist
     if product and hasattr(product, 'all_images'):
         first_image = product.all_images.first()
-        if first_image and hasattr(first_image, 'image') and first_image.image:
+        if first_image:
             try:
-                return first_image.image.url
+                # Check image_url first (CSV imports)
+                if hasattr(first_image, 'image_url') and first_image.image_url:
+                    return first_image.image_url
+                # Then check uploaded image
+                elif hasattr(first_image, 'image') and first_image.image:
+                    return first_image.image.url
             except (ValueError, AttributeError):
                 pass
-    
+
     # Final fallback to static default image
     return static(default_image)
 

@@ -1,0 +1,547 @@
+{% load static %}
+<!-- Advanced Mega Menu Navigation -->
+<nav class="advanced-mega-menu">
+    <div class="container">
+        <ul class="main-menu-categories">
+            {% for category in main_categories %}
+                <li class="menu-category-item" data-category="{{ category.slug }}">
+                    <a href="{% url 'products:category_detail' category.slug %}" class="category-link">
+                        {% if category.icon %}
+                            <i class="{{ category.icon }}"></i>
+                        {% endif %}
+                        {{ category.name }}
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </a>
+                    
+                    <!-- Mega Menu Panel -->
+                    <div class="mega-menu-panel" id="mega-{{ category.slug }}">
+                        <div class="mega-menu-container">
+                            <div class="menu-sections-grid">
+                                {% for section in category.menu_sections %}
+                                    <div class="menu-section" data-section="{{ section.section_type }}">
+                                        <h6 class="section-title">{{ section.name }}</h6>
+                                        <div class="section-items">
+                                            {% for item in section.items %}
+                                                <div class="menu-item">
+                                                    <a href="{% if section.section_type == 'by_type' %}{% url 'products:product_type_detail' item.slug %}{% elif section.section_type == 'collection' %}{% url 'products:collection_detail' item.slug %}{% elif section.section_type == 'for_whom' %}{% url 'products:recipient_detail' item.slug %}{% elif section.section_type == 'by_occasion' %}{% url 'products:occasion_detail' item.slug %}{% elif section.section_type == 'deliver_to' %}{% url 'products:location_detail' item.slug %}{% else %}#{% endif %}" class="item-link">
+                                                        {{ item.name }}
+                                                        {% if item.badges.all %}
+                                                            {% for badge in item.badges.all %}
+                                                                <span class="menu-badge" style="background-color: {{ badge.background_color }}; color: {{ badge.color }};">
+                                                                    {{ badge.name }}
+                                                                </span>
+                                                            {% endfor %}
+                                                        {% endif %}
+                                                    </a>
+                                                </div>
+                                            {% endfor %}
+                                            
+                                            {% if section.section_type == 'by_type' and category.slug == 'flowers' %}
+                                                <div class="menu-item">
+                                                    <a href="#" class="item-link view-all">All Flowers</a>
+                                                </div>
+                                            {% elif section.section_type == 'deliver_to' %}
+                                                <div class="menu-item">
+                                                    <a href="#" class="item-link view-all">All Cities</a>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Featured Products Section -->
+                            {% if category.featured_products %}
+                                <div class="featured-products-section">
+                                    <h6 class="section-title">Featured {{ category.name }}</h6>
+                                    <div class="featured-products-grid">
+                                        {% for product in category.featured_products %}
+                                            <div class="featured-product-card" onclick="window.location.href='{{ product.get_absolute_url }}'">
+                                                <div class="product-image">
+                                                    {% if product.primary_image %}
+                                                        <img src="{{ product.primary_image.get_image_url }}" alt="{{ product.name }}" loading="lazy">
+                                                    {% else %}
+                                                        <img src="{% static 'images/products/default.jpg' %}" alt="{{ product.name }}" loading="lazy">
+                                                    {% endif %}
+                                                </div>
+                                                <div class="product-info">
+                                                    <span class="product-name">{{ product.name|truncatechars:25 }}</span>
+                                                    <span class="product-price">₹{{ product.current_price }}</span>
+                                                    {% if product.discount_percentage > 0 %}
+                                                        <span class="discount-badge">{{ product.discount_percentage }}% OFF</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</nav>
+
+<style>
+/* Advanced Mega Menu Styles */
+.advanced-mega-menu {
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 1000;
+    width: 100%;
+}
+
+.advanced-mega-menu .container {
+    max-width: 100%;
+    padding: 0;
+}
+
+.main-menu-categories {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    justify-content: space-evenly;
+    align-items: center;
+    width: 100%;
+    background: #fff;
+}
+
+.menu-category-item {
+    position: relative;
+    flex: 1;
+    text-align: center;
+}
+
+.category-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 18px 8px;
+    color: #333;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.category-link:hover {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    background: rgba(233, 30, 99, 0.05);
+}
+
+.category-link i:first-child {
+    font-size: 16px;
+}
+
+.dropdown-arrow {
+    font-size: 10px;
+    transition: transform 0.3s ease;
+}
+
+.menu-category-item:hover .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+/* Mega Menu Panel */
+.mega-menu-panel {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 9999;
+    max-height: 70vh;
+    overflow-y: auto;
+    border-radius: 0 0 8px 8px;
+    min-width: 600px;
+    max-width: 900px;
+    width: auto;
+}
+
+/* Hover state handled by JavaScript for better control */
+
+.mega-menu-container {
+    display: flex;
+    padding: 25px 30px;
+    gap: 25px;
+    width: 100%;
+}
+
+.menu-sections-grid {
+    display: flex;
+    gap: 25px;
+    flex: 1;
+    min-width: 0;
+}
+
+.menu-section {
+    min-width: 140px;
+    flex: 1;
+}
+
+.section-title {
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 12px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--primary-color);
+    padding-bottom: 6px;
+}
+
+.section-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.menu-item {
+    position: relative;
+}
+
+.item-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #333;
+    text-decoration: none;
+    font-size: 12px;
+    padding: 4px 0;
+    transition: all 0.3s ease;
+    border-left: 2px solid transparent;
+    padding-left: 6px;
+    white-space: nowrap;
+}
+
+.item-link:hover {
+    color: var(--primary-color);
+    border-left-color: var(--primary-color);
+    padding-left: 8px;
+}
+
+.item-link.view-all {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+}
+
+/* Menu Badges */
+.menu-badge {
+    font-size: 8px;
+    font-weight: 600;
+    padding: 1px 4px;
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    margin-left: 6px;
+}
+
+/* Featured Products Section */
+.featured-products-section {
+    min-width: 200px;
+    max-width: 250px;
+    border-left: 1px solid #f0f0f0;
+    padding-left: 20px;
+}
+
+.featured-products-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.featured-product-card {
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.featured-product-card:hover {
+    background: rgba(233, 30, 99, 0.05);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.product-image {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 6px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.product-name {
+    font-size: 11px;
+    color: #333;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.product-price {
+    font-size: 12px;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.discount-badge {
+    font-size: 9px;
+    background: #4CAF50;
+    color: white;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+    .mega-menu-container {
+        padding: 30px 40px;
+        gap: 30px;
+    }
+    
+    .menu-sections-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+    }
+    
+    .featured-products-section {
+        min-width: 280px;
+        padding-left: 25px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .mega-menu-container {
+        padding: 25px 30px;
+        gap: 25px;
+    }
+    
+    .menu-sections-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 25px;
+    }
+    
+    .featured-products-section {
+        min-width: 250px;
+        padding-left: 20px;
+    }
+    
+    .featured-products-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .category-link {
+        font-size: 12px;
+        padding: 16px 6px;
+    }
+}
+
+@media (max-width: 992px) {
+    .advanced-mega-menu {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .mega-menu-panel {
+        display: none !important;
+    }
+}
+
+/* Animation for menu items */
+.menu-item {
+    animation: fadeInUp 0.3s ease forwards;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.menu-category-item:hover .menu-item {
+    animation-delay: calc(var(--item-index, 0) * 0.05s);
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Hover delay for better UX */
+.menu-category-item {
+    transition-delay: 0.1s;
+}
+
+.mega-menu-panel {
+    transition-delay: 0.1s;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add item index for staggered animation
+    document.querySelectorAll('.menu-section').forEach(section => {
+        section.querySelectorAll('.menu-item').forEach((item, index) => {
+            item.style.setProperty('--item-index', index);
+        });
+    });
+    
+    // Position mega menu correctly and adjust width
+    const menuItems = document.querySelectorAll('.menu-category-item');
+    menuItems.forEach(item => {
+        const panel = item.querySelector('.mega-menu-panel');
+        if (panel) {
+            item.addEventListener('mouseenter', function() {
+                // Adjust panel width based on content
+                const sections = panel.querySelectorAll('.menu-section');
+                const sectionCount = sections.length;
+                const hasFeaturedProducts = panel.querySelector('.featured-products-section');
+                
+                let panelWidth = 140 * sectionCount + 25 * (sectionCount - 1) + 60; // base width + gaps + padding
+                
+                if (hasFeaturedProducts) {
+                    panelWidth += 220; // add featured products section width
+                }
+                
+                // Set minimum and maximum widths
+                panelWidth = Math.max(500, Math.min(900, panelWidth));
+                panel.style.width = panelWidth + 'px';
+                
+                // Position relative to viewport
+                const rect = item.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                
+                // Check if panel would go off-screen
+                const panelLeft = rect.left + rect.width / 2 - panelWidth / 2;
+                const panelRight = panelLeft + panelWidth;
+                
+                if (panelLeft < 10) {
+                    // Too far left, align to left edge
+                    panel.style.left = '10px';
+                    panel.style.transform = 'translateY(-10px)';
+                } else if (panelRight > viewportWidth - 10) {
+                    // Too far right, align to right edge
+                    panel.style.left = 'auto';
+                    panel.style.right = '10px';
+                    panel.style.transform = 'translateY(-10px)';
+                } else {
+                    // Center under menu item
+                    panel.style.left = '50%';
+                    panel.style.right = 'auto';
+                    panel.style.transform = 'translateX(-50%) translateY(-10px)';
+                }
+            });
+            
+            item.addEventListener('mouseenter', function() {
+                panel.style.opacity = '1';
+                panel.style.visibility = 'visible';
+                
+                // Update transform based on positioning
+                if (panel.style.left === '50%') {
+                    panel.style.transform = 'translateX(-50%) translateY(0)';
+                } else {
+                    panel.style.transform = 'translateY(0)';
+                }
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                setTimeout(() => {
+                    if (!panel.matches(':hover') && !item.matches(':hover')) {
+                        panel.style.opacity = '0';
+                        panel.style.visibility = 'hidden';
+                        
+                        // Reset transform
+                        if (panel.style.left === '50%') {
+                            panel.style.transform = 'translateX(-50%) translateY(-10px)';
+                        } else {
+                            panel.style.transform = 'translateY(-10px)';
+                        }
+                    }
+                }, 100);
+            });
+            
+            panel.addEventListener('mouseleave', function() {
+                setTimeout(() => {
+                    if (!item.matches(':hover')) {
+                        panel.style.opacity = '0';
+                        panel.style.visibility = 'hidden';
+                        
+                        // Reset transform
+                        if (panel.style.left === '50%') {
+                            panel.style.transform = 'translateX(-50%) translateY(-10px)';
+                        } else {
+                            panel.style.transform = 'translateY(-10px)';
+                        }
+                    }
+                }, 100);
+            });
+        }
+    });
+    
+    // Close mega menu when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.advanced-mega-menu')) {
+            document.querySelectorAll('.mega-menu-panel').forEach(panel => {
+                panel.style.opacity = '0';
+                panel.style.visibility = 'hidden';
+                
+                // Reset transform
+                if (panel.style.left === '50%') {
+                    panel.style.transform = 'translateX(-50%) translateY(-10px)';
+                } else {
+                    panel.style.transform = 'translateY(-10px)';
+                }
+            });
+        }
+    });
+    
+    // Close mega menu on scroll
+    window.addEventListener('scroll', function() {
+        document.querySelectorAll('.mega-menu-panel').forEach(panel => {
+            panel.style.opacity = '0';
+            panel.style.visibility = 'hidden';
+            
+            // Reset transform
+            if (panel.style.left === '50%') {
+                panel.style.transform = 'translateX(-50%) translateY(-10px)';
+            } else {
+                panel.style.transform = 'translateY(-10px)';
+            }
+        });
+    });
+});
+</script>

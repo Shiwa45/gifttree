@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.db.models import Q
 from .models import SiteSettings
 from apps.products.models import Product, Category, Occasion
 
@@ -58,26 +59,74 @@ def home_view(request):
         bestseller_products = Product.objects.none()
     
     try:
-        # Quick categories for action grid with product count
-        quick_categories = Category.objects.filter(
+        # Quick occasions for action grid with product count
+        quick_occasions = Occasion.objects.filter(
             is_featured=True,
             is_active=True
-        ).prefetch_related('products')[:8]
+        ).prefetch_related('products')[:9]
     except:
-        quick_categories = Category.objects.none()
+        quick_occasions = Occasion.objects.none()
     
     try:
         site_settings = SiteSettings.get_settings()
     except:
         site_settings = None
-    
+
+    # Get category-specific products for "Send X" sections
+    try:
+        # Cakes - Get products from Cakes category
+        cake_products = Product.objects.filter(
+            Q(category__name__icontains='cake') | Q(name__icontains='cake'),
+            is_active=True,
+            published=True
+        ).select_related('category').prefetch_related('images').distinct()[:8]
+    except:
+        cake_products = Product.objects.none()
+
+    try:
+        # Flowers - Get products from Flowers category
+        flower_products = Product.objects.filter(
+            Q(category__name__icontains='flower') | Q(name__icontains='flower') | Q(name__icontains='rose') | Q(name__icontains='bouquet'),
+            is_active=True,
+            published=True
+        ).select_related('category').prefetch_related('images').distinct()[:8]
+    except:
+        flower_products = Product.objects.none()
+
+    try:
+        # Plants - Get products from Plants category
+        plant_products = Product.objects.filter(
+            Q(category__name__icontains='plant') | Q(name__icontains='plant') | Q(name__icontains='bamboo') | Q(name__icontains='bonsai'),
+            is_active=True,
+            published=True
+        ).select_related('category').prefetch_related('images').distinct()[:8]
+    except:
+        plant_products = Product.objects.none()
+
+    try:
+        # Gifts - Get products from various gift categories
+        gift_products = Product.objects.filter(
+            Q(category__name__icontains='gift') | Q(category__name__icontains='personalized') |
+            Q(category__name__icontains='chocolate') | Q(category__name__icontains='hamper') |
+            Q(name__icontains='personalized') | Q(name__icontains='mug') | Q(name__icontains='cushion'),
+            is_active=True,
+            published=True
+        ).select_related('category').prefetch_related('images').distinct()[:8]
+    except:
+        gift_products = Product.objects.none()
+
     context = {
         'site_settings': site_settings,
         'featured_products': featured_products,
         'bestseller_products': bestseller_products,
-        'quick_categories': quick_categories,
+        'quick_occasions': quick_occasions,
         'has_featured_products': featured_products.exists(),
         'has_bestseller_products': bestseller_products.exists(),
-        'has_categories': quick_categories.exists(),
+        'has_occasions': quick_occasions.exists(),
+        # Category-specific products
+        'cake_products': cake_products,
+        'flower_products': flower_products,
+        'plant_products': plant_products,
+        'gift_products': gift_products,
     }
     return render(request, 'core/home.html', context)

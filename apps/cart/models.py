@@ -30,12 +30,20 @@ class CartItem(BaseModel):
     variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, blank=True, null=True)
     quantity = models.PositiveIntegerField(default=1)
 
+    # Customization fields
+    custom_message = models.TextField(blank=True, null=True, help_text="Custom message/text on product")
+    custom_name = models.CharField(max_length=100, blank=True, null=True, help_text="Name to be written (e.g., on cake)")
+    custom_date = models.DateField(blank=True, null=True, help_text="Custom date (e.g., delivery date)")
+    custom_flavor = models.CharField(max_length=100, blank=True, null=True, help_text="Flavor preference")
+    custom_data = models.JSONField(blank=True, null=True, help_text="Additional customization data")
+
     class Meta:
-        unique_together = ['cart', 'product', 'variant']
+        unique_together = []  # Removed unique_together to allow same product with different customizations
 
     def __str__(self):
         variant_name = f" ({self.variant.name})" if self.variant else ""
-        return f"{self.product.name}{variant_name} x {self.quantity}"
+        custom_info = f" - Custom: {self.custom_name}" if self.custom_name else ""
+        return f"{self.product.name}{variant_name}{custom_info} x {self.quantity}"
 
     @property
     def unit_price(self):
@@ -46,3 +54,8 @@ class CartItem(BaseModel):
     @property
     def total_price(self):
         return self.unit_price * self.quantity
+
+    @property
+    def has_customization(self):
+        """Check if item has any customization"""
+        return bool(self.custom_message or self.custom_name or self.custom_date or self.custom_flavor or self.custom_data)

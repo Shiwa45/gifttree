@@ -120,9 +120,11 @@
 <!-- Products Grid -->
 <div class="products-section">
     {% if products %}
-        <div class="products-grid">
+        <div class="products-grid mft-grid">
             {% for product in products %}
-                {% include 'includes/product_card.html' with product=product card_type='grid' show_wishlist=True show_rating=True %}
+                <div class="mft-card">
+                    {% include 'includes/product_card.html' with product=product card_type='grid' show_wishlist=True show_rating=True %}
+                </div>
             {% endfor %}
         </div>
         
@@ -288,159 +290,193 @@
 
 {% block extra_css %}
 <style>
-/* Product list specific styles */
-.breadcrumb-section {
-    background: white;
-    padding: 12px 0;
-    border-bottom: 1px solid #f0f0f0;
+:root{
+    --mft-card-radius: 14px;
+    --mft-card-shadow: 0 8px 18px rgba(0,0,0,.06);
+    --mft-card-shadow-hover: 0 14px 28px rgba(0,0,0,.10);
+    --mft-chip-bg: #f6f7fb;
+    --mft-chip-active: #ffecec;
+    --mft-accent: #e8416c; /* close to MFT pink/red */
 }
 
-.breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--text-light);
-    margin: 0;
-    background: transparent;
-    padding: 0;
+/* Breadcrumb */
+.breadcrumb-section { background: #fff; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.breadcrumb { display:flex; align-items:center; gap:8px; font-size:14px; color:var(--text-light); margin:0; }
+.breadcrumb a{ color:var(--text-light); text-decoration:none; }
+.breadcrumb .active{ color:var(--primary-color); font-weight:600; }
+
+/* Page header */
+.page-header{ background:#fff; padding:24px 16px; text-align:center; border-bottom:1px solid #f0f0f0; }
+.page-title{ font-size:26px; font-weight:800; color:var(--text-dark); margin:0 0 6px; }
+.page-subtitle{ color:var(--text-light); font-size:14px; }
+
+/* Filters: bar + chips (pill look similar to MFT) */
+.filter-section{ background:#fff; padding:10px 12px 6px; position:sticky; top:0; z-index:5; border-bottom:1px solid #f3f3f3; }
+.filter-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
+.filter-toggle{ display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:999px; background:var(--mft-chip-bg); border:1px solid #ececf2; font-weight:600; }
+.sort-select{ border:1px solid #ececf2; background:#fff; padding:10px 12px; border-radius:999px; min-width:190px; }
+
+.quick-filters{ display:flex; flex-wrap:wrap; gap:10px; padding-bottom:8px; }
+.filter-chip{ border:none; background:var(--mft-chip-bg); color:#333; padding:8px 14px; border-radius:999px; font-weight:600; }
+.filter-chip.active{ background:var(--mft-chip-active); color:var(--mft-accent); border:1px solid #ffd4d9; }
+
+/* Grid */
+.products-section{ background:#fff; }
+.products-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:18px; padding:16px; }
+@media (min-width:1200px){ .products-grid{ grid-template-columns:repeat(4,1fr); gap:22px; padding:24px; } }
+@media (max-width:768px){ .products-grid{ grid-template-columns:repeat(2,1fr); gap:12px; padding:12px; } }
+
+/* === MyFlowerTree-style Card Container (wrap only) === */
+.mft-card{
+    position:relative;
+    background:#fff;
+    border-radius:var(--mft-card-radius);
+    box-shadow:var(--mft-card-shadow);
+    overflow:hidden;
+    transition:transform .18s ease, box-shadow .18s ease;
+    border:1px solid #f2f2f2;
+}
+.mft-card:hover{ transform:translateY(-3px); box-shadow:var(--mft-card-shadow-hover); }
+
+/* Try to normalize unknown inner markup of includes/product_card.html
+   These styles are defensive and apply to common class names and elements.
+*/
+
+/* Image area */
+.mft-card img, 
+.mft-card .product-image img,
+.mft-card .card-img-top{
+    width:100%; height:auto; display:block;
+    aspect-ratio: 4/3; object-fit:cover;
+    transition: transform .25s ease;
+}
+.mft-card:hover img{ transform:scale(1.04); }
+
+/* Wishlist / badges at top-right if present */
+.mft-card .wishlist-btn, 
+.mft-card .btn-wishlist, 
+.mft-card .add-to-wishlist{
+    position:absolute; top:10px; right:10px;
+    width:36px; height:36px; display:grid; place-items:center;
+    background:#fff; border-radius:999px; border:1px solid #eee;
+    box-shadow:0 4px 10px rgba(0,0,0,.08);
+    z-index:2;
 }
 
-.breadcrumb a {
-    color: var(--text-light);
-    text-decoration: none;
+/* Discount ribbon (supports common classnames) */
+.mft-card .badge-discount,
+.mft-card .discount,
+.mft-card .ribbon{
+    position:absolute; left:10px; top:10px;
+    background:var(--mft-accent); color:#fff;
+    padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px;
+    z-index:2;
 }
 
-.breadcrumb .active {
-    color: var(--primary-color);
-    font-weight: 500;
+/* Content zone */
+.mft-card .product-info,
+.mft-card .card-body,
+.mft-card .details,
+.mft-card .content{
+    padding:12px 12px 14px;
 }
 
-.page-header {
-    background: white;
-    padding: 20px 16px;
-    text-align: center;
-    border-bottom: 1px solid #f0f0f0;
+/* Title clamp */
+.mft-card .product-title,
+.mft-card .title,
+.mft-card h3, 
+.mft-card h4{
+    font-size:15px; line-height:1.35; font-weight:700; margin:6px 0 6px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    min-height: 40px;
 }
 
-.page-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text-dark);
-    margin-bottom: 8px;
+/* Rating row (stars + count) */
+.mft-card .rating, 
+.mft-card .rating-row{
+    display:flex; align-items:center; gap:6px; font-size:13px; color:#777;
+}
+.mft-card .rating .stars i{ font-size:13px; }
+
+/* Price styles */
+.mft-card .price, 
+.mft-card .product-price{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    margin-top:6px; margin-bottom:8px;
+}
+.mft-card .price .current, 
+.mft-card .product-price .current,
+.mft-card .price .sale{
+    font-weight:800; font-size:18px; color:#222;
+}
+.mft-card .price .mrp, 
+.mft-card .product-price .mrp,
+.mft-card .old-price{
+    color:#9b9b9b; text-decoration:line-through; font-size:13px; font-weight:600;
 }
 
-.page-subtitle {
-    color: var(--text-light);
-    font-size: 14px;
+/* Delivery/label pill if present */
+.mft-card .tags, 
+.mft-card .delivery, 
+.mft-card .label-pill{
+    display:flex; gap:6px; flex-wrap:wrap;
+}
+.mft-card .tag, 
+.mft-card .pill, 
+.mft-card .label{
+    background:#f7f7fb; border:1px solid #eee; padding:5px 8px; border-radius:999px; font-size:12px; font-weight:600; color:#666;
 }
 
-.no-products {
-    text-align: center;
-    padding: 60px 20px;
-    background: white;
-    margin: 20px 16px;
-    border-radius: 12px;
+/* CTA area: reveal style like MFT (button prominent) */
+.mft-card .actions, 
+.mft-card .cta, 
+.mft-card .card-actions{
+    display:flex; align-items:center; gap:10px; margin-top:10px;
+}
+.mft-card .btn-add, 
+.mft-card .btn-primary,
+.mft-card .add-to-cart, 
+.mft-card .buy-now{
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:10px 12px; border-radius:10px; border:1px solid #ffdbe2;
+    background:linear-gradient(180deg,#fff0f3, #ffe0e5);
+    color:var(--mft-accent); font-weight:800; width:100%;
+    transition:filter .2s ease, transform .2s ease, background .2s ease;
+}
+.mft-card .btn-add:hover,
+.mft-card .btn-primary:hover,
+.mft-card .add-to-cart:hover,
+.mft-card .buy-now:hover{ filter:brightness(0.98); transform:translateY(-1px); }
+
+/* If your include uses simple .btn or .btn-sm, upscale it here inside card only */
+.mft-card .btn{
+    width:100%;
+    border-radius:10px; font-weight:800;
 }
 
-.no-products-icon {
-    font-size: 64px;
-    color: #E0E0E0;
-    margin-bottom: 20px;
+/* No products + pagination */
+.no-products{ text-align:center; padding:60px 20px; background:#fff; margin:20px 16px; border-radius:12px; }
+.no-products-icon{ font-size:64px; color:#E0E0E0; margin-bottom:20px; }
+.no-products-title{ font-size:24px; font-weight:700; color:var(--text-dark); margin-bottom:8px; }
+.no-products-text{ color:var(--text-light); margin:0 auto 24px; max-width:420px; }
+.pagination-section{ padding:36px 0; background:#fff; }
+.pagination .page-link{ color:var(--primary-color); border:1px solid #dee2e6; padding:8px 12px; }
+.pagination .page-item.active .page-link{ background:var(--primary-color); border-color:var(--primary-color); color:#fff; }
+.pagination .page-link:hover{ color:#fff; background:var(--primary-color); border-color:var(--primary-color); }
+
+/* Desktop tweaks */
+@media (min-width:992px){
+    .page-header{ padding:40px 0; }
+    .page-title{ font-size:32px; }
+    .page-subtitle{ font-size:16px; }
+    .products-section{ padding: 8px 12px 24px; }
 }
 
-.no-products-title {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--text-dark);
-    margin-bottom: 8px;
-}
-
-.no-products-text {
-    color: var(--text-light);
-    margin-bottom: 24px;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.pagination-section {
-    padding: 40px 0;
-    background: white;
-}
-
-.pagination .page-link {
-    color: var(--primary-color);
-    border: 1px solid #dee2e6;
-    padding: 8px 12px;
-}
-
-.pagination .page-item.active .page-link {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-}
-
-.pagination .page-link:hover {
-    color: white;
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-}
-
-/* Products grid styling */
-.products-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
-    padding: 20px 16px;
-}
-
-.products-section {
-    background: white;
-}
-
-/* Mobile responsive grid */
-@media (max-width: 768px) {
-    .products-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 15px;
-        padding: 15px;
-    }
-}
-
-/* Tablet responsive grid */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .products-grid {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 18px;
-    }
-}
-
-/* Desktop adjustments */
-@media (min-width: 992px) {
-    .page-header {
-        padding: 40px 0;
-    }
-    
-    .page-title {
-        font-size: 2.5rem;
-    }
-    
-    .page-subtitle {
-        font-size: 1.1rem;
-    }
-    
-    .filter-section {
-        padding: 20px 40px;
-    }
-    
-    .products-section {
-        padding: 40px;
-    }
-    
-    .no-products {
-        margin: 40px;
-        padding: 80px 40px;
-    }
+/* Mobile niceties */
+@media (max-width:576px){
+    .filter-row{ flex-wrap:wrap; }
+    .sort-select{ width:100%; }
+    .mft-card .title, .mft-card .product-title{ min-height:auto; }
 }
 </style>
 {% endblock %}
@@ -477,9 +513,7 @@ function applyFilters() {
 
 function clearFilters() {
     const checkboxes = document.querySelectorAll('#filterForm .filter-checkbox');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = false;
-    });
+    checkboxes.forEach(checkbox => { checkbox.checked = false; });
     applyFilters();
 }
 
@@ -489,13 +523,11 @@ function loadMoreProducts() {
     if (loadMoreBtn) {
         loadMoreBtn.disabled = true;
         loadMoreBtn.textContent = 'Loading...';
-        
-        // In a real implementation, this would make an AJAX request
         setTimeout(() => {
             loadMoreBtn.disabled = false;
             loadMoreBtn.textContent = 'Load More Products';
             showToast('More products loaded!');
-        }, 1500);
+        }, 1200);
     }
 }
 </script>

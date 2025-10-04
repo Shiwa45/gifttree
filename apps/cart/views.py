@@ -43,30 +43,35 @@ def add_to_cart(request):
         product_id = data.get('product_id')
         variant_id = data.get('variant_id')
         quantity = int(data.get('quantity', 1))
-        
+
+        # Customization data
+        custom_name = data.get('custom_name', '').strip()
+        custom_message = data.get('custom_message', '').strip()
+        custom_flavor = data.get('custom_flavor', '').strip()
+        custom_date = data.get('custom_date')
+
         # Validate product
         product = get_object_or_404(Product, id=product_id, is_active=True)
-        
+
         # Get or create cart
         cart, created = Cart.objects.get_or_create(user=request.user)
-        
+
         # Handle variant if provided
         variant = None
         if variant_id:
             variant = get_object_or_404(ProductVariant, id=variant_id, product=product)
-        
-        # Check if item already in cart
-        cart_item, item_created = CartItem.objects.get_or_create(
+
+        # Create cart item (removed unique constraint, so always create new for customizations)
+        cart_item = CartItem.objects.create(
             cart=cart,
             product=product,
             variant=variant,
-            defaults={'quantity': quantity}
+            quantity=quantity,
+            custom_name=custom_name if custom_name else None,
+            custom_message=custom_message if custom_message else None,
+            custom_flavor=custom_flavor if custom_flavor else None,
+            custom_date=custom_date if custom_date else None
         )
-        
-        if not item_created:
-            # Update quantity if item exists
-            cart_item.quantity += quantity
-            cart_item.save()
         
         # Calculate cart totals
         cart_count = cart.total_items

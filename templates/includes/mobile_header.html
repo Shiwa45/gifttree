@@ -106,37 +106,65 @@
         <div class="mobile-menu-categories">
             {% for category in main_categories %}
                 <div class="mobile-category-item">
-                    <div class="mobile-category-header" onclick="toggleMobileCategory('{{ category.id }}')">
+                    <div class="mobile-category-header" onclick="toggleMobileCategory('{{ category.slug }}')">
+                        {% if category.icon %}
+                            <i class="{{ category.icon }}" style="margin-right: 8px; color: var(--primary-color);"></i>
+                        {% endif %}
                         <span>{{ category.name }}</span>
-                        <i class="fas fa-chevron-right mobile-chevron" id="chevron-{{ category.id }}"></i>
+                        <i class="fas fa-chevron-right mobile-chevron" id="chevron-{{ category.slug }}"></i>
                     </div>
-                    <div class="mobile-category-submenu" id="submenu-{{ category.id }}">
-                        <a href="{% url 'products:category_detail' category.slug %}" class="mobile-submenu-item view-all">
+                    <div class="mobile-category-submenu" id="submenu-{{ category.slug }}">
+                        <!-- Multi-layer dropdown sections -->
+                        {% for section in category.menu_sections %}
+                            {% if section.items %}
+                                <div class="mobile-section-item">
+                                    <div class="mobile-section-header" onclick="toggleMobileSection('{{ category.slug }}-{{ section.name|slugify }}')">
+                                        <span>{{ section.name }}</span>
+                                        <i class="fas fa-chevron-right mobile-section-chevron" id="section-chevron-{{ category.slug }}-{{ section.name|slugify }}"></i>
+                                    </div>
+                                    <div class="mobile-section-submenu" id="section-submenu-{{ category.slug }}-{{ section.name|slugify }}">
+                                        {% for item in section.items %}
+                                            <a href="{% if section.section_type == 'by_type' %}{% url 'products:product_type_detail' item.slug %}{% elif section.section_type == 'collection' %}{% url 'products:collection_detail' item.slug %}{% elif section.section_type == 'for_whom' %}{% url 'products:recipient_detail' item.slug %}{% elif section.section_type == 'by_occasion' %}{% url 'products:occasion_detail' item.slug %}{% elif section.section_type == 'deliver_to' %}{% url 'products:location_detail' item.slug %}{% else %}#{% endif %}" class="mobile-section-item-link">
+                                                {{ item.name }}
+                                                {% if item.badges %}
+                                                    {% for badge in item.badges|slice:":1" %}
+                                                        <span class="mobile-badge" style="background-color: {{ badge.background_color }}; color: {{ badge.color }};">
+                                                            {{ badge.name }}
+                                                        </span>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <!-- Featured Products as a separate section -->
+                        {% if category.featured_products %}
+                            <div class="mobile-section-item">
+                                <div class="mobile-section-header" onclick="toggleMobileSection('{{ category.slug }}-featured')">
+                                    <span>Featured {{ category.name }}</span>
+                                    <i class="fas fa-chevron-right mobile-section-chevron" id="section-chevron-{{ category.slug }}-featured"></i>
+                                </div>
+                                <div class="mobile-section-submenu" id="section-submenu-{{ category.slug }}-featured">
+                                    {% for product in category.featured_products %}
+                                        <a href="{{ product.get_absolute_url }}" class="mobile-section-item-link featured-product">
+                                            <div class="featured-product-info">
+                                                <span class="product-name">{{ product.name|truncatechars:25 }}</span>
+                                                <span class="product-price">₹{{ product.current_price }}</span>
+                                            </div>
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- View All Link -->
+                        <a href="{% url 'products:menu_category_detail' category.slug %}" class="mobile-submenu-item view-all">
                             <i class="fas fa-th-large"></i>
                             View All {{ category.name }}
                         </a>
-                        {% if category.children.all %}
-                            {% for subcategory in category.children.all %}
-                                <a href="{% url 'products:category_detail' subcategory.slug %}" class="mobile-submenu-item">
-                                    {{ subcategory.name }}
-                                </a>
-                            {% endfor %}
-                        {% endif %}
-                        <div class="mobile-submenu-section">
-                            <span class="mobile-submenu-title">Shop {{ category.name }}</span>
-                            <a href="{% url 'products:product_list' %}?filter=featured&category={{ category.slug }}" class="mobile-submenu-item">Featured {{ category.name }}</a>
-                            <a href="{% url 'products:product_list' %}?filter=bestseller&category={{ category.slug }}" class="mobile-submenu-item">Best Selling {{ category.name }}</a>
-                            <a href="{% url 'products:product_list' %}?filter=under_500&category={{ category.slug }}" class="mobile-submenu-item">{{ category.name }} Under ₹500</a>
-                            <a href="{% url 'products:product_list' %}?filter=same_day&category={{ category.slug }}" class="mobile-submenu-item">Same Day {{ category.name }}</a>
-                        </div>
-                        {% if category.category_occasions %}
-                        <div class="mobile-submenu-section">
-                            <span class="mobile-submenu-title">By Occasion</span>
-                            {% for occasion in category.category_occasions|slice:":4" %}
-                                <a href="{% url 'products:product_list' %}?occasions={{ occasion.slug }}&category={{ category.slug }}" class="mobile-submenu-item">{{ occasion.name }} {{ category.name }}</a>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
@@ -292,10 +320,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
+    padding: 12px 20px;
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-dark);
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.mobile-category-header.active {
+    background: rgba(233, 30, 99, 0.1);
+    color: var(--primary-color);
 }
 
 .mobile-chevron {
@@ -310,47 +345,170 @@
 .mobile-category-submenu {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background: #f8f9fa;
+    border-radius: 0 0 8px 8px;
 }
 
 .mobile-category-submenu.active {
-    max-height: 500px;
+    max-height: 400px;
+    padding-bottom: 8px;
 }
 
 .mobile-submenu-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 30px;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 30px;
     color: var(--text-dark);
     text-decoration: none;
-    font-size: 14px;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    font-size: 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+    transition: all 0.3s ease;
 }
 
-.mobile-submenu-item:hover {
-    background: rgba(233, 30, 99, 0.1);
+.mobile-submenu-item:hover,
+.mobile-submenu-item:active {
+    background: rgba(233, 30, 99, 0.08);
     color: var(--primary-color);
+    padding-left: 35px;
 }
 
 .mobile-submenu-item.view-all {
     font-weight: 600;
     color: var(--primary-color);
+    background: rgba(233, 30, 99, 0.05);
+    margin-top: 8px;
+    border-radius: 4px;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.mobile-submenu-item.view-more {
+    font-weight: 500;
+    color: var(--primary-color);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .mobile-submenu-section {
-    padding: 10px 0;
+    padding: 8px 0;
+    margin-bottom: 6px;
 }
 
 .mobile-submenu-title {
     display: block;
-    padding: 8px 30px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-light);
+    padding: 6px 30px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary-color);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid rgba(233, 30, 99, 0.2);
+    margin-bottom: 4px;
+}
+
+/* Multi-layer Mobile Menu Styles */
+.mobile-section-item {
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.mobile-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 30px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--primary-color);
+    font-size: 13px;
+    background: rgba(233, 30, 99, 0.03);
+    transition: all 0.3s ease;
+}
+
+.mobile-section-header:hover {
+    background: rgba(233, 30, 99, 0.08);
+}
+
+.mobile-section-chevron {
+    transition: transform 0.3s ease;
+    color: var(--primary-color);
+    font-size: 10px;
+}
+
+.mobile-section-chevron.rotated {
+    transform: rotate(90deg);
+}
+
+.mobile-section-submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #fff;
+}
+
+.mobile-section-submenu.active {
+    max-height: 300px;
+}
+
+.mobile-section-item-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 45px;
+    color: var(--text-dark);
+    text-decoration: none;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.02);
+    transition: all 0.3s ease;
+}
+
+.mobile-section-item-link:hover,
+.mobile-section-item-link:active {
+    background: rgba(233, 30, 99, 0.05);
+    color: var(--primary-color);
+    padding-left: 50px;
+}
+
+/* Mobile Badge Styles */
+.mobile-badge {
+    font-size: 7px;
+    font-weight: 600;
+    padding: 1px 3px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    margin-left: 4px;
+    display: inline-block;
+}
+
+/* Featured Product Mobile Styles */
+.mobile-section-item-link.featured-product {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 8px 45px;
+}
+
+.featured-product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+}
+
+.featured-product-info .product-name {
+    font-size: 11px;
+    color: #333;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.featured-product-info .product-price {
+    font-size: 10px;
+    color: var(--primary-color);
+    font-weight: 600;
 }
 
 .mobile-menu-footer {
@@ -387,6 +545,75 @@
     margin: 8px 0;
     font-size: 12px;
     color: var(--text-light);
+}
+
+/* Responsive adjustments for mobile menu */
+@media (max-width: 360px) {
+    .mobile-menu-drawer {
+        width: 90%;
+        max-width: 300px;
+    }
+    
+    .mobile-category-header {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+    
+    .mobile-section-header {
+        padding: 8px 25px;
+        font-size: 12px;
+    }
+    
+    .mobile-section-item-link {
+        padding: 6px 35px;
+        font-size: 11px;
+    }
+    
+    .mobile-section-item-link:hover {
+        padding-left: 40px;
+    }
+    
+    .mobile-submenu-item {
+        padding: 6px 25px;
+        font-size: 11px;
+    }
+    
+    .mobile-badge {
+        font-size: 6px;
+        padding: 1px 2px;
+    }
+}
+
+/* Performance optimizations */
+.mobile-category-submenu,
+.mobile-section-submenu {
+    will-change: max-height;
+}
+
+.mobile-submenu-item,
+.mobile-section-item-link {
+    will-change: background-color, padding-left;
+}
+
+/* Smooth scrolling for long menus */
+.mobile-menu-drawer {
+    scroll-behavior: smooth;
+}
+
+/* Better visual hierarchy */
+.mobile-category-item {
+    border-left: 3px solid transparent;
+    transition: border-color 0.3s ease;
+}
+
+.mobile-category-item:hover {
+    border-left-color: var(--primary-color);
+}
+
+.mobile-section-item {
+    margin-left: 10px;
+    border-radius: 4px;
+    overflow: hidden;
 }
 </style>
 
@@ -426,19 +653,26 @@ function toggleMenu() {
     }
 }
 
-// Mobile category toggle
-function toggleMobileCategory(categoryId) {
-    const submenu = document.getElementById('submenu-' + categoryId);
-    const chevron = document.getElementById('chevron-' + categoryId);
+// Mobile category toggle (Level 1)
+function toggleMobileCategory(categorySlug) {
+    const submenu = document.getElementById('submenu-' + categorySlug);
+    const chevron = document.getElementById('chevron-' + categorySlug);
     
     if (submenu && chevron) {
-        // Close all other submenus
+        const isActive = submenu.classList.contains('active');
+        
+        // Close all other category submenus
         const allSubmenus = document.querySelectorAll('.mobile-category-submenu');
         const allChevrons = document.querySelectorAll('.mobile-chevron');
         
         allSubmenus.forEach(menu => {
             if (menu !== submenu) {
                 menu.classList.remove('active');
+                // Also close all section submenus within this category
+                const sectionSubmenus = menu.querySelectorAll('.mobile-section-submenu');
+                const sectionChevrons = menu.querySelectorAll('.mobile-section-chevron');
+                sectionSubmenus.forEach(sectionMenu => sectionMenu.classList.remove('active'));
+                sectionChevrons.forEach(sectionChev => sectionChev.classList.remove('rotated'));
             }
         });
         
@@ -449,20 +683,133 @@ function toggleMobileCategory(categoryId) {
         });
         
         // Toggle current submenu
-        submenu.classList.toggle('active');
-        chevron.classList.toggle('rotated');
+        if (isActive) {
+            submenu.classList.remove('active');
+            chevron.classList.remove('rotated');
+            // Close all section submenus within this category
+            const sectionSubmenus = submenu.querySelectorAll('.mobile-section-submenu');
+            const sectionChevrons = submenu.querySelectorAll('.mobile-section-chevron');
+            sectionSubmenus.forEach(sectionMenu => sectionMenu.classList.remove('active'));
+            sectionChevrons.forEach(sectionChev => sectionChev.classList.remove('rotated'));
+        } else {
+            submenu.classList.add('active');
+            chevron.classList.add('rotated');
+        }
+        
+        // Add haptic feedback for mobile
+        if ('vibrate' in navigator) {
+            navigator.vibrate(15);
+        }
     }
 }
 
-// Close mobile menu when clicking on links
+// Mobile section toggle (Level 2)
+function toggleMobileSection(sectionId) {
+    const submenu = document.getElementById('section-submenu-' + sectionId);
+    const chevron = document.getElementById('section-chevron-' + sectionId);
+    
+    if (submenu && chevron) {
+        const isActive = submenu.classList.contains('active');
+        
+        // Close all other section submenus in the same category
+        const parentCategory = submenu.closest('.mobile-category-submenu');
+        if (parentCategory) {
+            const allSectionSubmenus = parentCategory.querySelectorAll('.mobile-section-submenu');
+            const allSectionChevrons = parentCategory.querySelectorAll('.mobile-section-chevron');
+            
+            allSectionSubmenus.forEach(menu => {
+                if (menu !== submenu) {
+                    menu.classList.remove('active');
+                }
+            });
+            
+            allSectionChevrons.forEach(chev => {
+                if (chev !== chevron) {
+                    chev.classList.remove('rotated');
+                }
+            });
+        }
+        
+        // Toggle current section submenu
+        if (isActive) {
+            submenu.classList.remove('active');
+            chevron.classList.remove('rotated');
+        } else {
+            submenu.classList.add('active');
+            chevron.classList.add('rotated');
+        }
+        
+        // Add haptic feedback for mobile
+        if ('vibrate' in navigator) {
+            navigator.vibrate(10);
+        }
+    }
+}
+
+// Enhanced mobile menu functionality
 document.addEventListener('DOMContentLoaded', function() {
-    const mobileMenuLinks = document.querySelectorAll('.mobile-submenu-item, .mobile-menu-link');
+    // Close mobile menu when clicking on actual links
+    const mobileMenuLinks = document.querySelectorAll('.mobile-submenu-item, .mobile-menu-link, .mobile-section-item-link');
     mobileMenuLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            // Close menu after a short delay to allow navigation
-            setTimeout(() => {
-                toggleMenu();
-            }, 100);
+        link.addEventListener('click', function(e) {
+            // Don't close menu for view-more links or if it's just a toggle
+            const href = this.getAttribute('href');
+            if (href && href !== '#' && !this.classList.contains('view-more')) {
+                // Add visual feedback
+                this.style.background = 'rgba(233, 30, 99, 0.15)';
+                
+                // Close menu after a short delay to allow navigation
+                setTimeout(() => {
+                    toggleMenu();
+                }, 150);
+            }
+        });
+        
+        // Add touch feedback
+        link.addEventListener('touchstart', function() {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(8);
+            }
+        }, { passive: true });
+    });
+    
+    // Optimize category submenu animations
+    const categorySubmenus = document.querySelectorAll('.mobile-category-submenu');
+    categorySubmenus.forEach(submenu => {
+        // Pre-calculate heights for smoother animations
+        const originalMaxHeight = submenu.style.maxHeight;
+        submenu.style.maxHeight = 'none';
+        submenu.style.display = 'block';
+        const fullHeight = submenu.scrollHeight;
+        submenu.style.maxHeight = originalMaxHeight;
+        submenu.style.display = '';
+        
+        // Store the full height for animation
+        submenu.dataset.fullHeight = fullHeight + 'px';
+    });
+    
+    // Optimize section submenu animations
+    const sectionSubmenus = document.querySelectorAll('.mobile-section-submenu');
+    sectionSubmenus.forEach(submenu => {
+        // Pre-calculate heights for smoother animations
+        const originalMaxHeight = submenu.style.maxHeight;
+        submenu.style.maxHeight = 'none';
+        submenu.style.display = 'block';
+        const fullHeight = submenu.scrollHeight;
+        submenu.style.maxHeight = originalMaxHeight;
+        submenu.style.display = '';
+        
+        // Store the full height for animation
+        submenu.dataset.sectionHeight = fullHeight + 'px';
+    });
+    
+    // Add breadcrumb-like navigation feedback
+    const categoryHeaders = document.querySelectorAll('.mobile-category-header');
+    categoryHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            // Add visual feedback for category selection
+            categoryHeaders.forEach(h => h.classList.remove('active'));
+            this.classList.add('active');
         });
     });
 });

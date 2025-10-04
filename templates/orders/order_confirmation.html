@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - GiftTree</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+        }
+        .header {
+            background: linear-gradient(135deg, #E91E63 0%, #FF6090 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+        .header h1 {
+            margin: 20px 0 10px;
+            font-size: 28px;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .order-info {
+            background: #F8F9FA;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #E0E0E0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .info-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .items-table th {
+            background: #F8F9FA;
+            padding: 12px;
+            text-align: left;
+            font-size: 14px;
+            color: #666;
+            border-bottom: 2px solid #E0E0E0;
+        }
+        .items-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #F0F0F0;
+            font-size: 14px;
+            color: #333;
+        }
+        .product-name {
+            font-weight: 600;
+        }
+        .price {
+            font-weight: 700;
+            color: #E91E63;
+        }
+        .summary {
+            background: #FFF8F0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0 8px;
+            border-top: 2px solid #E91E63;
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #E91E63;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #E91E63 0%, #FF6090 100%);
+            color: white;
+            padding: 16px 40px;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
+        }
+        .address-section {
+            background: #F8F9FA;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .address-section h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 16px;
+        }
+        .address-text {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .features {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            padding: 20px;
+            background: #F8F9FA;
+            border-radius: 12px;
+        }
+        .feature {
+            text-align: center;
+            flex: 1;
+        }
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #E91E63 0%, #FF6090 100%);
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+        .feature-text {
+            font-size: 12px;
+            color: #666;
+        }
+        .footer {
+            background: #333;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .footer-links {
+            margin: 20px 0;
+        }
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 14px;
+        }
+        .social-icons {
+            margin: 20px 0;
+        }
+        .social-icons a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            margin: 0 5px;
+            line-height: 40px;
+            color: white;
+            text-decoration: none;
+        }
+        .footer p {
+            margin: 10px 0;
+            font-size: 13px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">🎁 GiftTree</div>
+            <div class="success-icon">✓</div>
+            <h1>Order Confirmed!</h1>
+            <p>Thank you for your order</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <p class="greeting">Hi {{ order.billing_name }},</p>
+            <p>Your order has been confirmed and will be processed soon. We'll send you another email when your order ships.</p>
+            
+            <!-- Order Details -->
+            <div class="order-info">
+                <h2 style="margin-top: 0; color: #333; font-size: 18px;">Order Details</h2>
+                <div class="info-row">
+                    <span class="info-label">Order Number:</span>
+                    <span class="info-value">#{{ order.order_number }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Order Date:</span>
+                    <span class="info-value">{{ order.created_at|date:"d M, Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Payment Status:</span>
+                    <span class="info-value">{{ order.get_payment_status_display }}</span>
+                </div>
+            </div>
+            
+            <!-- Order Items -->
+            <h3 style="color: #333;">Order Items</h3>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order_items %}
+                    <tr>
+                        <td class="product-name">{{ item.product.name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td class="price">₹{{ item.price }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <!-- Order Summary -->
+            <div class="summary">
+                <h3 style="margin-top: 0; color: #333;">Payment Summary</h3>
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span>₹{{ order.subtotal|default:order.total_amount }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Delivery Charges:</span>
+                    <span>₹{{ order.delivery_charge|default:"0" }}</span>
+                </div>
+                {% if order.discount_amount %}
+                <div class="summary-row">
+                    <span>Discount:</span>
+                    <span style="color: #4CAF50;">- ₹{{ order.discount_amount }}</span>
+                </div>
+                {% endif %}
+                <div class="summary-total">
+                    <span>Total Amount:</span>
+                    <span>₹{{ order.total_amount }}</span>
+                </div>
+            </div>
+            
+            <!-- Delivery Address -->
+            <div class="address-section">
+                <h3>Delivery Address</h3>
+                <div class="address-text">
+                    <strong>{{ order.billing_name }}</strong><br>
+                    {{ order.billing_address }}<br>
+                    {{ order.billing_city }}, {{ order.billing_state }} - {{ order.billing_pincode }}<br>
+                    Phone: {{ order.billing_phone }}
+                </div>
+            </div>
+            
+            <!-- Track Order Button -->
+            <center>
+                <a href="http://{{ site_url }}/orders/{{ order.order_number }}/" class="button">
+                    Track Your Order
+                </a>
+            </center>
+            
+            <!-- Features -->
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🚚</div>
+                    <div class="feature-text">Fast Delivery</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <div class="feature-text">Secure Payment</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">⭐</div>
+                    <div class="feature-text">Quality Products</div>
+                </div>
+            </div>
+            
+            <p style="color: #666; font-size: 14px; line-height: 1.6;">
+                If you have any questions about your order, please don't hesitate to contact our customer support team. We're here to help!
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="logo">🎁 GiftTree</div>
+            <p>Spreading happiness, one gift at a time</p>
+            
+            <div class="footer-links">
+                <a href="http://{{ site_url }}/">Home</a>
+                <a href="http://{{ site_url }}/products/">Shop</a>
+                <a href="http://{{ site_url }}/account/profile/">My Account</a>
+                <a href="#">Contact Us</a>
+            </div>
+            
+            <div class="social-icons">
+                <a href="#">f</a>
+                <a href="#">t</a>
+                <a href="#">i</a>
+            </div>
+            
+            <p>© 2025 GiftTree. All rights reserved.</p>
+            <p style="font-size: 11px;">
+                You received this email because you placed an order on GiftTree.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -10,59 +10,63 @@
             <i class="fas fa-times"></i>
         </button>
     </div>
-    
+
     <div class="mobile-menu-content">
-        <!-- Main Categories -->
+        <!-- Main Menu Categories -->
         {% for category in main_categories %}
-            {% if category.children.all %}
-                <div class="mobile-menu-item mobile-dropdown">
-                    <a href="#" class="mobile-menu-link" onclick="toggleMobileDropdown(event, '{{ category.slug }}')">
-                        <i class="fas fa-{{ category.icon|default:'tag' }}"></i>
-                        <span>{{ category.name }}</span>
-                        <i class="fas fa-chevron-right mobile-chevron" id="{{ category.slug }}-chevron"></i>
-                    </a>
-                    <div class="mobile-submenu" id="{{ category.slug }}-submenu">
-                        <div class="mobile-submenu-section">
-                            <h5>{{ category.name }}</h5>
-                            <a href="{% url 'products:category_detail' category.slug %}">All {{ category.name }}</a>
-                            {% for subcategory in category.children.all %}
-                                <a href="{% url 'products:category_detail' subcategory.slug %}">
-                                    {{ subcategory.name }}
-                                </a>
-                            {% endfor %}
-                        </div>
-                        
-                        {% if category.occasions.all %}
-                            <div class="mobile-submenu-section">
-                                <h5>By Occasion</h5>
-                                {% for occasion in category.occasions.all %}
-                                    <a href="#">
-                                        {{ occasion.name }}
-                                    </a>
-                                {% endfor %}
-                            </div>
+        <div class="mobile-menu-item mobile-dropdown">
+            <a href="#" class="mobile-menu-link" onclick="toggleMobileDropdown(event, '{{ category.slug }}')">
+                {% if category.icon %}
+                <i class="{{ category.icon }}"></i>
+                {% else %}
+                <i class="fas fa-tag"></i>
+                {% endif %}
+                <span>{{ category.name }}</span>
+                <i class="fas fa-chevron-right mobile-chevron" id="{{ category.slug }}-chevron"></i>
+            </a>
+            <div class="mobile-submenu" id="{{ category.slug }}-submenu">
+                <!-- Menu Sections for this category (limited for mobile) -->
+                {% for section in category.menu_sections|slice:":3" %}
+                {% if section.items %}
+                <div class="mobile-submenu-section">
+                    <h5>{{ section.name }}</h5>
+                    {% for item in section.items|slice:":6" %}
+                    <a
+                        href="{% if section.section_type == 'by_type' %}{% url 'products:product_type_detail' item.slug %}{% elif section.section_type == 'collection' %}{% url 'products:collection_detail' item.slug %}{% elif section.section_type == 'for_whom' %}{% url 'products:recipient_detail' item.slug %}{% elif section.section_type == 'by_occasion' %}{% url 'products:occasion_detail' item.slug %}{% elif section.section_type == 'deliver_to' %}{% url 'products:location_detail' item.slug %}{% else %}#{% endif %}">
+                        {{ item.name|truncatechars:25 }}
+                        {% if item.badges %}
+                        {% for badge in item.badges|slice:":1" %}
+                        <span class="mobile-badge"
+                            style="background-color: {{ badge.background_color }}; color: {{ badge.color }};">
+                            {{ badge.name }}
+                        </span>
+                        {% endfor %}
                         {% endif %}
-                        
-                        {% if category.featured_products.all %}
-                            <div class="mobile-submenu-section">
-                                <h5>Featured</h5>
-                                {% for product in category.featured_products.all|slice:":3" %}
-                                    <a href="{% url 'products:product_detail' product.slug %}">
-                                        {{ product.name }}
-                                    </a>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            {% else %}
-                <div class="mobile-menu-item">
-                    <a href="{% url 'products:category_detail' category.slug %}" class="mobile-menu-link">
-                        <i class="fas fa-{{ category.icon|default:'tag' }}"></i>
-                        <span>{{ category.name }}</span>
                     </a>
+                    {% endfor %}
+                    {% if section.items|length > 6 %}
+                    <a href="{% url 'products:menu_category_detail' category.slug %}" class="view-more-link">
+                        View All {{ section.name }}
+                    </a>
+                    {% endif %}
                 </div>
-            {% endif %}
+                {% endif %}
+                {% endfor %}
+
+                <!-- Featured Products (compact) -->
+                {% if category.featured_products %}
+                <div class="mobile-submenu-section">
+                    <h5>Featured {{ category.name }}</h5>
+                    {% for product in category.featured_products|slice:":2" %}
+                    <a href="{{ product.get_absolute_url }}" class="featured-product-mobile">
+                        <span class="product-name">{{ product.name|truncatechars:25 }}</span>
+                        <span class="product-price">₹{{ product.current_price }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
         {% endfor %}
 
         <!-- All Products -->
@@ -77,81 +81,81 @@
 
         <!-- User Account Section -->
         {% if user.is_authenticated %}
-            <div class="mobile-menu-item">
-                <a href="{% url 'users:profile' %}" class="mobile-menu-link">
-                    <i class="fas fa-user"></i>
-                    <span>My Profile</span>
-                </a>
-            </div>
-            <div class="mobile-menu-item">
-                <a href="{% url 'orders:order_list' %}" class="mobile-menu-link">
-                    <i class="fas fa-shopping-bag"></i>
-                    <span>My Orders</span>
-                </a>
-            </div>
-            <div class="mobile-menu-item">
-                <a href="#" class="mobile-menu-link">
-                    <i class="fas fa-heart"></i>
-                    <span>Wishlist</span>
-                </a>
-            </div>
-            <div class="mobile-menu-item">
-                <a href="#" class="mobile-menu-link">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span>My Addresses</span>
-                </a>
-            </div>
-            
-            <div class="mobile-menu-divider"></div>
-            
-            <div class="mobile-menu-item">
-                <a href="#" class="mobile-menu-link">
-                    <i class="fas fa-question-circle"></i>
-                    <span>Help & Support</span>
-                </a>
-            </div>
-            <div class="mobile-menu-item">
-                <a href="#" class="mobile-menu-link">
-                    <i class="fas fa-info-circle"></i>
-                    <span>About Us</span>
-                </a>
-            </div>
-            <div class="mobile-menu-item">
-                <a href="{% url 'users:logout' %}" class="mobile-menu-link">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div>
+        <div class="mobile-menu-item">
+            <a href="{% url 'users:profile' %}" class="mobile-menu-link">
+                <i class="fas fa-user"></i>
+                <span>My Profile</span>
+            </a>
+        </div>
+        <div class="mobile-menu-item">
+            <a href="{% url 'orders:order_list' %}" class="mobile-menu-link">
+                <i class="fas fa-shopping-bag"></i>
+                <span>My Orders</span>
+            </a>
+        </div>
+        <div class="mobile-menu-item">
+            <a href="#" class="mobile-menu-link">
+                <i class="fas fa-heart"></i>
+                <span>Wishlist</span>
+            </a>
+        </div>
+        <div class="mobile-menu-item">
+            <a href="#" class="mobile-menu-link">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>My Addresses</span>
+            </a>
+        </div>
+
+        <div class="mobile-menu-divider"></div>
+
+        <div class="mobile-menu-item">
+            <a href="#" class="mobile-menu-link">
+                <i class="fas fa-question-circle"></i>
+                <span>Help & Support</span>
+            </a>
+        </div>
+        <div class="mobile-menu-item">
+            <a href="#" class="mobile-menu-link">
+                <i class="fas fa-info-circle"></i>
+                <span>About Us</span>
+            </a>
+        </div>
+        <div class="mobile-menu-item">
+            <a href="{% url 'users:logout' %}" class="mobile-menu-link">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </div>
         {% else %}
-            <div class="mobile-menu-item">
-                <a href="{% url 'users:login' %}" class="mobile-menu-link">
-                    <i class="fas fa-sign-in-alt"></i>
-                    <span>Login</span>
-                </a>
-            </div>
-            <div class="mobile-menu-item">
-                <a href="#" class="mobile-menu-link">
-                    <i class="fas fa-user-plus"></i>
-                    <span>Sign Up</span>
-                </a>
-            </div>
-            
-            <div class="mobile-menu-divider"></div>
-            
-            <div class="mobile-menu-item">
-                <a href="#" class="mobile-menu-link">
-                    <i class="fas fa-question-circle"></i>
-                    <span>Help & Support</span>
-                </a>
-            </div>
-            <div class="mobile-menu-item">
-                <a href="#" class="mobile-menu-link">
-                    <i class="fas fa-info-circle"></i>
-                    <span>About Us</span>
-                </a>
-            </div>
+        <div class="mobile-menu-item">
+            <a href="{% url 'users:login' %}" class="mobile-menu-link">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Login</span>
+            </a>
+        </div>
+        <div class="mobile-menu-item">
+            <a href="#" class="mobile-menu-link">
+                <i class="fas fa-user-plus"></i>
+                <span>Sign Up</span>
+            </a>
+        </div>
+
+        <div class="mobile-menu-divider"></div>
+
+        <div class="mobile-menu-item">
+            <a href="#" class="mobile-menu-link">
+                <i class="fas fa-question-circle"></i>
+                <span>Help & Support</span>
+            </a>
+        </div>
+        <div class="mobile-menu-item">
+            <a href="#" class="mobile-menu-link">
+                <i class="fas fa-info-circle"></i>
+                <span>About Us</span>
+            </a>
+        </div>
         {% endif %}
-        
+
         <!-- App Info -->
         <div class="mobile-menu-divider"></div>
         <div class="mobile-menu-item">
@@ -166,185 +170,391 @@
 <!-- Mobile Bottom Navigation -->
 <nav class="bottom-nav mobile-only">
     <div class="nav-items">
-        <a href="{% url 'core:home' %}" class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+        <a href="{% url 'core:home' %}"
+            class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
             <i class="fas fa-store"></i>
             <span>Shop</span>
         </a>
-        <a href="{% url 'products:search' %}" class="nav-item {% if request.resolver_match.url_name == 'search' %}active{% endif %}">
+        <a href="{% url 'products:search' %}"
+            class="nav-item {% if request.resolver_match.url_name == 'search' %}active{% endif %}">
             <i class="fas fa-search"></i>
             <span>Search</span>
         </a>
-        <a href="{% url 'cart:cart' %}" class="nav-item {% if request.resolver_match.url_name == 'cart' %}active{% endif %}">
+        <a href="{% url 'cart:cart' %}"
+            class="nav-item {% if request.resolver_match.url_name == 'cart' %}active{% endif %}">
             <i class="fas fa-shopping-cart"></i>
             <span>Cart</span>
             {% if cart_count %}
-                <div class="cart-badge">{{ cart_count }}</div>
+            <div class="cart-badge">{{ cart_count }}</div>
             {% endif %}
         </a>
         {% if user.is_authenticated %}
-            <a href="#" class="nav-item">
-                <i class="fas fa-heart"></i>
-                <span>Wishlist</span>
-            </a>
-            <a href="{% url 'users:profile' %}" class="nav-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
-                <i class="fas fa-user"></i>
-                <span>Profile</span>
-            </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-heart"></i>
+            <span>Wishlist</span>
+        </a>
+        <a href="{% url 'users:profile' %}"
+            class="nav-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </a>
         {% else %}
-            <a href="#" class="nav-item">
-                <i class="fas fa-percent"></i>
-                <span>Offers</span>
-            </a>
-            <a href="{% url 'users:login' %}" class="nav-item">
-                <i class="fas fa-user"></i>
-                <span>Login</span>
-            </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-percent"></i>
+            <span>Offers</span>
+        </a>
+        <a href="{% url 'users:login' %}" class="nav-item">
+            <i class="fas fa-user"></i>
+            <span>Login</span>
+        </a>
         {% endif %}
     </div>
 </nav>
 
 <style>
-/* Additional mobile navigation styles */
-.mobile-menu-item .mobile-menu-link[style*="opacity"] {
-    pointer-events: none;
-}
-
-.bottom-nav .nav-item {
-    position: relative;
-}
-
-.bottom-nav .cart-badge {
-    position: absolute;
-    top: 4px;
-    right: 8px;
-    background: var(--primary-color);
-    color: white;
-    border-radius: 50%;
-    width: 16px;
-    height: 16px;
-    font-size: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-}
-
-/* Smooth transitions for mobile menu */
-.mobile-menu-drawer {
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.mobile-menu-overlay {
-    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Enhanced mobile submenu animations */
-.mobile-submenu {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.mobile-submenu.active {
-    max-height: 500px;
-}
-
-/* Mobile menu item hover effects */
-.mobile-menu-link:active {
-    background: rgba(233, 30, 99, 0.1);
-    transform: scale(0.98);
-}
-
-/* Bottom navigation active state enhancement */
-.bottom-nav .nav-item.active {
-    background: rgba(233, 30, 99, 0.1);
-    border-radius: 12px;
-    margin: 0 4px;
-}
-
-/* Responsive adjustments for very small screens */
-@media (max-width: 360px) {
-    .mobile-menu-drawer {
-        width: 280px;
+    /* Additional mobile navigation styles */
+    .mobile-menu-item .mobile-menu-link[style*="opacity"] {
+        pointer-events: none;
     }
-    
-    .bottom-nav .nav-item {
+
+    /* Mobile Badge Styles */
+    .mobile-badge {
+        font-size: 7px;
+        font-weight: 600;
+        padding: 1px 3px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
+        margin-left: 4px;
+        display: inline-block;
+    }
+
+    /* Mobile Submenu Section Enhancements */
+    .mobile-submenu-section {
+        margin-bottom: 15px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .mobile-submenu-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    .mobile-submenu-section h5 {
+        color: var(--primary-color);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid var(--primary-color);
+    }
+
+    .mobile-submenu-section a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 0;
+        color: #333;
+        text-decoration: none;
+        font-size: 12px;
+        border-left: 2px solid transparent;
+        padding-left: 6px;
+        transition: all 0.3s ease;
+    }
+
+    .mobile-submenu-section a:hover,
+    .mobile-submenu-section a:active {
+        color: var(--primary-color);
+        border-left-color: var(--primary-color);
+        padding-left: 10px;
+        background: rgba(233, 30, 99, 0.05);
+    }
+
+    .view-more-link {
+        font-weight: 600 !important;
+        color: var(--primary-color) !important;
+        font-size: 11px !important;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    /* Featured Product Mobile Styles */
+    .featured-product-mobile {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 3px;
+        padding: 4px 0 !important;
+    }
+
+    .featured-product-mobile .product-name {
+        font-size: 11px;
+        color: #333;
+        font-weight: 500;
+        line-height: 1.3;
+    }
+
+    .featured-product-mobile .product-price {
         font-size: 10px;
-        padding: 6px;
+        color: var(--primary-color);
+        font-weight: 600;
     }
-    
-    .bottom-nav .nav-item i {
-        font-size: 18px;
+
+    .bottom-nav .nav-item {
+        position: relative;
     }
-}
+
+    .bottom-nav .cart-badge {
+        position: absolute;
+        top: 4px;
+        right: 8px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+
+    /* Smooth transitions for mobile menu */
+    .mobile-menu-drawer {
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mobile-menu-overlay {
+        transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Enhanced mobile submenu animations */
+    .mobile-submenu {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 6px;
+        margin-top: 4px;
+    }
+
+    .mobile-submenu.active {
+        max-height: 400px;
+        padding: 8px;
+    }
+
+    /* Mobile menu item hover effects */
+    .mobile-menu-link:active {
+        background: rgba(233, 30, 99, 0.1);
+        transform: scale(0.98);
+    }
+
+    .mobile-menu-link {
+        border-radius: 6px;
+        margin: 2px 0;
+    }
+
+    /* Bottom navigation active state enhancement */
+    .bottom-nav .nav-item.active {
+        background: rgba(233, 30, 99, 0.1);
+        border-radius: 12px;
+        margin: 0 4px;
+    }
+
+    /* Responsive adjustments for very small screens */
+    @media (max-width: 360px) {
+        .mobile-menu-drawer {
+            width: 280px;
+        }
+
+        .mobile-submenu-section h5 {
+            font-size: 10px;
+        }
+
+        .mobile-submenu-section a {
+            font-size: 11px;
+            padding: 5px 0;
+        }
+
+        .mobile-badge {
+            font-size: 6px;
+            padding: 1px 2px;
+        }
+
+        .bottom-nav .nav-item {
+            font-size: 10px;
+            padding: 6px;
+        }
+
+        .bottom-nav .nav-item i {
+            font-size: 18px;
+        }
+    }
+
+    /* Improved mobile menu performance */
+    @media (max-width: 768px) {
+        .mobile-submenu-section {
+            will-change: transform;
+        }
+
+        .mobile-menu-link {
+            will-change: background-color, transform;
+        }
+    }
 </style>
 
 <script>
-// Enhanced mobile menu functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Close mobile menu when clicking on non-dropdown links
-    const mobileMenuLinks = document.querySelectorAll('.mobile-menu-link:not([onclick*="toggleMobileDropdown"])');
-    mobileMenuLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            // Close menu after a short delay to allow for navigation
-            setTimeout(() => {
+    // Enhanced mobile menu functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        // Close mobile menu when clicking on non-dropdown links
+        const mobileMenuLinks = document.querySelectorAll('.mobile-menu-link:not([onclick*="toggleMobileDropdown"])');
+        mobileMenuLinks.forEach(link => {
+            link.addEventListener('click', function () {
+                // Add visual feedback
+                this.style.background = 'rgba(233, 30, 99, 0.1)';
+
+                // Close menu after a short delay to allow for navigation
+                setTimeout(() => {
+                    toggleMenu();
+                }, 150);
+            });
+        });
+
+        // Add swipe gesture to close mobile menu
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let touchStartY = 0;
+        let touchEndY = 0;
+
+        const mobileMenuDrawer = document.getElementById('mobileMenuDrawer');
+        if (mobileMenuDrawer) {
+            mobileMenuDrawer.addEventListener('touchstart', function (e) {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+
+            mobileMenuDrawer.addEventListener('touchend', function (e) {
+                touchEndX = e.changedTouches[0].screenX;
+                touchEndY = e.changedTouches[0].screenY;
+                handleSwipe();
+            }, { passive: true });
+        }
+
+        function handleSwipe() {
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = Math.abs(touchEndY - touchStartY);
+
+            // Swipe left to close menu (only if horizontal swipe is dominant)
+            if (deltaX < -50 && deltaY < 100) {
                 toggleMenu();
-            }, 150);
+            }
+        }
+
+        // Optimize mobile submenu animations
+        const mobileSubmenus = document.querySelectorAll('.mobile-submenu');
+        mobileSubmenus.forEach(submenu => {
+            // Pre-calculate heights for smoother animations
+            const originalDisplay = submenu.style.display;
+            submenu.style.display = 'block';
+            submenu.style.maxHeight = 'none';
+            const fullHeight = submenu.scrollHeight;
+            submenu.style.maxHeight = '0';
+            submenu.style.display = originalDisplay;
+
+            // Store the full height for animation
+            submenu.dataset.fullHeight = fullHeight + 'px';
         });
+
+        // Update active bottom navigation item based on current page
+        const currentPath = window.location.pathname;
+        const navItems = document.querySelectorAll('.bottom-nav .nav-item');
+
+        navItems.forEach(item => {
+            const href = item.getAttribute('href');
+            if (href && currentPath.includes(href) && href !== '/') {
+                navItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+            }
+        });
+
+        // Add haptic feedback for mobile interactions (if supported)
+        if ('vibrate' in navigator) {
+            mobileMenuLinks.forEach(link => {
+                link.addEventListener('touchstart', function () {
+                    navigator.vibrate(10); // Very short vibration
+                }, { passive: true });
+            });
+        }
     });
-    
-    // Add swipe gesture to close mobile menu
-    let touchStartX = 0;
-    let touchEndX = 0;
-    
-    const mobileMenuDrawer = document.getElementById('mobileMenuDrawer');
-    if (mobileMenuDrawer) {
-        mobileMenuDrawer.addEventListener('touchstart', function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-        });
-        
-        mobileMenuDrawer.addEventListener('touchend', function(e) {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        });
-    }
-    
-    function handleSwipe() {
-        // Swipe left to close menu
-        if (touchEndX < touchStartX - 50) {
-            toggleMenu();
+
+    // Prevent body scroll when mobile menu is open
+    function toggleMenu() {
+        const overlay = document.getElementById('mobileMenuOverlay');
+        const drawer = document.getElementById('mobileMenuDrawer');
+
+        if (overlay && drawer) {
+            const isActive = overlay.classList.contains('active');
+
+            overlay.classList.toggle('active');
+            drawer.classList.toggle('active');
+
+            // Toggle body scroll
+            document.body.style.overflow = isActive ? 'auto' : 'hidden';
         }
     }
-    
-    // Update active bottom navigation item based on current page
-    const currentPath = window.location.pathname;
-    const navItems = document.querySelectorAll('.bottom-nav .nav-item');
-    
-    navItems.forEach(item => {
-        const href = item.getAttribute('href');
-        if (href && currentPath.includes(href) && href !== '/') {
-            navItems.forEach(nav => nav.classList.remove('active'));
-            item.classList.add('active');
+
+    // Enhanced mobile dropdown toggle
+    function toggleMobileDropdown(event, categorySlug) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const submenu = document.getElementById(categorySlug + '-submenu');
+        const chevron = document.getElementById(categorySlug + '-chevron');
+
+        if (submenu && chevron) {
+            const isActive = submenu.classList.contains('active');
+
+            // Close all other submenus first
+            document.querySelectorAll('.mobile-submenu.active').forEach(menu => {
+                if (menu !== submenu) {
+                    menu.classList.remove('active');
+                    menu.style.maxHeight = '0';
+
+                    // Reset chevron
+                    const menuChevron = menu.parentElement.querySelector('.mobile-chevron');
+                    if (menuChevron) {
+                        menuChevron.style.transform = 'rotate(0deg)';
+                    }
+                }
+            });
+
+            if (isActive) {
+                // Close this submenu
+                submenu.classList.remove('active');
+                submenu.style.maxHeight = '0';
+                chevron.style.transform = 'rotate(0deg)';
+            } else {
+                // Open this submenu
+                submenu.classList.add('active');
+                submenu.style.maxHeight = submenu.dataset.fullHeight || '400px';
+                chevron.style.transform = 'rotate(90deg)';
+            }
+
+            // Add haptic feedback
+            if ('vibrate' in navigator) {
+                navigator.vibrate(15);
+            }
         }
-    });
-});
-
-// Prevent body scroll when mobile menu is open
-function toggleMenu() {
-    const overlay = document.getElementById('mobileMenuOverlay');
-    const drawer = document.getElementById('mobileMenuDrawer');
-    
-    if (overlay && drawer) {
-        const isActive = overlay.classList.contains('active');
-        
-        overlay.classList.toggle('active');
-        drawer.classList.toggle('active');
-        
-        // Toggle body scroll
-        document.body.style.overflow = isActive ? 'auto' : 'hidden';
     }
-}
 
-// Make toggleMenu globally available (override the one in main.js if needed)
-window.toggleMenu = toggleMenu;
+    // Make functions globally available
+    window.toggleMenu = toggleMenu;
+    window.toggleMobileDropdown = toggleMobileDropdown;
 </script>
