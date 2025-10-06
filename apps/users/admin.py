@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, UserProfile, Address
+from .models import CustomUser, UserProfile, Address, Wishlist
 
 
 class AddressInline(admin.TabularInline):
@@ -11,6 +11,12 @@ class AddressInline(admin.TabularInline):
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
+
+
+class WishlistInline(admin.TabularInline):
+    model = Wishlist
+    extra = 0
+    readonly_fields = ['created_at']
 
 
 @admin.register(CustomUser)
@@ -32,7 +38,7 @@ class CustomUserAdmin(UserAdmin):
         }),
     )
 
-    inlines = [UserProfileInline, AddressInline]
+    inlines = [UserProfileInline, AddressInline, WishlistInline]
 
 
 @admin.register(UserProfile)
@@ -47,3 +53,16 @@ class AddressAdmin(admin.ModelAdmin):
     list_display = ['user', 'title', 'full_name', 'city', 'state', 'is_default']
     list_filter = ['city', 'state', 'is_default', 'created_at']
     search_fields = ['user__email', 'full_name', 'city', 'state']
+
+
+# ✅ NEW: Wishlist Admin
+@admin.register(Wishlist)
+class WishlistAdmin(admin.ModelAdmin):
+    list_display = ['user', 'product', 'created_at', 'is_active']
+    list_filter = ['created_at', 'is_active']
+    search_fields = ['user__email', 'product__name']
+    readonly_fields = ['created_at', 'updated_at']
+    raw_id_fields = ['user', 'product']
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'product')

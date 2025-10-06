@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GiftTree{% endblock %}</title>
+    <style>
+        /* Reset styles */
+        body, table, td, a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+
+        /* Base styles */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        /* Container */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+
+        /* Header */
+        .email-header {
+            background: linear-gradient(135deg, #E91E63 0%, #FF6090 100%);
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .email-logo {
+            color: #ffffff;
+            font-size: 32px;
+            font-weight: 700;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .email-tagline {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        /* Content */
+        .email-content {
+            padding: 40px 30px;
+        }
+
+        .email-title {
+            color: #333333;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 0 20px;
+        }
+
+        .email-text {
+            color: #666666;
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0 0 20px;
+        }
+
+        /* Button */
+        .email-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #E91E63 0%, #FF6090 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 14px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+
+        .email-button:hover {
+            background: linear-gradient(135deg, #d81b60 0%, #FF6090 100%);
+        }
+
+        /* Info Box */
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #E91E63;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .info-box-title {
+            color: #E91E63;
+            font-weight: 600;
+            margin: 0 0 10px;
+        }
+
+        /* Order Details */
+        .order-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .order-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .order-row:last-child {
+            border-bottom: none;
+        }
+
+        .order-label {
+            color: #666666;
+            font-weight: 500;
+        }
+
+        .order-value {
+            color: #333333;
+            font-weight: 600;
+        }
+
+        /* Product Item */
+        .product-item {
+            display: table;
+            width: 100%;
+            padding: 15px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .product-image {
+            display: table-cell;
+            width: 80px;
+            vertical-align: top;
+        }
+
+        .product-image img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .product-info {
+            display: table-cell;
+            padding-left: 15px;
+            vertical-align: top;
+        }
+
+        .product-name {
+            color: #333333;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .product-details {
+            color: #666666;
+            font-size: 14px;
+        }
+
+        /* Footer */
+        .email-footer {
+            background: #f8f9fa;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .social-links {
+            margin: 20px 0;
+        }
+
+        .social-icon {
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            margin: 0 8px;
+            background: #E91E63;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 50%;
+            line-height: 36px;
+            text-align: center;
+        }
+
+        .footer-links {
+            margin: 20px 0;
+        }
+
+        .footer-link {
+            color: #E91E63;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 14px;
+        }
+
+        .footer-text {
+            color: #999999;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .email-content {
+                padding: 30px 20px !important;
+            }
+            .email-title {
+                font-size: 20px !important;
+            }
+            .product-image {
+                width: 60px !important;
+            }
+            .product-image img {
+                width: 60px !important;
+                height: 60px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5;">
+        <tr>
+            <td style="padding: 20px 0;">
+                <!-- Email Container -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="email-container">
+                    <!-- Header -->
+                    <tr>
+                        <td class="email-header">
+                            <a href="{{ site_url }}" class="email-logo">GiftTree</a>
+                            <div class="email-tagline">Send Love, Spread Joy</div>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td class="email-content">
+                            {% block content %}
+                            {% endblock %}
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td class="email-footer">
+                            <div class="social-links">
+                                <a href="#" class="social-icon">f</a>
+                                <a href="#" class="social-icon">t</a>
+                                <a href="#" class="social-icon">i</a>
+                            </div>
+                            <div class="footer-links">
+                                <a href="{{ site_url }}" class="footer-link">Shop</a>
+                                <a href="{{ site_url }}/about/" class="footer-link">About Us</a>
+                                <a href="{{ site_url }}/contact/" class="footer-link">Contact</a>
+                                <a href="{{ site_url }}/help/" class="footer-link">Help</a>
+                            </div>
+                            <p class="footer-text">
+                                © {% now "Y" %} GiftTree. All rights reserved.<br>
+                                📍 Delhi, India | 📞 +91-9876543210
+                            </p>
+                            <p class="footer-text">
+                                You're receiving this email because you have an account with GiftTree.<br>
+                                <a href="#" style="color: #E91E63;">Unsubscribe</a> from marketing emails.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

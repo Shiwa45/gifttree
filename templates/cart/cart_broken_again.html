@@ -48,13 +48,13 @@ day delivery available.{% endblock %}
                     <div class="item-price-section">
                         <div class="item-price">₹{{ item.total_price }}</div>
                         <div class="quantity-controls">
-                            <button class="qty-btn minus-btn" onclick="updateQuantity('{{ item.id }}', -1)" {% if
-                                item.quantity==1 %}disabled{% endif %}>
+                            <button class="qty-btn" onclick="updateQuantity('{{ item.id }}', -1)" {% if item.quantity
+                                <=1 %}disabled{% endif %}>
                                 <i class="fas fa-minus"></i>
                             </button>
                             <div class="qty-display">{{ item.quantity }}</div>
-                            <button class="qty-btn plus-btn" onclick="updateQuantity('{{ item.id }}', 1)" {% if
-                                item.quantity==10 %}disabled{% endif %}>
+                            <button class="qty-btn" onclick="updateQuantity('{{ item.id }}', 1)" {% if item.quantity>=
+                                10 %}disabled{% endif %}>
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
@@ -197,7 +197,6 @@ day delivery available.{% endblock %}
             </button>
             <p class="quick-checkout-note">Or follow the steps below for delivery & payment options</p>
         </div>
-
         <div class="summary-row">
             <span class="summary-label">Subtotal (<span id="itemCount">{{ cart_items.count }}</span> items)</span>
             <span class="summary-value">₹<span id="subtotal">{{ cart_subtotal }}</span></span>
@@ -361,6 +360,7 @@ day delivery available.{% endblock %}
         font-size: 18px;
         font-weight: 600;
         color: var(--text-dark);
+        margin-bottom: 16px;
         margin: 0;
     }
 

@@ -209,36 +209,68 @@ def add_to_cart(request):
 
 
 @require_POST
-@login_required
 def update_cart_item(request, item_id):
-    """Update cart item quantity"""
+    """Update cart item quantity - supports both logged-in users and session cart"""
     try:
         data = json.loads(request.body)
         quantity = int(data.get('quantity', 1))
         
-        cart_item = get_object_or_404(
-            CartItem, 
-            id=item_id, 
-            cart__user=request.user
-        )
-        
-        if quantity <= 0:
-            cart_item.delete()
-            message = 'Item removed from cart'
+        if request.user.is_authenticated:
+            # Database cart for logged-in users
+            cart_item = get_object_or_404(
+                CartItem, 
+                id=item_id, 
+                cart__user=request.user
+            )
+            
+            if quantity <= 0:
+                cart_item.delete()
+                message = 'Item removed from cart'
+            else:
+                cart_item.quantity = quantity
+                cart_item.save()
+                message = 'Cart updated'
+            
+            cart = cart_item.cart if quantity > 0 else Cart.objects.get(user=request.user)
+            
+            return JsonResponse({
+                'success': True,
+                'message': message,
+                'cart_count': cart.total_items,
+                'cart_total': float(cart.total_price),
+                'item_total': float(cart_item.total_price) if quantity > 0 else 0
+            })
         else:
-            cart_item.quantity = quantity
-            cart_item.save()
-            message = 'Cart updated'
-        
-        cart = cart_item.cart if quantity > 0 else Cart.objects.get(user=request.user)
-        
-        return JsonResponse({
-            'success': True,
-            'message': message,
-            'cart_count': cart.total_items,
-            'cart_total': float(cart.total_price),
-            'item_total': float(cart_item.total_price) if quantity > 0 else 0
-        })
+            # Session cart for anonymous users
+            session_cart = request.session.get('cart', {})
+            
+            if item_id in session_cart:
+                if quantity <= 0:
+                    del session_cart[item_id]
+                    message = 'Item removed from cart'
+                else:
+                    session_cart[item_id]['quantity'] = quantity
+                    message = 'Cart updated'
+                
+                request.session.modified = True
+                
+                # Calculate totals
+                cart_count = sum(item['quantity'] for item in session_cart.values())
+                cart_total = sum(item['quantity'] * item['price'] for item in session_cart.values())
+                item_total = session_cart[item_id]['quantity'] * session_cart[item_id]['price'] if item_id in session_cart else 0
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': message,
+                    'cart_count': cart_count,
+                    'cart_total': cart_total,
+                    'item_total': item_total
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Item not found in cart'
+                }, status=404)
         
     except Exception as e:
         return JsonResponse({
@@ -248,27 +280,52 @@ def update_cart_item(request, item_id):
 
 
 @require_POST
-@login_required
 def remove_from_cart(request, item_id):
-    """Remove item from cart"""
+    """Remove item from cart - supports both logged-in users and session cart"""
     try:
-        cart_item = get_object_or_404(
-            CartItem, 
-            id=item_id, 
-            cart__user=request.user
-        )
-        
-        product_name = cart_item.product.name
-        cart_item.delete()
-        
-        cart = Cart.objects.get(user=request.user)
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'{product_name} removed from cart',
-            'cart_count': cart.total_items,
-            'cart_total': float(cart.total_price)
-        })
+        if request.user.is_authenticated:
+            # Database cart for logged-in users
+            cart_item = get_object_or_404(
+                CartItem, 
+                id=item_id, 
+                cart__user=request.user
+            )
+            
+            product_name = cart_item.product.name
+            cart_item.delete()
+            
+            cart = Cart.objects.get(user=request.user)
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'{product_name} removed from cart',
+                'cart_count': cart.total_items,
+                'cart_total': float(cart.total_price)
+            })
+        else:
+            # Session cart for anonymous users
+            session_cart = request.session.get('cart', {})
+            
+            if item_id in session_cart:
+                product_name = session_cart[item_id]['name']
+                del session_cart[item_id]
+                request.session.modified = True
+                
+                # Calculate totals
+                cart_count = sum(item['quantity'] for item in session_cart.values())
+                cart_total = sum(item['quantity'] * item['price'] for item in session_cart.values())
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'{product_name} removed from cart',
+                    'cart_count': cart_count,
+                    'cart_total': cart_total
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Item not found in cart'
+                }, status=404)
         
     except Exception as e:
         return JsonResponse({

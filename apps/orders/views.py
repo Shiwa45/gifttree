@@ -9,7 +9,7 @@ from django.conf import settings
 from .models import Order, OrderItem, OrderTracking
 from apps.cart.models import Cart, CartItem
 from apps.users.models import Address
-from apps.products.models import Product
+from apps.products.models import Product, ProductVariant
 from decimal import Decimal
 import json
 from datetime import datetime, timedelta
@@ -40,30 +40,32 @@ def order_detail(request, order_number):
     return render(request, 'orders/order_detail.html', context)
 
 
-@login_required
 def checkout_view(request):
     """Checkout page"""
-    from django.conf import settings
+    cart_items = []
+    addresses = []
+    default_address = None
+    
+    if request.user.is_authenticated:
+        try:
+            cart = Cart.objects.get(user=request.user)
+            cart_items = cart.items.select_related('product', 'variant').prefetch_related('product__images').all()
+        except Cart.DoesNotExist:
+            messages.warning(request, 'Your cart is empty')
+            return redirect('cart:cart')
 
-    # Get user's cart
-    try:
-        cart = Cart.objects.get(user=request.user)
-        cart_items = cart.items.select_related('product', 'variant').all()
-    except Cart.DoesNotExist:
-        messages.warning(request, 'Your cart is empty')
-        return redirect('cart:cart')
+        if not cart_items.exists():
+            messages.warning(request, 'Your cart is empty')
+            return redirect('cart:cart')
+            
+        addresses = Address.objects.filter(user=request.user, is_active=True)
+        default_address = addresses.filter(is_default=True).first()
+    else:
+        messages.info(request, 'Please login to proceed with checkout')
+        return redirect('users:login')
 
-    if not cart_items.exists():
-        messages.warning(request, 'Your cart is empty')
-        return redirect('cart:cart')
-
-    # Get user's addresses
-    addresses = Address.objects.filter(user=request.user, is_active=True)
-    default_address = addresses.filter(is_default=True).first()
-
-    # Calculate totals
     subtotal = sum(item.total_price for item in cart_items)
-    delivery_charge = Decimal('0.00')  # Can be dynamic based on location
+    delivery_charge = Decimal('0.00')
     total = subtotal + delivery_charge
 
     context = {
@@ -73,8 +75,12 @@ def checkout_view(request):
         'subtotal': subtotal,
         'delivery_charge': delivery_charge,
         'total': total,
-        'min_delivery_date': datetime.now().date() + timedelta(days=1),
-        'razorpay_key_id': settings.RAZORPAY_KEY_ID,
+        'today': datetime.now().date(),
+        'razorpay_key_id': getattr(settings, 'RAZORPAY_KEY_ID', ''),
+        'site_settings': {
+            'free_delivery_above': 500,
+            'delivery_charge': delivery_charge,
+        }
     }
 
     return render(request, 'orders/checkout.html', context)
@@ -303,3 +309,341 @@ def track_order(request, order_number):
     }
     
     return render(request, 'orders/track_order.html', context)
+
+
+@login_required
+@require_POST
+def apply_coupon(request):
+    """Apply coupon code to cart"""
+    coupon_code = request.POST.get('coupon_code', '').strip().upper()
+    
+    if not coupon_code:
+        return JsonResponse({
+            'success': False,
+            'message': 'Please enter a coupon code'
+        })
+    
+    # For now, simulate coupon validation
+    # TODO: Implement actual coupon system
+    valid_coupons = {
+        'SAVE10': {'type': 'percentage', 'value': 10, 'min_order': 500},
+        'FLOWER20': {'type': 'percentage', 'value': 20, 'min_order': 1000},
+        'FIRST15': {'type': 'percentage', 'value': 15, 'min_order': 300},
+    }
+    
+    if coupon_code not in valid_coupons:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid coupon code'
+        })
+    
+    # Get user's cart
+    try:
+        cart = Cart.objects.get(user=request.user)
+        cart_total = cart.total_price
+    except Cart.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Your cart is empty'
+        })
+    
+    coupon = valid_coupons[coupon_code]
+    
+    # Check minimum order value
+    if cart_total < coupon['min_order']:
+        return JsonResponse({
+            'success': False,
+            'message': f'Minimum order value ₹{coupon["min_order"]} required for this coupon'
+        })
+    
+    # Calculate discount
+    if coupon['type'] == 'percentage':
+        discount_amount = (cart_total * coupon['value']) / 100
+        discount_display = f'{coupon["value"]}% OFF'
+    else:
+        discount_amount = coupon['value']
+        discount_display = f'₹{coupon["value"]} OFF'
+    
+    # Store coupon in session
+    request.session['applied_coupon'] = {
+        'code': coupon_code,
+        'discount_amount': float(discount_amount),
+        'discount_display': discount_display,
+    }
+    
+    return JsonResponse({
+        'success': True,
+        'message': f'Coupon "{coupon_code}" applied successfully!',
+        'coupon': {
+            'code': coupon_code,
+            'discount_display': discount_display,
+            'discount_amount': float(discount_amount),
+        }
+    })
+
+
+@login_required
+@require_POST
+def remove_coupon(request):
+    """Remove applied coupon from cart"""
+    if 'applied_coupon' in request.session:
+        del request.session['applied_coupon']
+        request.session.modified = True
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Coupon removed'
+    })
+
+
+
+# Create: apps/orders/coupon_views.py
+
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from decimal import Decimal
+from .models import Coupon, CouponUsage
+from apps.cart.models import Cart
+
+
+@login_required
+@require_POST
+def apply_coupon(request):
+    """
+    Apply coupon code to cart
+    """
+    coupon_code = request.POST.get('coupon_code', '').strip().upper()
+    
+    if not coupon_code:
+        return JsonResponse({
+            'success': False,
+            'message': 'Please enter a coupon code'
+        })
+    
+    # Get user's cart
+    try:
+        cart = Cart.objects.get(user=request.user)
+    except Cart.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Your cart is empty'
+        })
+    
+    # Calculate cart total
+    cart_total = cart.total_price
+    
+    if cart_total == 0:
+        return JsonResponse({
+            'success': False,
+            'message': 'Your cart is empty'
+        })
+    
+    # Check if coupon exists
+    try:
+        coupon = Coupon.objects.get(code=coupon_code)
+    except Coupon.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid coupon code'
+        })
+    
+    # Check if user can use this coupon
+    can_use, message = coupon.can_be_used_by_user(request.user, cart_total)
+    
+    if not can_use:
+        return JsonResponse({
+            'success': False,
+            'message': message
+        })
+    
+    # Calculate discount
+    discount_amount = coupon.calculate_discount(cart_total)
+    
+    # Store coupon in session
+    request.session['applied_coupon'] = {
+        'code': coupon.code,
+        'id': coupon.id,
+        'discount_type': coupon.discount_type,
+        'discount_value': float(coupon.discount_value),
+        'discount_amount': float(discount_amount),
+    }
+    
+    # Calculate new total
+    new_total = cart_total - discount_amount
+    
+    return JsonResponse({
+        'success': True,
+        'message': f'Coupon "{coupon.code}" applied successfully!',
+        'coupon': {
+            'code': coupon.code,
+            'discount_display': coupon.get_discount_display(),
+            'discount_amount': float(discount_amount),
+        },
+        'cart_subtotal': float(cart_total),
+        'discount_amount': float(discount_amount),
+        'new_total': float(new_total),
+    })
+
+
+@login_required
+@require_POST
+def remove_coupon(request):
+    """
+    Remove applied coupon from cart
+    """
+    # Remove coupon from session
+    if 'applied_coupon' in request.session:
+        del request.session['applied_coupon']
+        request.session.modified = True
+    
+    # Get cart total
+    try:
+        cart = Cart.objects.get(user=request.user)
+        cart_total = cart.total_price
+    except Cart.DoesNotExist:
+        cart_total = 0
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Coupon removed',
+        'cart_total': float(cart_total),
+    })
+
+
+@login_required
+def validate_coupon(request):
+    """
+    Validate coupon without applying (for real-time feedback)
+    """
+    coupon_code = request.GET.get('code', '').strip().upper()
+    
+    if not coupon_code:
+        return JsonResponse({
+            'valid': False,
+            'message': 'Please enter a coupon code'
+        })
+    
+    try:
+        coupon = Coupon.objects.get(code=coupon_code)
+    except Coupon.DoesNotExist:
+        return JsonResponse({
+            'valid': False,
+            'message': 'Invalid coupon code'
+        })
+    
+    # Check if coupon is valid
+    is_valid, message = coupon.is_valid()
+    
+    if not is_valid:
+        return JsonResponse({
+            'valid': False,
+            'message': message
+        })
+    
+    # Get cart total
+    try:
+        cart = Cart.objects.get(user=request.user)
+        cart_total = cart.total_price
+    except Cart.DoesNotExist:
+        cart_total = 0
+    
+    # Check if user can use coupon
+    can_use, user_message = coupon.can_be_used_by_user(request.user, cart_total)
+    
+    if not can_use:
+        return JsonResponse({
+            'valid': False,
+            'message': user_message
+        })
+    
+    # Calculate potential discount
+    discount_amount = coupon.calculate_discount(cart_total)
+    
+    return JsonResponse({
+        'valid': True,
+        'message': 'Valid coupon!',
+        'coupon': {
+            'code': coupon.code,
+            'description': coupon.description,
+            'discount_display': coupon.get_discount_display(),
+            'discount_amount': float(discount_amount),
+            'minimum_order_value': float(coupon.minimum_order_value),
+        }
+    })
+
+
+def get_available_coupons(request):
+    """
+    Get list of currently available coupons
+    """
+    from django.utils import timezone
+    
+    # Get active coupons
+    coupons = Coupon.objects.filter(
+        is_active=True,
+        valid_from__lte=timezone.now(),
+        valid_to__gte=timezone.now()
+    ).exclude(
+        usage_limit__isnull=False,
+        times_used__gte=models.F('usage_limit')
+    )
+    
+    # If user is authenticated, filter by user eligibility
+    if request.user.is_authenticated:
+        # Get cart total
+        try:
+            cart = Cart.objects.get(user=request.user)
+            cart_total = cart.total_price
+        except Cart.DoesNotExist:
+            cart_total = 0
+        
+        coupon_list = []
+        for coupon in coupons:
+            can_use, message = coupon.can_be_used_by_user(request.user, cart_total)
+            
+            coupon_list.append({
+                'code': coupon.code,
+                'description': coupon.description,
+                'discount_display': coupon.get_discount_display(),
+                'minimum_order_value': float(coupon.minimum_order_value),
+                'can_use': can_use,
+                'message': message if not can_use else None,
+                'valid_to': coupon.valid_to.strftime('%d %b %Y'),
+            })
+    else:
+        coupon_list = [
+            {
+                'code': coupon.code,
+                'description': coupon.description,
+                'discount_display': coupon.get_discount_display(),
+                'minimum_order_value': float(coupon.minimum_order_value),
+                'valid_to': coupon.valid_to.strftime('%d %b %Y'),
+            }
+            for coupon in coupons
+        ]
+    
+    return JsonResponse({
+        'success': True,
+        'coupons': coupon_list
+    })
+
+
+# Helper function to record coupon usage after order
+def record_coupon_usage(order, coupon, user, discount_amount):
+    """
+    Record that a coupon was used in an order
+    Call this after order confirmation
+    """
+    # Create usage record
+    CouponUsage.objects.create(
+        coupon=coupon,
+        user=user,
+        order=order,
+        discount_amount=discount_amount
+    )
+    
+    # Increment usage count
+    coupon.times_used += 1
+    coupon.save()

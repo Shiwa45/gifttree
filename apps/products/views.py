@@ -884,3 +884,75 @@ class LocationDetailView(ListView):
             location_name = self.kwargs['slug'].replace('-', ' ').title()
             context['page_title'] = f'Delivery to {location_name}'
         return context
+
+@require_http_methods(["GET"])
+def quick_view(request, product_id):
+    """Quick view API for product details"""
+    try:
+        product = Product.objects.select_related('category').prefetch_related(
+            'images',
+            'variants',
+            'occasions'
+        ).get(id=product_id, is_active=True, published=True)
+
+        # Get product images
+        images = []
+        for img in product.all_images:
+            images.append({
+                'url': img.get_image_url,
+                'alt': img.alt_text or product.name,
+                'is_primary': img.is_primary
+            })
+
+        # Get product variants
+        variants = []
+        for variant in product.variants.filter(is_active=True):
+            variants.append({
+                'id': variant.id,
+                'name': variant.display_name,
+                'price': float(variant.final_price),
+                'stock': variant.stock_quantity,
+                'sku': variant.full_sku
+            })
+
+        # Build response data
+        data = {
+            'success': True,
+            'product': {
+                'id': product.id,
+                'name': product.name,
+                'slug': product.slug,
+                'description': product.description,
+                'price': float(product.current_price),
+                'discount_price': float(product.discount_price) if product.discount_price else None,
+                'discount_percentage': product.discount_percentage,
+                'stock_quantity': product.stock_quantity,
+                'is_in_stock': product.is_in_stock,
+                'category': {
+                    'name': product.category.name,
+                    'slug': product.category.slug
+                } if product.category else None,
+                'images': images,
+                'variants': variants,
+                'customization': {
+                    'allow_customization': product.allow_customization,
+                    'allow_name_customization': product.allow_name_customization,
+                    'allow_message_customization': product.allow_message_customization,
+                    'allow_flavor_selection': product.allow_flavor_selection,
+                    'customization_note': product.customization_note
+                }
+            }
+        }
+
+        return JsonResponse(data)
+
+    except Product.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Product not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

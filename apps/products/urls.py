@@ -6,6 +6,8 @@ app_name = 'products'
 urlpatterns = [
     path('', views.ProductListView.as_view(), name='product_list'),
     path('search/', views.product_search, name='search'),
+    path('search/suggestions/', views.product_autocomplete_api, name='search_suggestions'),
+    path('quick-view/<int:product_id>/', views.quick_view, name='quick_view'),
     path('category/<slug:slug>/', views.CategoryDetailView.as_view(), name='category_detail'),
     path('occasion/<slug:slug>/', views.OccasionDetailView.as_view(), name='occasion_detail'),
     

@@ -1,261 +1,351 @@
-"""
-Razorpay Payment Gateway Integration
-Install: pip install razorpay
-"""
+# Complete Payment Webhook Handlers
+# Replace the webhook handler section in apps/orders/payment.py
 
-import razorpay
+import logging
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.conf import settings
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-from django.shortcuts import get_object_or_404
-from .models import Order, OrderTracking
-import json
-import hmac
-import hashlib
+from django.utils import timezone
 
+logger = logging.getLogger(__name__)
 
-class RazorpayClient:
-    """Razorpay payment handler"""
-    
-    def __init__(self):
-        self.client = razorpay.Client(
-            auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
-        )
-    
-    def create_order(self, amount, currency='INR', receipt=None):
-        """
-        Create Razorpay order
-        Amount should be in paise (multiply by 100)
-        """
-        data = {
-            'amount': int(amount * 100),  # Convert to paise
-            'currency': currency,
-            'receipt': receipt or f'order_{receipt}',
-            'payment_capture': 1  # Auto capture payment
-        }
-        
-        try:
-            order = self.client.order.create(data=data)
-            return {
-                'success': True,
-                'order_id': order['id'],
-                'amount': order['amount'],
-                'currency': order['currency']
-            }
-        except Exception as e:
-            return {
-                'success': False,
-                'error': str(e)
-            }
-    
-    def verify_payment_signature(self, razorpay_order_id, razorpay_payment_id, razorpay_signature):
-        """Verify payment signature for security"""
-        try:
-            params_dict = {
-                'razorpay_order_id': razorpay_order_id,
-                'razorpay_payment_id': razorpay_payment_id,
-                'razorpay_signature': razorpay_signature
-            }
-            
-            self.client.utility.verify_payment_signature(params_dict)
-            return True
-        except:
-            return False
-    
-    def fetch_payment(self, payment_id):
-        """Fetch payment details"""
-        try:
-            payment = self.client.payment.fetch(payment_id)
-            return {
-                'success': True,
-                'payment': payment
-            }
-        except Exception as e:
-            return {
-                'success': False,
-                'error': str(e)
-            }
-
-
-# Initialize Razorpay client
-razorpay_client = RazorpayClient()
-
-
-@require_POST
-def initiate_payment(request):
-    """Initiate payment for an order"""
-    try:
-        data = json.loads(request.body)
-        order_number = data.get('order_number')
-        
-        # Get order
-        order = get_object_or_404(Order, order_number=order_number, user=request.user)
-        
-        # Check if order is already paid
-        if order.payment_status == 'paid':
-            return JsonResponse({
-                'success': False,
-                'message': 'Order is already paid'
-            }, status=400)
-        
-        # Create Razorpay order
-        razorpay_order = razorpay_client.create_order(
-            amount=float(order.total_amount),
-            receipt=order.order_number
-        )
-        
-        if not razorpay_order['success']:
-            return JsonResponse({
-                'success': False,
-                'message': 'Failed to initiate payment'
-            }, status=400)
-        
-        # Return payment details for frontend
-        return JsonResponse({
-            'success': True,
-            'razorpay_key': settings.RAZORPAY_KEY_ID,
-            'razorpay_order_id': razorpay_order['order_id'],
-            'amount': razorpay_order['amount'],
-            'currency': razorpay_order['currency'],
-            'order_number': order.order_number,
-            'customer': {
-                'name': order.billing_name,
-                'email': order.billing_email,
-                'phone': order.billing_phone
-            }
-        })
-        
-    except Order.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': 'Order not found'
-        }, status=404)
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=400)
-
-
-@csrf_exempt
-@require_POST
-def payment_callback(request):
-    """Handle payment callback from Razorpay"""
-    try:
-        data = json.loads(request.body)
-        
-        razorpay_order_id = data.get('razorpay_order_id')
-        razorpay_payment_id = data.get('razorpay_payment_id')
-        razorpay_signature = data.get('razorpay_signature')
-        order_number = data.get('order_number')
-        
-        # Verify payment signature
-        is_valid = razorpay_client.verify_payment_signature(
-            razorpay_order_id,
-            razorpay_payment_id,
-            razorpay_signature
-        )
-        
-        if not is_valid:
-            return JsonResponse({
-                'success': False,
-                'message': 'Invalid payment signature'
-            }, status=400)
-        
-        # Get order
-        order = get_object_or_404(Order, order_number=order_number)
-        
-        # Fetch payment details
-        payment_details = razorpay_client.fetch_payment(razorpay_payment_id)
-        
-        if payment_details['success']:
-            payment = payment_details['payment']
-            
-            # Update order payment status
-            order.payment_status = 'paid'
-            order.status = 'confirmed'
-            order.save()
-            
-            # Create tracking entry
-            OrderTracking.objects.create(
-                order=order,
-                status='confirmed',
-                message='Payment received successfully. Order confirmed.',
-            )
-            
-            # TODO: Send confirmation email
-            # send_order_confirmation_email(order)
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Payment successful',
-                'order_number': order.order_number,
-                'redirect': f'/orders/{order.order_number}/'
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': 'Payment verification failed'
-            }, status=400)
-            
-    except Order.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': 'Order not found'
-        }, status=404)
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=400)
-
-
-@csrf_exempt
-@require_POST
-def payment_webhook(request):
+def handle_razorpay_webhook(request):
     """
-    Webhook handler for Razorpay events
-    Configure this URL in Razorpay Dashboard
+    Handle Razorpay webhook events
     """
     try:
+        # Get webhook data
+        webhook_body = request.body.decode('utf-8')
+        webhook_signature = request.META.get('HTTP_X_RAZORPAY_SIGNATURE', '')
+        
         # Verify webhook signature
-        webhook_signature = request.headers.get('X-Razorpay-Signature')
-        webhook_secret = settings.RAZORPAY_WEBHOOK_SECRET
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
         
-        # Verify signature
-        expected_signature = hmac.new(
-            webhook_secret.encode('utf-8'),
-            request.body,
-            hashlib.sha256
-        ).hexdigest()
+        try:
+            client.utility.verify_webhook_signature(
+                webhook_body,
+                webhook_signature,
+                settings.RAZORPAY_WEBHOOK_SECRET
+            )
+        except razorpay.errors.SignatureVerificationError:
+            logger.error('Razorpay webhook signature verification failed')
+            return JsonResponse({'status': 'error', 'message': 'Invalid signature'}, status=400)
         
-        if webhook_signature != expected_signature:
-            return JsonResponse({
-                'success': False,
-                'message': 'Invalid signature'
-            }, status=400)
-        
-        # Process webhook event
-        data = json.loads(request.body)
+        # Parse webhook data
+        data = json.loads(webhook_body)
         event = data.get('event')
         
+        logger.info(f'Received Razorpay webhook: {event}')
+        
+        # Handle different events
         if event == 'payment.captured':
-            # Payment was captured successfully
-            payment = data['payload']['payment']['entity']
-            # Handle payment captured event
-            pass
+            return handle_payment_captured(data)
         
         elif event == 'payment.failed':
-            # Payment failed
-            payment = data['payload']['payment']['entity']
-            # Handle payment failed event
-            pass
+            return handle_payment_failed(data)
         
-        return JsonResponse({'success': True})
+        elif event == 'payment.authorized':
+            return handle_payment_authorized(data)
         
+        elif event == 'refund.created':
+            return handle_refund_created(data)
+        
+        elif event == 'refund.processed':
+            return handle_refund_processed(data)
+        
+        elif event == 'refund.failed':
+            return handle_refund_failed(data)
+        
+        else:
+            logger.info(f'Unhandled webhook event: {event}')
+            return JsonResponse({'status': 'success'}, status=200)
+    
     except Exception as e:
+        logger.error(f'Error processing webhook: {str(e)}', exc_info=True)
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+def handle_payment_captured(data):
+    """
+    Handle successful payment capture
+    """
+    try:
+        payment = data['payload']['payment']['entity']
+        payment_id = payment['id']
+        order_id = payment['order_id']
+        amount = payment['amount'] / 100  # Convert paise to rupees
+        
+        logger.info(f'Payment captured: {payment_id} for order: {order_id}')
+        
+        # Find the order
+        try:
+            order = Order.objects.get(order_number=order_id)
+        except Order.DoesNotExist:
+            logger.error(f'Order not found: {order_id}')
+            return JsonResponse({'status': 'error', 'message': 'Order not found'}, status=404)
+        
+        # Update order status
+        order.payment_status = 'paid'
+        order.status = 'confirmed'
+        order.save()
+        
+        # Create order tracking entry
+        OrderTracking.objects.create(
+            order=order,
+            status='confirmed',
+            message=f'Payment successful. Payment ID: {payment_id}',
+            location='Online'
+        )
+        
+        # Send confirmation email
+        send_payment_confirmation_email(order, payment_id, amount)
+        
+        # Optional: Send SMS notification
+        # send_payment_confirmation_sms(order)
+        
+        logger.info(f'Order {order_id} marked as paid and confirmed')
+        
         return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=400)
+            'status': 'success',
+            'message': 'Payment captured successfully',
+            'order_id': order_id
+        }, status=200)
+    
+    except Exception as e:
+        logger.error(f'Error handling payment.captured: {str(e)}', exc_info=True)
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+def handle_payment_failed(data):
+    """
+    Handle failed payment
+    """
+    try:
+        payment = data['payload']['payment']['entity']
+        payment_id = payment['id']
+        order_id = payment.get('order_id', 'Unknown')
+        error_code = payment.get('error_code', 'UNKNOWN')
+        error_description = payment.get('error_description', 'Payment failed')
+        
+        logger.warning(f'Payment failed: {payment_id} for order: {order_id}. Error: {error_description}')
+        
+        # Try to find the order
+        try:
+            order = Order.objects.get(order_number=order_id)
+            
+            # Update order status
+            order.payment_status = 'failed'
+            order.status = 'cancelled'
+            order.save()
+            
+            # Create order tracking entry
+            OrderTracking.objects.create(
+                order=order,
+                status='cancelled',
+                message=f'Payment failed. Reason: {error_description}',
+                location='Online'
+            )
+            
+            # Send payment failure email
+            send_payment_failure_email(order, error_description)
+            
+            logger.info(f'Order {order_id} marked as payment failed')
+        
+        except Order.DoesNotExist:
+            logger.error(f'Order not found for failed payment: {order_id}')
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Payment failure recorded',
+            'order_id': order_id,
+            'error': error_description
+        }, status=200)
+    
+    except Exception as e:
+        logger.error(f'Error handling payment.failed: {str(e)}', exc_info=True)
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+def handle_payment_authorized(data):
+    """
+    Handle payment authorization (before capture)
+    """
+    try:
+        payment = data['payload']['payment']['entity']
+        payment_id = payment['id']
+        order_id = payment['order_id']
+        
+        logger.info(f'Payment authorized: {payment_id} for order: {order_id}')
+        
+        try:
+            order = Order.objects.get(order_number=order_id)
+            
+            # Update order status to processing
+            order.payment_status = 'pending'
+            order.status = 'processing'
+            order.save()
+            
+            # Create order tracking entry
+            OrderTracking.objects.create(
+                order=order,
+                status='processing',
+                message=f'Payment authorized and being processed. Payment ID: {payment_id}',
+                location='Online'
+            )
+            
+            logger.info(f'Order {order_id} marked as payment authorized')
+        
+        except Order.DoesNotExist:
+            logger.error(f'Order not found: {order_id}')
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Payment authorization recorded'
+        }, status=200)
+    
+    except Exception as e:
+        logger.error(f'Error handling payment.authorized: {str(e)}', exc_info=True)
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+def handle_refund_created(data):
+    """
+    Handle refund creation
+    """
+    try:
+        refund = data['payload']['refund']['entity']
+        refund_id = refund['id']
+        payment_id = refund['payment_id']
+        amount = refund['amount'] / 100
+        
+        logger.info(f'Refund created: {refund_id} for payment: {payment_id}')
+        
+        # Find order by payment_id (you may need to store payment_id in Order model)
+        # For now, log the refund
+        logger.info(f'Refund of ₹{amount} created for payment {payment_id}')
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Refund creation recorded'
+        }, status=200)
+    
+    except Exception as e:
+        logger.error(f'Error handling refund.created: {str(e)}', exc_info=True)
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+def handle_refund_processed(data):
+    """
+    Handle processed refund
+    """
+    try:
+        refund = data['payload']['refund']['entity']
+        refund_id = refund['id']
+        payment_id = refund['payment_id']
+        amount = refund['amount'] / 100
+        status = refund['status']
+        
+        logger.info(f'Refund processed: {refund_id} for payment: {payment_id}. Status: {status}')
+        
+        # Update order status if found
+        # You may need to add a payment_id field to Order model to find the order
+        
+        # Send refund confirmation email
+        # send_refund_confirmation_email(order, amount)
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Refund processed'
+        }, status=200)
+    
+    except Exception as e:
+        logger.error(f'Error handling refund.processed: {str(e)}', exc_info=True)
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+def handle_refund_failed(data):
+    """
+    Handle failed refund
+    """
+    try:
+        refund = data['payload']['refund']['entity']
+        refund_id = refund['id']
+        payment_id = refund['payment_id']
+        error = refund.get('error_description', 'Refund failed')
+        
+        logger.error(f'Refund failed: {refund_id} for payment: {payment_id}. Error: {error}')
+        
+        # Notify admin about failed refund
+        send_mail(
+            subject=f'Refund Failed - {refund_id}',
+            message=f'Refund {refund_id} for payment {payment_id} failed.\nError: {error}',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[settings.ADMIN_EMAIL],
+            fail_silently=True,
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Refund failure recorded'
+        }, status=200)
+    
+    except Exception as e:
+        logger.error(f'Error handling refund.failed: {str(e)}', exc_info=True)
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+# Email notification functions
+
+def send_payment_confirmation_email(order, payment_id, amount):
+    """Send payment confirmation email to customer"""
+    try:
+        subject = f'Payment Confirmed - Order #{order.order_number}'
+        
+        # Render email template
+        html_message = render_to_string('emails/payment_confirmation.html', {
+            'order': order,
+            'payment_id': payment_id,
+            'amount': amount,
+            'site_name': settings.SITE_NAME,
+        })
+        
+        send_mail(
+            subject=subject,
+            message=f'Your payment of ₹{amount} has been confirmed for order #{order.order_number}',
+            html_message=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[order.billing_email],
+            fail_silently=True,
+        )
+        
+        logger.info(f'Payment confirmation email sent for order {order.order_number}')
+    
+    except Exception as e:
+        logger.error(f'Error sending payment confirmation email: {str(e)}', exc_info=True)
+
+
+def send_payment_failure_email(order, error_description):
+    """Send payment failure email to customer"""
+    try:
+        subject = f'Payment Failed - Order #{order.order_number}'
+        
+        html_message = render_to_string('emails/payment_failed.html', {
+            'order': order,
+            'error': error_description,
+            'site_name': settings.SITE_NAME,
+            'retry_url': f'{settings.SITE_DOMAIN}/orders/{order.order_number}/retry-payment/',
+        })
+        
+        send_mail(
+            subject=subject,
+            message=f'Your payment for order #{order.order_number} failed. Reason: {error_description}',
+            html_message=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[order.billing_email],
+            fail_silently=True,
+        )
+        
+        logger.info(f'Payment failure email sent for order {order.order_number}')
+    
+    except Exception as e:
+        logger.error(f'Error sending payment failure email: {str(e)}', exc_info=True)

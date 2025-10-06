@@ -1,0 +1,158 @@
+{% extends 'emails/base.html' %}
+
+{% block title %}Order #{{ order.order_number }} - {{ status_display }} - GiftTree{% endblock %}
+
+{% block content %}
+<!-- Status Icon -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+        <td align="center" style="padding-bottom: 20px;">
+            {% if order.status == 'shipped' %}
+                <div style="width: 80px; height: 80px; background: #2196F3; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                    <span style="color: white; font-size: 40px;">🚚</span>
+                </div>
+            {% elif order.status == 'delivered' %}
+                <div style="width: 80px; height: 80px; background: #4CAF50; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                    <span style="color: white; font-size: 40px;">✓</span>
+                </div>
+            {% elif order.status == 'cancelled' %}
+                <div style="width: 80px; height: 80px; background: #f44336; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                    <span style="color: white; font-size: 40px;">✕</span>
+                </div>
+            {% else %}
+                <div style="width: 80px; height: 80px; background: #FF9800; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                    <span style="color: white; font-size: 40px;">📦</span>
+                </div>
+            {% endif %}
+        </td>
+    </tr>
+</table>
+
+<h1 class="email-title">
+    {% if order.status == 'shipped' %}
+        Your Order Has Shipped! 🎉
+    {% elif order.status == 'delivered' %}
+        Order Delivered Successfully! ✨
+    {% elif order.status == 'cancelled' %}
+        Order Cancelled
+    {% elif order.status == 'processing' %}
+        Order is Being Prepared
+    {% else %}
+        Order Status Update
+    {% endif %}
+</h1>
+
+<p class="email-text">
+    Hi {{ order.billing_name }},<br><br>
+    {% if order.status == 'shipped' %}
+        Great news! Your order has been shipped and is on its way to {{ order.shipping_name }}.
+    {% elif order.status == 'delivered' %}
+        Your order has been successfully delivered to {{ order.shipping_name }}. We hope they loved it!
+    {% elif order.status == 'cancelled' %}
+        Your order has been cancelled as per your request. If you have any questions, please contact our support team.
+    {% elif order.status == 'processing' %}
+        Your order is being carefully prepared by our team. We'll notify you once it's shipped.
+    {% else %}
+        Your order status has been updated to: {{ status_display }}
+    {% endif %}
+</p>
+
+<!-- Order Number Box -->
+<div class="info-box">
+    <div class="info-box-title">Order Number: #{{ order.order_number }}</div>
+    <div style="color: #666666; font-size: 14px;">Order Date: {{ order.created_at|date:"F d, Y" }}</div>
+</div>
+
+<!-- Tracking Information (for shipped orders) -->
+{% if order.status == 'shipped' and tracking_number %}
+<div class="order-details">
+    <div class="order-row">
+        <span class="order-label">Tracking Number</span>
+        <span class="order-value" style="font-family: monospace;">{{ tracking_number }}</span>
+    </div>
+    {% if courier_name %}
+    <div class="order-row">
+        <span class="order-label">Courier</span>
+        <span class="order-value">{{ courier_name }}</span>
+    </div>
+    {% endif %}
+    {% if estimated_delivery %}
+    <div class="order-row">
+        <span class="order-label">Estimated Delivery</span>
+        <span class="order-value">{{ estimated_delivery|date:"F d, Y" }}</span>
+    </div>
+    {% endif %}
+</div>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+        <td align="center" style="padding: 20px 0;">
+            <a href="{{ tracking_url }}" class="email-button">
+                Track Shipment
+            </a>
+        </td>
+    </tr>
+</table>
+{% endif %}
+
+<!-- Order Timeline -->
+<h3 style="color: #333333; margin: 30px 0 15px;">Order Timeline</h3>
+<div style="padding: 20px; background: #f8f9fa; border-radius: 8px;">
+    {% for update in order.tracking.all %}
+    <div style="display: flex; margin-bottom: 20px; {% if forloop.last %}margin-bottom: 0;{% endif %}">
+        <div style="width: 12px; height: 12px; background: {% if forloop.first %}#E91E63{% else %}#e0e0e0{% endif %}; border-radius: 50%; margin-right: 15px; margin-top: 5px;"></div>
+        <div style="flex: 1;">
+            <div style="color: #333333; font-weight: 600; margin-bottom: 4px;">{{ update.get_status_display }}</div>
+            <div style="color: #666666; font-size: 14px;">{{ update.message }}</div>
+            {% if update.location %}
+                <div style="color: #999999; font-size: 12px; margin-top: 4px;">📍 {{ update.location }}</div>
+            {% endif %}
+            <div style="color: #999999; font-size: 12px; margin-top: 4px;">{{ update.created_at|date:"M d, Y - h:i A" }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Delivery Address -->
+<h3 style="color: #333333; margin: 30px 0 15px;">Delivery Address</h3>
+<div class="order-details">
+    <p style="margin: 0; color: #333333; line-height: 1.6;">
+        <strong>{{ order.shipping_name }}</strong><br>
+        {{ order.shipping_phone }}<br>
+        {{ order.shipping_address_line_1 }},
+        {% if order.shipping_address_line_2 %}{{ order.shipping_address_line_2 }},{% endif %}<br>
+        {{ order.shipping_city }}, {{ order.shipping_state }} - {{ order.shipping_pincode }}
+    </p>
+</div>
+
+<!-- CTA Button -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+        <td align="center" style="padding: 20px 0;">
+            <a href="{{ site_url }}/orders/{{ order.order_number }}/" class="email-button">
+                View Order Details
+            </a>
+        </td>
+    </tr>
+</table>
+
+<!-- Feedback Request (for delivered orders) -->
+{% if order.status == 'delivered' %}
+<div class="info-box" style="background: #e8f5e9; border-left-color: #4CAF50;">
+    <div class="info-box-title" style="color: #2e7d32;">How was your experience?</div>
+    <p style="color: #666666; margin: 10px 0;">
+        We'd love to hear your feedback! Please take a moment to review your purchase.
+    </p>
+    <a href="{{ site_url }}/reviews/submit/{{ order.items.first.product.id }}/" 
+       style="color: #4CAF50; font-weight: 600; text-decoration: none;">
+        Write a Review →
+    </a>
+</div>
+{% endif %}
+
+<p class="email-text" style="text-align: center; margin-top: 30px;">
+    Questions? We're here to help!<br>
+    <a href="mailto:support@gifttree.com" style="color: #E91E63;">support@gifttree.com</a> | 
+    <a href="tel:+919876543210" style="color: #E91E63;">+91-9876543210</a>
+</p>
+{% endblock %}

@@ -101,3 +101,183 @@ class OrderTracking(BaseModel):
 
     def __str__(self):
         return f"{self.order.order_number} - {self.get_status_display()}"
+    
+
+
+# Add to apps/orders/models.py (at the end)
+
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
+
+
+class Coupon(BaseModel):
+    """Discount coupons for promotional campaigns"""
+    
+    DISCOUNT_TYPE_CHOICES = [
+        ('percentage', 'Percentage'),
+        ('fixed', 'Fixed Amount'),
+    ]
+    
+    code = models.CharField(max_length=50, unique=True, db_index=True)
+    description = models.TextField(blank=True)
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES)
+    discount_value = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
+    
+    # Validity
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField()
+    
+    # Usage limits
+    usage_limit = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        help_text="Total number of times this coupon can be used. Leave blank for unlimited."
+    )
+    usage_per_user = models.PositiveIntegerField(
+        default=1,
+        help_text="Number of times each user can use this coupon"
+    )
+    times_used = models.PositiveIntegerField(default=0, editable=False)
+    
+    # Restrictions
+    minimum_order_value = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Minimum order value required to use this coupon"
+    )
+    maximum_discount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Maximum discount amount (only for percentage discounts)"
+    )
+    
+    # Category restrictions (optional - can be added later)
+    # applicable_categories = models.ManyToManyField('products.Category', blank=True)
+    
+    # User restrictions
+    first_order_only = models.BooleanField(
+        default=False,
+        help_text="Can only be used on first order"
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.code} - {self.get_discount_display()}"
+    
+    def get_discount_display(self):
+        """Display discount in readable format"""
+        if self.discount_type == 'percentage':
+            return f"{self.discount_value}%"
+        return f"₹{self.discount_value}"
+    
+    def is_valid(self):
+        """Check if coupon is currently valid"""
+        now = timezone.now()
+        
+        # Check if active
+        if not self.is_active:
+            return False, "Coupon is not active"
+        
+        # Check date validity
+        if now < self.valid_from:
+            return False, f"Coupon will be valid from {self.valid_from.strftime('%d %B %Y')}"
+        
+        if now > self.valid_to:
+            return False, "Coupon has expired"
+        
+        # Check usage limit
+        if self.usage_limit and self.times_used >= self.usage_limit:
+            return False, "Coupon usage limit reached"
+        
+        return True, "Valid"
+    
+    def can_be_used_by_user(self, user, order_value):
+        """Check if user can use this coupon"""
+        # Check if coupon is valid
+        is_valid, message = self.is_valid()
+        if not is_valid:
+            return False, message
+        
+        # Check minimum order value
+        if order_value < self.minimum_order_value:
+            return False, f"Minimum order value of ₹{self.minimum_order_value} required"
+        
+        # Check first order restriction
+        if self.first_order_only:
+            previous_orders = Order.objects.filter(
+                user=user,
+                status__in=['delivered', 'confirmed']
+            ).exists()
+            if previous_orders:
+                return False, "This coupon is only valid for first orders"
+        
+        # Check user usage limit
+        user_usage = CouponUsage.objects.filter(
+            coupon=self,
+            user=user
+        ).count()
+        
+        if user_usage >= self.usage_per_user:
+            return False, f"You have already used this coupon {self.usage_per_user} time(s)"
+        
+        return True, "Valid"
+    
+    def calculate_discount(self, order_value):
+        """Calculate discount amount for given order value"""
+        if self.discount_type == 'percentage':
+            discount = (order_value * self.discount_value) / 100
+            
+            # Apply maximum discount cap if set
+            if self.maximum_discount and discount > self.maximum_discount:
+                discount = self.maximum_discount
+            
+            return discount
+        else:
+            # Fixed discount
+            # Don't allow discount to exceed order value
+            return min(self.discount_value, order_value)
+
+
+class CouponUsage(BaseModel):
+    """Track coupon usage by users"""
+    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, related_name='usages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='coupon_usages')
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, null=True, blank=True)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.email} used {self.coupon.code}"
+
+
+# Update Order model to include coupon fields
+# Add these fields to the existing Order model:
+"""
+Add to Order model:
+
+    # Coupon fields
+    coupon = models.ForeignKey(
+        'Coupon', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='orders'
+    )
+    coupon_discount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0
+    )
+"""

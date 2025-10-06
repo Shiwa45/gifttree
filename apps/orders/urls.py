@@ -7,11 +7,16 @@ app_name = 'orders'
 urlpatterns = [
     path('', views.order_list, name='order_list'),
     path('checkout/', views.checkout_view, name='checkout'),
+    path('place-order/', views.process_checkout, name='place_order'),
     path('process-checkout/', views.process_checkout, name='process_checkout'),
     path('<str:order_number>/cancel/', views.cancel_order, name='cancel_order'),
     path('<str:order_number>/track/', views.track_order, name='track_order'),
     path('<str:order_number>/reorder/', views.reorder, name='reorder'),
     path('<str:order_number>/', views.order_detail, name='order_detail'),
+
+    # Coupon endpoints
+    path('apply-coupon/', views.apply_coupon, name='apply_coupon'),
+    path('remove-coupon/', views.remove_coupon, name='remove_coupon'),
 
     # Razorpay payment endpoints
     path('payment/create-order/', razorpay_views.create_razorpay_order, name='create_razorpay_order'),

@@ -27,14 +27,7 @@ day delivery available.{% endblock %}
 <div id="cartContent" {% if not cart_items %}style="display: none;" {% endif %}>
     <!-- Cart Items Section -->
     <div class="cart-section">
-        <div class="cart-header">
-            <h2 class="section-title">Your Items</h2>
-            <button class="header-checkout-btn" onclick="proceedToCheckout()" {% if not cart_items %}disabled{% endif
-                %}>
-                <i class="fas fa-credit-card"></i>
-                Checkout Now
-            </button>
-        </div>
+        <h2 class="section-title">Your Items</h2>
         <div class="cart-items" id="cartItems">
             {% for item in cart_items %}
             <div class="cart-item" data-item-id="{{ item.id }}">
@@ -48,13 +41,11 @@ day delivery available.{% endblock %}
                     <div class="item-price-section">
                         <div class="item-price">₹{{ item.total_price }}</div>
                         <div class="quantity-controls">
-                            <button class="qty-btn minus-btn" onclick="updateQuantity('{{ item.id }}', -1)" {% if
-                                item.quantity==1 %}disabled{% endif %}>
+                            <button class="qty-btn" onclick="updateQuantity('{{ item.id }}', -1)" {% if item.quantity <= 1 %}disabled{% endif %}>
                                 <i class="fas fa-minus"></i>
                             </button>
                             <div class="qty-display">{{ item.quantity }}</div>
-                            <button class="qty-btn plus-btn" onclick="updateQuantity('{{ item.id }}', 1)" {% if
-                                item.quantity==10 %}disabled{% endif %}>
+                            <button class="qty-btn" onclick="updateQuantity('{{ item.id }}', 1)" {% if item.quantity >= 10 %}disabled{% endif %}>
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
@@ -65,6 +56,7 @@ day delivery available.{% endblock %}
                 </button>
             </div>
             {% empty %}
+            <!-- This will be hidden by JavaScript if cart is empty -->
             <div class="empty-cart-message">
                 <p>Your cart is empty</p>
             </div>
@@ -188,16 +180,6 @@ day delivery available.{% endblock %}
     <!-- Order Summary -->
     <div class="order-summary">
         <h3 class="summary-title">Order Summary</h3>
-
-        <!-- Quick Checkout Button (Always Visible) -->
-        <div class="quick-checkout-section">
-            <button class="quick-checkout-btn" onclick="proceedToCheckout()" {% if not cart_items %}disabled{% endif %}>
-                <i class="fas fa-shopping-bag"></i>
-                Quick Checkout - ₹{{ cart_total }}
-            </button>
-            <p class="quick-checkout-note">Or follow the steps below for delivery & payment options</p>
-        </div>
-
         <div class="summary-row">
             <span class="summary-label">Subtotal (<span id="itemCount">{{ cart_items.count }}</span> items)</span>
             <span class="summary-value">₹<span id="subtotal">{{ cart_subtotal }}</span></span>
@@ -231,7 +213,7 @@ day delivery available.{% endblock %}
                     {% if product.primary_image %}
                     <img src="{{ product.primary_image.get_image_url }}" alt="{{ product.name }}" class="rec-image">
                     {% else %}
-                    <img src="{% static 'images/products/default.jpg' %}" alt="{{ product.name }}" class="rec-image">
+                        <img src="{% static 'images/products/default.jpg' %}" alt="{{ product.name }}" class="rec-image">
                     {% endif %}
                     <div class="rec-info">
                         <div class="rec-name">{{ product.name|truncatechars:15 }}</div>
@@ -286,8 +268,7 @@ day delivery available.{% endblock %}
         <span>Total: ₹<span id="bottomTotal">{{ cart_total }}</span></span>
         <span><span id="bottomItemCount">{{ cart_items.count }}</span> items</span>
     </div>
-    <button class="checkout-btn" onclick="proceedToCheckout()" id="checkoutButton" {% if not cart_items %}disabled{%
-        endif %}>
+    <button class="checkout-btn" onclick="proceedToCheckout()" id="checkoutButton" {% if not cart_items %}disabled{% endif %}>
         PROCEED TO CHECKOUT
     </button>
 </div>
@@ -348,46 +329,14 @@ day delivery available.{% endblock %}
         margin: 0 16px 20px;
     }
 
-    .cart-header {
-        background: white;
-        padding: 20px 16px 0;
-        border-radius: 12px 12px 0 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
     .section-title {
         font-size: 18px;
         font-weight: 600;
         color: var(--text-dark);
-        margin: 0;
-    }
-
-    .header-checkout-btn {
-        background: var(--pink-gradient);
-        color: white;
-        border: none;
-        border-radius: 20px;
-        padding: 8px 16px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .header-checkout-btn:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(233, 30, 99, 0.3);
-    }
-
-    .header-checkout-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
+        margin-bottom: 16px;
+        background: white;
+        padding: 20px 16px 0;
+        border-radius: 12px 12px 0 0;
     }
 
     .cart-items {
@@ -509,8 +458,7 @@ day delivery available.{% endblock %}
     .delivery-section,
     .coupon-section,
     .order-summary,
-    .recommendations,
-    .payment-section {
+    .recommendations {
         background: white;
         margin: 0 16px 20px;
         padding: 20px 16px;
@@ -520,56 +468,11 @@ day delivery available.{% endblock %}
     .delivery-title,
     .coupon-title,
     .summary-title,
-    .rec-title,
-    .payment-title {
+    .rec-title {
         font-size: 18px;
         font-weight: 600;
         color: var(--text-dark);
         margin-bottom: 16px;
-    }
-
-    /* Quick Checkout Section */
-    .quick-checkout-section {
-        text-align: center;
-        margin-bottom: 20px;
-        padding: 16px;
-        background: linear-gradient(135deg, #E91E63 0%, #FF6090 100%);
-        border-radius: 12px;
-        color: white;
-    }
-
-    .quick-checkout-btn {
-        background: white;
-        color: var(--primary-color);
-        border: none;
-        border-radius: 25px;
-        padding: 14px 28px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .quick-checkout-btn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    }
-
-    .quick-checkout-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-    .quick-checkout-note {
-        font-size: 12px;
-        margin: 0;
-        opacity: 0.9;
     }
 
     .delivery-options {
@@ -624,111 +527,6 @@ day delivery available.{% endblock %}
     }
 
     .free-delivery {
-        color: var(--secondary-color);
-    }
-
-    /* Continue Buttons */
-    .section-continue {
-        margin-top: 20px;
-        text-align: center;
-    }
-
-    .btn-continue-delivery,
-    .btn-continue-payment {
-        background: var(--pink-gradient);
-        color: white;
-        border: none;
-        border-radius: 25px;
-        padding: 12px 32px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .btn-continue-delivery:hover,
-    .btn-continue-payment:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
-    }
-
-    /* Payment Options */
-    .payment-options {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-bottom: 16px;
-    }
-
-    .payment-option {
-        display: flex;
-        align-items: center;
-        padding: 16px;
-        border: 2px solid #f0f0f0;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .payment-option.selected {
-        border-color: var(--primary-color);
-        background: rgba(233, 30, 99, 0.05);
-    }
-
-    .payment-option input[type="radio"] {
-        margin-right: 12px;
-    }
-
-    .payment-icon {
-        font-size: 24px;
-        color: var(--primary-color);
-        margin-right: 12px;
-        width: 40px;
-        text-align: center;
-    }
-
-    .payment-details {
-        flex: 1;
-    }
-
-    .payment-name {
-        font-weight: 600;
-        color: var(--text-dark);
-        margin-bottom: 4px;
-    }
-
-    .payment-desc {
-        font-size: 14px;
-        color: var(--text-light);
-    }
-
-    .payment-badge {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--secondary-color);
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .payment-badge.cod {
-        color: var(--accent-color);
-    }
-
-    .payment-security {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        color: var(--text-light);
-        margin-bottom: 16px;
-        justify-content: center;
-    }
-
-    .payment-security i {
         color: var(--secondary-color);
     }
 
@@ -958,24 +756,6 @@ day delivery available.{% endblock %}
         bottom: 120px;
     }
 
-    /* Pulse animation for checkout button */
-    @keyframes pulse {
-        0% {
-            transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(233, 30, 99, 0.7);
-        }
-
-        70% {
-            transform: scale(1.05);
-            box-shadow: 0 0 0 10px rgba(233, 30, 99, 0);
-        }
-
-        100% {
-            transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(233, 30, 99, 0);
-        }
-    }
-
     /* Desktop adjustments */
     @media (min-width: 992px) {
         body {
@@ -986,8 +766,7 @@ day delivery available.{% endblock %}
         .delivery-section,
         .coupon-section,
         .order-summary,
-        .recommendations,
-        .payment-section {
+        .recommendations {
             margin: 0 40px 30px;
             padding: 30px;
         }
@@ -1010,6 +789,143 @@ day delivery available.{% endblock %}
             padding: 60px 40px;
         }
     }
+
+    /* Continue Buttons */
+    .section-continue {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .btn-continue-delivery,
+    .btn-continue-payment {
+        background: var(--pink-gradient);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 12px 32px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-continue-delivery:hover,
+    .btn-continue-payment:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+    }
+
+    /* Payment Options */
+    .payment-section {
+        background: white;
+        margin: 0 16px 20px;
+        padding: 20px 16px;
+        border-radius: 12px;
+    }
+
+    .payment-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 16px;
+    }
+
+    .payment-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .payment-option {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        border: 2px solid #f0f0f0;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .payment-option.selected {
+        border-color: var(--primary-color);
+        background: rgba(233, 30, 99, 0.05);
+    }
+
+    .payment-option input[type="radio"] {
+        margin-right: 12px;
+    }
+
+    .payment-icon {
+        font-size: 24px;
+        color: var(--primary-color);
+        margin-right: 12px;
+        width: 40px;
+        text-align: center;
+    }
+
+    .payment-details {
+        flex: 1;
+    }
+
+    .payment-name {
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 4px;
+    }
+
+    .payment-desc {
+        font-size: 14px;
+        color: var(--text-light);
+    }
+
+    .payment-badge {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--secondary-color);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .payment-badge.cod {
+        color: var(--accent-color);
+    }
+
+    .payment-security {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text-light);
+        margin-bottom: 16px;
+        justify-content: center;
+    }
+
+    .payment-security i {
+        color: var(--secondary-color);
+    }
+
+    /* Pulse animation for checkout button */
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(233, 30, 99, 0.7);
+        }
+
+        70% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 10px rgba(233, 30, 99, 0);
+        }
+
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(233, 30, 99, 0);
+        }
+    }
 </style>
 {% endblock %}
 
@@ -1027,10 +943,10 @@ day delivery available.{% endblock %}
             name: '{{ item.product.name|escapejs }}',
             price: {{ item.product.current_price }},
         quantity: {{ item.quantity }},
-        addons: [{% for addon in item.addons %}'{{ addon|escapejs }}'{% if not forloop.last %}, {% endif %} {% endfor %}],
-    image: '{% if item.product.primary_image %}{{ item.product.primary_image.get_image_url }}{% else %}{% static "images/products/default.jpg" %}{% endif %}',
-        total: { { item.total_price } }
-            }{% if not forloop.last %}, {% endif %}
+                addons: [{% for addon in item.addons %}'{{ addon|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                image: '{% if item.product.primary_image %}{{ item.product.primary_image.get_image_url }}{% else %}{% static "images/products/default.jpg" %}{% endif %}',
+                total: {{ item.total_price }}
+            }{% if not forloop.last %},{% endif %}
     {% endfor %}
         ];
 
@@ -1043,57 +959,6 @@ day delivery available.{% endblock %}
     // Update cart display
     updateCartDisplay();
 });
-
-    // Step-by-step cart flow functions
-    function continueToPaymentOptions() {
-        // Show payment section
-        const paymentSection = document.getElementById('paymentSection');
-        paymentSection.style.display = 'block';
-
-        // Scroll to payment section
-        paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-        showToast('Please select your payment method');
-    }
-
-    function selectPaymentMethod(element, method) {
-        // Remove selected class from all payment options
-        document.querySelectorAll('.payment-option').forEach(opt => {
-            opt.classList.remove('selected');
-            opt.querySelector('input[type="radio"]').checked = false;
-        });
-
-        // Add selected class to clicked option
-        element.classList.add('selected');
-        element.querySelector('input[type="radio"]').checked = true;
-
-        showToast(`${method === 'online' ? 'Online Payment' : 'Cash on Delivery'} selected`);
-    }
-
-    function continueToOrderReview() {
-        // Check if payment method is selected
-        const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
-        if (!selectedPayment) {
-            showToast('Please select a payment method');
-            return;
-        }
-
-        // Show order summary prominently
-        const orderSummary = document.querySelector('.order-summary');
-        orderSummary.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-        // Enable the checkout button
-        const checkoutBtn = document.getElementById('checkoutButton');
-        checkoutBtn.style.background = 'var(--pink-gradient)';
-        checkoutBtn.style.transform = 'scale(1.05)';
-
-        showToast('Ready to place order! Click "PROCEED TO CHECKOUT" below');
-
-        // Highlight the checkout button
-        setTimeout(() => {
-            checkoutBtn.style.animation = 'pulse 2s infinite';
-        }, 1000);
-    }
 
     // Django-specific cart functions
     function updateQuantity(itemId, change) {
@@ -1311,6 +1176,57 @@ day delivery available.{% endblock %}
         const newTotal = currentTotal + price;
         document.getElementById('totalAmount').textContent = newTotal;
         document.getElementById('bottomTotal').textContent = newTotal;
+    }
+
+    // Step-by-step cart flow functions
+    function continueToPaymentOptions() {
+        // Show payment section
+        const paymentSection = document.getElementById('paymentSection');
+        paymentSection.style.display = 'block';
+
+        // Scroll to payment section
+        paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        showToast('Please select your payment method');
+    }
+
+    function selectPaymentMethod(element, method) {
+        // Remove selected class from all payment options
+        document.querySelectorAll('.payment-option').forEach(opt => {
+            opt.classList.remove('selected');
+            opt.querySelector('input[type="radio"]').checked = false;
+        });
+
+        // Add selected class to clicked option
+        element.classList.add('selected');
+        element.querySelector('input[type="radio"]').checked = true;
+
+        showToast(`${method === 'online' ? 'Online Payment' : 'Cash on Delivery'} selected`);
+    }
+
+    function continueToOrderReview() {
+        // Check if payment method is selected
+        const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+        if (!selectedPayment) {
+            showToast('Please select a payment method');
+            return;
+        }
+
+        // Show order summary prominently
+        const orderSummary = document.querySelector('.order-summary');
+        orderSummary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        // Enable the checkout button
+        const checkoutBtn = document.getElementById('checkoutButton');
+        checkoutBtn.style.background = 'var(--pink-gradient)';
+        checkoutBtn.style.transform = 'scale(1.05)';
+
+        showToast('Ready to place order! Click "PROCEED TO CHECKOUT" below');
+
+        // Highlight the checkout button
+        setTimeout(() => {
+            checkoutBtn.style.animation = 'pulse 2s infinite';
+        }, 1000);
     }
 
     // Toast notification function
