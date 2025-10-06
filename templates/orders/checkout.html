@@ -326,6 +326,9 @@
 {% endblock %}
 
 {% block page_js %}
+<!-- Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
 <script src="{% static 'js/checkout.js' %}"></script>
 <script>
     const checkoutData = {
@@ -336,5 +339,8 @@
         selectedDeliveryCharge: 0,
         selectedPaymentMethod: 'card'
     };
+
+    // Razorpay configuration
+    const RAZORPAY_KEY_ID = '{{ razorpay_key_id }}';
 </script>
 {% endblock %}

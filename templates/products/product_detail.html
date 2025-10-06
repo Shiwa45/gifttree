@@ -1142,22 +1142,38 @@ html, body, .product-detail-wrapper { overflow-x: hidden; }
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="action-buttons">
-                    <button class="btn-add-cart"
-                            onclick="addToCart({{ product.id }})"
-                            {% if not product.variants.exists and product.stock_quantity <= 0 %}disabled style="opacity: 0.5;"{% endif %}>
-                        {% if not product.variants.exists and product.stock_quantity <= 0 %}
-                        <i class="fas fa-times"></i> OUT OF STOCK
-                        {% else %}
-                        <i class="fas fa-shopping-cart"></i> ADD TO CART
-                        {% endif %}
-                    </button>
-                    <button class="btn-buy-now"
-                            onclick="buyNow({{ product.id }})"
-                            {% if not product.variants.exists and product.stock_quantity <= 0 %}disabled style="opacity: 0.5;"{% endif %}>
-                        BUY NOW
-                    </button>
-                </div>
+                <form method="POST" action="{% url 'cart:add_to_cart' %}" id="addToCartForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="variant_id" id="selectedVariantId" value="{% if product.variants.exists %}{{ product.variants.first.id }}{% endif %}">
+                    <input type="hidden" name="quantity" value="1">
+
+                    <!-- Customization fields (hidden, will be populated by JavaScript if needed) -->
+                    {% if product.allow_name_customization %}
+                    <input type="hidden" name="custom_name" id="customNameHidden" value="">
+                    {% endif %}
+                    {% if product.allow_message_customization %}
+                    <input type="hidden" name="custom_message" id="customMessageHidden" value="">
+                    {% endif %}
+                    {% if product.allow_flavor_selection %}
+                    <input type="hidden" name="custom_flavor" id="customFlavorHidden" value="">
+                    {% endif %}
+
+                    <div class="action-buttons">
+                        <button type="submit" class="btn-add-cart" name="action" value="add"
+                                {% if not product.variants.exists and product.stock_quantity <= 0 %}disabled style="opacity: 0.5;"{% endif %}>
+                            {% if not product.variants.exists and product.stock_quantity <= 0 %}
+                            <i class="fas fa-times"></i> OUT OF STOCK
+                            {% else %}
+                            <i class="fas fa-shopping-cart"></i> ADD TO CART
+                            {% endif %}
+                        </button>
+                        <button type="submit" class="btn-buy-now" name="action" value="buy_now"
+                                {% if not product.variants.exists and product.stock_quantity <= 0 %}disabled style="opacity: 0.5;"{% endif %}>
+                            BUY NOW
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1382,12 +1398,25 @@ function updateThumbnailBorders() {
 // Check Delivery Availability
 function checkAvailability() {
     const pincode = document.getElementById('pincodeInput').value;
-    if (pincode) {
-        alert('Checking availability for pincode: ' + pincode);
-        // Add your API call here
-    } else {
-        alert('Please enter a pincode');
+    if (!pincode) {
+        showNotification('error', 'Please enter a pincode');
+        return;
     }
+
+    // Make AJAX request to check delivery availability
+    fetch(`/api/check-delivery/?pincode=${pincode}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.available) {
+                showNotification('success', `Delivery available for pincode ${pincode}`);
+            } else {
+                showNotification('error', data.message || `Delivery not available for pincode ${pincode}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('info', `Pincode ${pincode} - Please contact customer support for delivery information`);
+        });
 }
 
 // Get CSRF token helper
@@ -1403,95 +1432,59 @@ function getCookie(name) {
             }
         }
     }
+    // Fallback to meta tag if cookie not found
+    if (!cookieValue) {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) {
+            cookieValue = meta.getAttribute('content');
+        }
+    }
     return cookieValue;
 }
 
-// Add to Cart
-function addToCart(productId) {
-    // Check if user is logged in
-    {% if not user.is_authenticated %}
-        // Redirect to login page
-        window.location.href = '/users/login/?next={{ request.path }}';
-        return;
-    {% endif %}
+// Form submission handler - sync customization fields before submit
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('addToCartForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Sync customization data to hidden fields
+            const customNameInput = document.getElementById('customName');
+            const customMessageInput = document.getElementById('customMessage');
+            const customFlavorInput = document.getElementById('customFlavor');
 
-    // Get selected variant (if exists)
-    const variantIdInput = document.getElementById('selectedVariantId');
-    const variantPriceInput = document.getElementById('selectedVariantPrice');
+            if (customNameInput) {
+                const hiddenInput = document.getElementById('customNameHidden');
+                if (hiddenInput) hiddenInput.value = customNameInput.value;
+            }
 
-    const variantId = variantIdInput ? variantIdInput.value : null;
-    const variantPrice = variantPriceInput ? variantPriceInput.value : null;
+            if (customMessageInput) {
+                const hiddenInput = document.getElementById('customMessageHidden');
+                if (hiddenInput) hiddenInput.value = customMessageInput.value;
+            }
 
-    // Get customization data (if exists)
-    const customNameInput = document.getElementById('customName');
-    const customMessageInput = document.getElementById('customMessage');
-    const customFlavorInput = document.getElementById('customFlavor');
+            if (customFlavorInput) {
+                const hiddenInput = document.getElementById('customFlavorHidden');
+                if (hiddenInput) hiddenInput.value = customFlavorInput.value;
+            }
 
-    const customName = customNameInput ? customNameInput.value : '';
-    const customMessage = customMessageInput ? customMessageInput.value : '';
-    const customFlavor = customFlavorInput ? customFlavorInput.value : '';
+            // Check which button was clicked
+            const clickedButton = e.submitter;
+            if (clickedButton && clickedButton.getAttribute('name') === 'action') {
+                const action = clickedButton.value;
 
-    // Build cart data
-    const cartData = {
-        product_id: productId,
-        variant_id: variantId,
-        quantity: 1,
-        custom_name: customName,
-        custom_message: customMessage,
-        custom_flavor: customFlavor
-    };
+                // For "buy_now", we'll let the form submit normally
+                // The backend will redirect to cart page
+                if (action === 'buy_now') {
+                    // Just let the form submit normally
+                    return true;
+                }
+            }
 
-    console.log('Adding to cart:', cartData);
-
-    // Show loading state
-    const addToCartBtn = document.querySelector('.btn-add-cart');
-    const originalBtnText = addToCartBtn.innerHTML;
-    addToCartBtn.disabled = true;
-    addToCartBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
-
-    // AJAX call to cart endpoint
-    fetch('/cart/add/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify(cartData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success message
-            addToCartBtn.innerHTML = '<i class="fas fa-check"></i> Added!';
-            addToCartBtn.style.background = '#4CAF50';
-
-            // Update cart count in header if exists
-            const cartCountElements = document.querySelectorAll('.cart-count');
-            cartCountElements.forEach(el => {
-                el.textContent = data.cart_count;
-                el.style.display = data.cart_count > 0 ? 'flex' : 'none';
-            });
-
-            // Show success notification
-            showNotification('success', data.message);
-
-            // Reset button after 2 seconds
-            setTimeout(() => {
-                addToCartBtn.innerHTML = originalBtnText;
-                addToCartBtn.style.background = '';
-                addToCartBtn.disabled = false;
-            }, 2000);
-        } else {
-            throw new Error(data.message || 'Failed to add to cart');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        addToCartBtn.innerHTML = originalBtnText;
-        addToCartBtn.disabled = false;
-        showNotification('error', error.message || 'Failed to add to cart. Please try again.');
-    });
-}
+            // For regular "add to cart", you can optionally use AJAX here
+            // For now, we'll let it submit normally and redirect
+        });
+    }
+});
 
 // Show notification helper
 function showNotification(type, message) {
@@ -1528,14 +1521,8 @@ function showNotification(type, message) {
     }, 3000);
 }
 
-// Buy Now
-function buyNow(productId) {
-    // Add to cart first, then redirect
-    addToCart(productId);
-    setTimeout(() => {
-        window.location.href = '/cart/';
-    }, 1000);
-}
+// Buy Now functionality is now handled by the form submission
+// When user clicks "BUY NOW" button, the form submits and backend redirects to cart
 
 // Toggle Wishlist
 function toggleWishlist(productId) {

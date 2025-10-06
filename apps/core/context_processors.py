@@ -3,9 +3,10 @@ from django.core.cache import cache
 
 
 class MenuSection:
-    def __init__(self, name, items):
+    def __init__(self, name, items, section_type='by_type'):
         self.name = name
         self.items = items
+        self.section_type = section_type
 
 
 class MenuItem:
@@ -92,10 +93,19 @@ def global_context(request):
         except:
             main_occasions = []
     
-    # Get cart count from session or localStorage
+    # Get cart count from database or session
     cart_count = 0
     try:
-        if hasattr(request, 'session') and 'cart' in request.session:
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            # Database cart for logged-in users
+            from apps.cart.models import Cart
+            try:
+                cart = Cart.objects.get(user=request.user)
+                cart_count = cart.total_items
+            except Cart.DoesNotExist:
+                cart_count = 0
+        elif hasattr(request, 'session') and 'cart' in request.session:
+            # Session cart for anonymous users
             cart_count = sum(item.get('quantity', 0) for item in request.session['cart'].values())
     except:
         cart_count = 0
@@ -121,7 +131,7 @@ def _build_flowers_menu():
             MenuItem("Mixed Flowers"),
             MenuItem("Hydrangea", badges=[{"name": "New", "background_color": "#FF4444", "color": "#FFFFFF"}]),
             MenuItem("Exotic Flowers", badges=[{"name": "Premium", "background_color": "#9C27B0", "color": "#FFFFFF"}]),
-        ]),
+        ], section_type='by_type'),
         MenuSection("Collection", [
             MenuItem("Bestseller"),
             MenuItem("Korean Paper Bouquets", badges=[{"name": "New", "background_color": "#FF4444", "color": "#FFFFFF"}]),
@@ -132,7 +142,7 @@ def _build_flowers_menu():
             MenuItem("Floral Hampers", badges=[{"name": "New", "background_color": "#FF4444", "color": "#FFFFFF"}]),
             MenuItem("Premium Vases"),
             MenuItem("All Flowers"),
-        ]),
+        ], section_type='collection'),
         MenuSection("Flowers For", [
             MenuItem("Girlfriend"),
             MenuItem("Wife"),
@@ -142,7 +152,7 @@ def _build_flowers_menu():
             MenuItem("Boyfriend"),
             MenuItem("Brother"),
             MenuItem("Sister"),
-        ]),
+        ], section_type='for_whom'),
         MenuSection("Flowers By Occasion", [
             MenuItem("Birthday"),
             MenuItem("Anniversary"),
@@ -153,7 +163,7 @@ def _build_flowers_menu():
             MenuItem("I Am Sorry"),
             MenuItem("Thank You"),
             MenuItem("New Born"),
-        ]),
+        ], section_type='by_occasion'),
         MenuSection("Flowers to", [
             MenuItem("Delhi"),
             MenuItem("Mumbai"),
@@ -167,7 +177,7 @@ def _build_flowers_menu():
             MenuItem("Jaipur"),
             MenuItem("Lucknow"),
             MenuItem("All Cities"),
-        ]),
+        ], section_type='deliver_to'),
     ]
 
 
@@ -187,7 +197,7 @@ def _build_cakes_menu():
             MenuItem("Coffee Cakes"),
             MenuItem("Strawberry Cakes"),
             MenuItem("Cheese Cakes", badges=[{"name": "Premium", "background_color": "#9C27B0", "color": "#FFFFFF"}]),
-        ]),
+        ], section_type='by_type'),
         MenuSection("By Type", [
             MenuItem("Eggless Cakes", badges=[{"name": "Must Try", "background_color": "#4CAF50", "color": "#FFFFFF"}]),
             MenuItem("Sugarfree Cakes", badges=[{"name": "Hot Selling", "background_color": "#FF6600", "color": "#FFFFFF"}]),
@@ -198,7 +208,7 @@ def _build_cakes_menu():
             MenuItem("Tier Cakes"),
             MenuItem("Cake Jars"),
             MenuItem("Exotic Cakes"),
-        ]),
+        ], section_type='by_type'),
         MenuSection("By Design", [
             MenuItem("Cartoon Cakes", badges=[{"name": "New", "background_color": "#FF4444", "color": "#FFFFFF"}]),
             MenuItem("Pinata Cakes", badges=[{"name": "Hot Selling", "background_color": "#FF6600", "color": "#FFFFFF"}]),
@@ -210,7 +220,7 @@ def _build_cakes_menu():
             MenuItem("Heart Shaped"),
             MenuItem("Barbie Cakes"),
             MenuItem("Theme Cakes", badges=[{"name": "Must Try", "background_color": "#4CAF50", "color": "#FFFFFF"}]),
-        ]),
+        ], section_type='by_type'),
         MenuSection("By Occasion", [
             MenuItem("Anniversary"),
             MenuItem("Birthday"),
@@ -221,7 +231,7 @@ def _build_cakes_menu():
             MenuItem("Love & Affection"),
             MenuItem("Thank You"),
             MenuItem("New Born"),
-        ]),
+        ], section_type='by_occasion'),
         MenuSection("By City", [
             MenuItem("Delhi"),
             MenuItem("Mumbai"),
@@ -237,7 +247,7 @@ def _build_cakes_menu():
             MenuItem("Kanpur"),
             MenuItem("Allahabad"),
             MenuItem("Jaipur"),
-        ]),
+        ], section_type='deliver_to'),
     ]
 
 
@@ -252,14 +262,14 @@ def _build_combos_menu():
             MenuItem("Birthday"),
             MenuItem("Anniversary"),
             MenuItem("All Combo"),
-        ]),
+        ], section_type='collection'),
         MenuSection("Flower Combos", [
             MenuItem("With Cake"),
             MenuItem("With Chocolate"),
             MenuItem("With Teddy"),
             MenuItem("With Plant"),
             MenuItem("With Greeting Card"),
-        ]),
+        ], section_type='collection'),
         MenuSection("By City", [
             MenuItem("Delhi NCR"),
             MenuItem("Bangalore"),
@@ -270,7 +280,7 @@ def _build_combos_menu():
             MenuItem("Kolkata"),
             MenuItem("Ahmedabad"),
             MenuItem("Lucknow"),
-        ]),
+        ], section_type='deliver_to'),
     ]
 
 
@@ -291,7 +301,7 @@ def _build_personalised_menu():
             MenuItem("Caricature"),
             MenuItem("Keychains"),
             MenuItem("All Personalised Gifts"),
-        ]),
+        ], section_type='by_type'),
     ]
 
 
@@ -312,7 +322,7 @@ def _build_birthday_menu():
             MenuItem("Travel Accessories"),
             MenuItem("Perfumes"),
             MenuItem("All Gifts"),
-        ]),
+        ], section_type='collection'),
         MenuSection("Gift By Milestone", [
             MenuItem("1st Birthday"),
             MenuItem("5th Birthday"),
@@ -323,7 +333,7 @@ def _build_birthday_menu():
             MenuItem("30th Birthday"),
             MenuItem("40th Birthday"),
             MenuItem("50th Birthday"),
-        ]),
+        ], section_type='by_occasion'),
         MenuSection("Gifts For", [
             MenuItem("Him"),
             MenuItem("Her"),
@@ -336,7 +346,7 @@ def _build_birthday_menu():
             MenuItem("Mother"),
             MenuItem("Father"),
             MenuItem("Kids"),
-        ]),
+        ], section_type='for_whom'),
         MenuSection("Cakes", [
             MenuItem("Bento Cakes"),
             MenuItem("Photo Cakes"),
@@ -345,7 +355,7 @@ def _build_birthday_menu():
             MenuItem("Fruit Cakes"),
             MenuItem("Ferrero Rocher Cakes"),
             MenuItem("Trend Cakes"),
-        ]),
+        ], section_type='by_type'),
     ]
 
 
@@ -368,7 +378,7 @@ def _build_anniversary_menu():
             MenuItem("Perfumes"),
             MenuItem("Travel Accessories"),
             MenuItem("All Gifts"),
-        ]),
+        ], section_type='collection'),
         MenuSection("Gift By Milestone", [
             MenuItem("1st Anniversary"),
             MenuItem("5th Anniversary"),
@@ -377,7 +387,7 @@ def _build_anniversary_menu():
             MenuItem("25th Anniversary"),
             MenuItem("50th Anniversary"),
             MenuItem("75th Anniversary"),
-        ]),
+        ], section_type='by_occasion'),
         MenuSection("Gifts For", [
             MenuItem("Her"),
             MenuItem("Him"),
@@ -385,13 +395,13 @@ def _build_anniversary_menu():
             MenuItem("Husband"),
             MenuItem("Parents"),
             MenuItem("Friends"),
-        ]),
+        ], section_type='for_whom'),
         MenuSection("Cakes", [
             MenuItem("Wife"),
             MenuItem("Husband"),
             MenuItem("Couple"),
             MenuItem("Parents"),
-        ]),
+        ], section_type='by_type'),
     ]
 
 
@@ -409,7 +419,7 @@ def _build_plants_menu():
             MenuItem("Money Plants"),
             MenuItem("Planters"),
             MenuItem("Same Day Plants"),
-        ]),
+        ], section_type='collection'),
     ]
 
 
@@ -423,7 +433,7 @@ def _build_gifts_menu():
             MenuItem("Grooming Kits"),
             MenuItem("Beauty & Cosmetics"),
             MenuItem("All Gifts"),
-        ]),
+        ], section_type='collection'),
         MenuSection("Collection", [
             MenuItem("Mugs"),
             MenuItem("Handbags"),
@@ -437,7 +447,7 @@ def _build_gifts_menu():
             MenuItem("Photo Frames"),
             MenuItem("Plants"),
             MenuItem("Chocolates"),
-        ]),
+        ], section_type='collection'),
         MenuSection("Gifts For", [
             MenuItem("Gifts For Sister"),
             MenuItem("Gifts For Brother"),
@@ -450,7 +460,7 @@ def _build_gifts_menu():
             MenuItem("Gifts For Friends"),
             MenuItem("Gifts for Father"),
             MenuItem("Gifts For Mother"),
-        ]),
+        ], section_type='for_whom'),
         MenuSection("Express Gifts", [
             MenuItem("Chocolate Bouquet"),
             MenuItem("Plants"),
@@ -459,7 +469,7 @@ def _build_gifts_menu():
             MenuItem("Hampers"),
             MenuItem("Combos"),
             MenuItem("Personalised"),
-        ]),
+        ], section_type='collection'),
         MenuSection("Gifts to", [
             MenuItem("Delhi"),
             MenuItem("Mumbai"),
@@ -472,7 +482,7 @@ def _build_gifts_menu():
             MenuItem("Noida"),
             MenuItem("Jaipur"),
             MenuItem("Lucknow"),
-        ]),
+        ], section_type='deliver_to'),
     ]
 
 
@@ -482,7 +492,7 @@ def _build_international_menu():
         MenuSection("Countries", [
             MenuItem("India"),
             MenuItem("USA"),
-        ]),
+        ], section_type='deliver_to'),
     ]
 
 
@@ -499,7 +509,7 @@ def _build_occasions_menu():
             MenuItem("Bhai Dooj - 23rd Oct"),
             MenuItem("Lohri - 13th Jan"),
             MenuItem("Holi - 14th Mar"),
-        ]),
+        ], section_type='by_occasion'),
         MenuSection("Special Occasions", [
             MenuItem("Mother's Day - 10th May"),
             MenuItem("Father's Day - 21st June"),
@@ -514,7 +524,7 @@ def _build_occasions_menu():
             MenuItem("New Year - 01st Jan"),
             MenuItem("Valentine's Day - 14th Feb"),
             MenuItem("Women's Day - 08th Mar"),
-        ]),
+        ], section_type='by_occasion'),
         MenuSection("Sentiments", [
             MenuItem("Congratulations"),
             MenuItem("I Am Sorry"),
@@ -522,5 +532,5 @@ def _build_occasions_menu():
             MenuItem("Sympathy"),
             MenuItem("Love n Romance"),
             MenuItem("Get Well Soon"),
-        ]),
+        ], section_type='by_occasion'),
     ]

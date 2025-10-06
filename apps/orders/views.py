@@ -3,7 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
+from django.conf import settings
 from .models import Order, OrderItem, OrderTracking
 from apps.cart.models import Cart, CartItem
 from apps.users.models import Address
@@ -11,6 +13,9 @@ from apps.products.models import Product
 from decimal import Decimal
 import json
 from datetime import datetime, timedelta
+import razorpay
+import hmac
+import hashlib
 
 
 @login_required
@@ -38,6 +43,8 @@ def order_detail(request, order_number):
 @login_required
 def checkout_view(request):
     """Checkout page"""
+    from django.conf import settings
+
     # Get user's cart
     try:
         cart = Cart.objects.get(user=request.user)
@@ -45,20 +52,20 @@ def checkout_view(request):
     except Cart.DoesNotExist:
         messages.warning(request, 'Your cart is empty')
         return redirect('cart:cart')
-    
+
     if not cart_items.exists():
         messages.warning(request, 'Your cart is empty')
         return redirect('cart:cart')
-    
+
     # Get user's addresses
     addresses = Address.objects.filter(user=request.user, is_active=True)
     default_address = addresses.filter(is_default=True).first()
-    
+
     # Calculate totals
     subtotal = sum(item.total_price for item in cart_items)
     delivery_charge = Decimal('0.00')  # Can be dynamic based on location
     total = subtotal + delivery_charge
-    
+
     context = {
         'cart_items': cart_items,
         'addresses': addresses,
@@ -67,8 +74,9 @@ def checkout_view(request):
         'delivery_charge': delivery_charge,
         'total': total,
         'min_delivery_date': datetime.now().date() + timedelta(days=1),
+        'razorpay_key_id': settings.RAZORPAY_KEY_ID,
     }
-    
+
     return render(request, 'orders/checkout.html', context)
 
 

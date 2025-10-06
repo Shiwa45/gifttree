@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 from django.db.models import Q
 from .models import SiteSettings
 from apps.products.models import Product, Category, Occasion
+from apps.blog.models import BlogPost
 
 
 class HomeView(TemplateView):
@@ -115,6 +116,14 @@ def home_view(request):
     except:
         gift_products = Product.objects.none()
 
+    try:
+        # Recent blog posts for homepage
+        recent_blog_posts = BlogPost.objects.filter(
+            status='published'
+        ).select_related('author', 'category').prefetch_related('tags')[:3]
+    except:
+        recent_blog_posts = BlogPost.objects.none()
+
     context = {
         'site_settings': site_settings,
         'featured_products': featured_products,
@@ -128,5 +137,7 @@ def home_view(request):
         'flower_products': flower_products,
         'plant_products': plant_products,
         'gift_products': gift_products,
+        # Blog posts
+        'recent_blog_posts': recent_blog_posts,
     }
     return render(request, 'core/home.html', context)

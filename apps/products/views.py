@@ -313,12 +313,29 @@ class OccasionDetailView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        self.occasion = get_object_or_404(Occasion, slug=self.kwargs['slug'], is_active=True)
-        queryset = Product.objects.filter(
-            occasions=self.occasion,
-            is_active=True,
-            published=True
-        ).select_related('category').prefetch_related('images')
+        slug = self.kwargs['slug']
+
+        # Try to get exact Occasion match
+        try:
+            self.occasion = Occasion.objects.get(slug=slug, is_active=True)
+            queryset = Product.objects.filter(
+                occasions=self.occasion,
+                is_active=True,
+                published=True
+            )
+        except Occasion.DoesNotExist:
+            # Fallback: Search by slug keywords in product name/description
+            self.occasion = None
+            search_terms = slug.replace('-', ' ')
+            queryset = Product.objects.filter(
+                Q(name__icontains=search_terms) |
+                Q(category__name__icontains=search_terms) |
+                Q(description__icontains=search_terms),
+                is_active=True,
+                published=True
+            ).distinct()
+
+        queryset = queryset.select_related('category').prefetch_related('images')
 
         # Apply the same filtering and sorting as ProductListView
         view = ProductListView()
@@ -331,8 +348,11 @@ class OccasionDetailView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['occasion'] = self.occasion
-        context['page_title'] = self.occasion.name
+        if self.occasion:
+            context['occasion'] = self.occasion
+            context['page_title'] = self.occasion.name
+        else:
+            context['page_title'] = self.kwargs['slug'].replace('-', ' ').title()
 
         # Add the same context as ProductListView
         try:
@@ -661,7 +681,7 @@ class MenuCategoryDetailView(ListView):
 
 
 class ProductTypeDetailView(ListView):
-    """Product Type-specific product listing"""
+    """Product Type-specific product listing with fallback search"""
     model = Product
     template_name = 'products/product_list.html'
     context_object_name = 'products'
@@ -669,32 +689,51 @@ class ProductTypeDetailView(ListView):
 
     def get_queryset(self):
         from .models import ProductType
-        self.product_type = get_object_or_404(ProductType, slug=self.kwargs['slug'], is_active=True)
-        
-        queryset = Product.objects.filter(
-            product_types=self.product_type,
-            is_active=True,
-            published=True
-        ).select_related('category').prefetch_related('images')
-        
+        slug = self.kwargs['slug']
+
+        # Try to get exact ProductType match
+        try:
+            self.product_type = ProductType.objects.get(slug=slug, is_active=True)
+            queryset = Product.objects.filter(
+                product_types=self.product_type,
+                is_active=True,
+                published=True
+            )
+        except ProductType.DoesNotExist:
+            # Fallback: Search by slug keywords in product name/category
+            self.product_type = None
+            search_terms = slug.replace('-', ' ')
+            queryset = Product.objects.filter(
+                Q(name__icontains=search_terms) |
+                Q(category__name__icontains=search_terms) |
+                Q(description__icontains=search_terms),
+                is_active=True,
+                published=True
+            ).distinct()
+
+        queryset = queryset.select_related('category').prefetch_related('images')
+
         # Apply filtering and sorting
         view = ProductListView()
         view.request = self.request
         view.kwargs = self.kwargs
         queryset = view.apply_filters(queryset)
         queryset = view.apply_sorting(queryset)
-        
+
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['product_type'] = self.product_type
-        context['page_title'] = self.product_type.name
+        if self.product_type:
+            context['product_type'] = self.product_type
+            context['page_title'] = self.product_type.name
+        else:
+            context['page_title'] = self.kwargs['slug'].replace('-', ' ').title()
         return context
 
 
 class CollectionDetailView(ListView):
-    """Collection-specific product listing"""
+    """Collection-specific product listing with fallback search"""
     model = Product
     template_name = 'products/product_list.html'
     context_object_name = 'products'
@@ -702,32 +741,51 @@ class CollectionDetailView(ListView):
 
     def get_queryset(self):
         from .models import Collection
-        self.collection = get_object_or_404(Collection, slug=self.kwargs['slug'], is_active=True)
-        
-        queryset = Product.objects.filter(
-            collections=self.collection,
-            is_active=True,
-            published=True
-        ).select_related('category').prefetch_related('images')
-        
+        slug = self.kwargs['slug']
+
+        # Try to get exact Collection match
+        try:
+            self.collection = Collection.objects.get(slug=slug, is_active=True)
+            queryset = Product.objects.filter(
+                collections=self.collection,
+                is_active=True,
+                published=True
+            )
+        except Collection.DoesNotExist:
+            # Fallback: Search by slug keywords
+            self.collection = None
+            search_terms = slug.replace('-', ' ')
+            queryset = Product.objects.filter(
+                Q(name__icontains=search_terms) |
+                Q(category__name__icontains=search_terms) |
+                Q(description__icontains=search_terms),
+                is_active=True,
+                published=True
+            ).distinct()
+
+        queryset = queryset.select_related('category').prefetch_related('images')
+
         # Apply filtering and sorting
         view = ProductListView()
         view.request = self.request
         view.kwargs = self.kwargs
         queryset = view.apply_filters(queryset)
         queryset = view.apply_sorting(queryset)
-        
+
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['collection'] = self.collection
-        context['page_title'] = self.collection.name
+        if self.collection:
+            context['collection'] = self.collection
+            context['page_title'] = self.collection.name
+        else:
+            context['page_title'] = self.kwargs['slug'].replace('-', ' ').title()
         return context
 
 
 class RecipientDetailView(ListView):
-    """Recipient-specific product listing"""
+    """Recipient-specific product listing with fallback search"""
     model = Product
     template_name = 'products/product_list.html'
     context_object_name = 'products'
@@ -735,32 +793,52 @@ class RecipientDetailView(ListView):
 
     def get_queryset(self):
         from .models import Recipient
-        self.recipient = get_object_or_404(Recipient, slug=self.kwargs['slug'], is_active=True)
-        
-        queryset = Product.objects.filter(
-            recipients=self.recipient,
-            is_active=True,
-            published=True
-        ).select_related('category').prefetch_related('images')
-        
+        slug = self.kwargs['slug']
+
+        # Try to get exact Recipient match
+        try:
+            self.recipient = Recipient.objects.get(slug=slug, is_active=True)
+            queryset = Product.objects.filter(
+                recipients=self.recipient,
+                is_active=True,
+                published=True
+            )
+        except Recipient.DoesNotExist:
+            # Fallback: Search by slug keywords
+            self.recipient = None
+            search_terms = slug.replace('-', ' ').replace('for-', '')
+            queryset = Product.objects.filter(
+                Q(name__icontains=search_terms) |
+                Q(category__name__icontains=search_terms) |
+                Q(description__icontains=search_terms),
+                is_active=True,
+                published=True
+            ).distinct()
+
+        queryset = queryset.select_related('category').prefetch_related('images')
+
         # Apply filtering and sorting
         view = ProductListView()
         view.request = self.request
         view.kwargs = self.kwargs
         queryset = view.apply_filters(queryset)
         queryset = view.apply_sorting(queryset)
-        
+
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['recipient'] = self.recipient
-        context['page_title'] = f'Gifts for {self.recipient.name}'
+        if self.recipient:
+            context['recipient'] = self.recipient
+            context['page_title'] = f'Gifts for {self.recipient.name}'
+        else:
+            name = self.kwargs['slug'].replace('-', ' ').replace('for ', '').title()
+            context['page_title'] = f'Gifts for {name}'
         return context
 
 
 class LocationDetailView(ListView):
-    """Location-specific product listing"""
+    """Location-specific product listing with fallback to all products"""
     model = Product
     template_name = 'products/product_list.html'
     context_object_name = 'products'
@@ -768,25 +846,41 @@ class LocationDetailView(ListView):
 
     def get_queryset(self):
         from .models import DeliveryLocation
-        self.location = get_object_or_404(DeliveryLocation, slug=self.kwargs['slug'], is_active=True)
-        
-        queryset = Product.objects.filter(
-            delivery_locations=self.location,
-            is_active=True,
-            published=True
-        ).select_related('category').prefetch_related('images')
-        
+        slug = self.kwargs['slug']
+
+        # Try to get exact DeliveryLocation match
+        try:
+            self.location = DeliveryLocation.objects.get(slug=slug, is_active=True)
+            queryset = Product.objects.filter(
+                delivery_locations=self.location,
+                is_active=True,
+                published=True
+            )
+        except DeliveryLocation.DoesNotExist:
+            # Fallback: Show all products (most products are deliverable everywhere)
+            self.location = None
+            queryset = Product.objects.filter(
+                is_active=True,
+                published=True
+            )
+
+        queryset = queryset.select_related('category').prefetch_related('images')
+
         # Apply filtering and sorting
         view = ProductListView()
         view.request = self.request
         view.kwargs = self.kwargs
         queryset = view.apply_filters(queryset)
         queryset = view.apply_sorting(queryset)
-        
+
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['location'] = self.location
-        context['page_title'] = f'Delivery to {self.location.name}'
+        if self.location:
+            context['location'] = self.location
+            context['page_title'] = f'Delivery to {self.location.name}'
+        else:
+            location_name = self.kwargs['slug'].replace('-', ' ').title()
+            context['page_title'] = f'Delivery to {location_name}'
         return context

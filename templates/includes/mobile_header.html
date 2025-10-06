@@ -746,6 +746,49 @@ function toggleMobileSection(sectionId) {
     }
 }
 
+// Multi-layer mobile section toggle
+function toggleMobileSection(sectionId) {
+    const submenu = document.getElementById('section-submenu-' + sectionId);
+    const chevron = document.getElementById('section-chevron-' + sectionId);
+    
+    if (submenu && chevron) {
+        const isActive = submenu.classList.contains('active');
+        
+        // Close all other section submenus in the same category
+        const categorySubmenu = submenu.closest('.mobile-category-submenu');
+        if (categorySubmenu) {
+            const allSectionSubmenus = categorySubmenu.querySelectorAll('.mobile-section-submenu');
+            const allSectionChevrons = categorySubmenu.querySelectorAll('.mobile-section-chevron');
+            
+            allSectionSubmenus.forEach(menu => {
+                if (menu !== submenu) {
+                    menu.classList.remove('active');
+                }
+            });
+            
+            allSectionChevrons.forEach(chev => {
+                if (chev !== chevron) {
+                    chev.classList.remove('rotated');
+                }
+            });
+        }
+        
+        // Toggle current section submenu
+        if (isActive) {
+            submenu.classList.remove('active');
+            chevron.classList.remove('rotated');
+        } else {
+            submenu.classList.add('active');
+            chevron.classList.add('rotated');
+        }
+        
+        // Add haptic feedback
+        if ('vibrate' in navigator) {
+            navigator.vibrate(10);
+        }
+    }
+}
+
 // Enhanced mobile menu functionality
 document.addEventListener('DOMContentLoaded', function() {
     // Close mobile menu when clicking on actual links
