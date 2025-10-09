@@ -1,545 +1,351 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}My Orders - GiftTree{% endblock %}
-
-{% block meta_description %}View and track all your orders on GiftTree. Check order status, delivery details, and order history.{% endblock %}
+{% block title %}My Orders - Order History | GiftTree{% endblock %}
 
 {% block content %}
-<!-- Mobile Header with Back Button -->
+<!-- Mobile Header -->
 {% include 'includes/mobile_header.html' with show_back_button=True page_title="My Orders" %}
 
-<style>
-/* Orders Page Styles */
-.orders-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px 16px 80px;
-    min-height: 100vh;
-    background: #f5f5f5;
-}
-
-.orders-header {
-    background: white;
-    padding: 24px;
-    border-radius: 16px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.orders-header h1 {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text-dark);
-    margin-bottom: 8px;
-}
-
-.orders-header p {
-    color: var(--text-light);
-    font-size: 14px;
-}
-
-.orders-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-    margin-top: 20px;
-}
-
-.stat-card {
-    background: linear-gradient(135deg, #E91E63 0%, #FF6090 100%);
-    padding: 16px;
-    border-radius: 12px;
-    color: white;
-    text-align: center;
-}
-
-.stat-card.green {
-    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-}
-
-.stat-card.orange {
-    background: linear-gradient(135deg, #FF9800 0%, #FFB74D 100%);
-}
-
-.stat-card.blue {
-    background: linear-gradient(135deg, #2196F3 0%, #42A5F5 100%);
-}
-
-.stat-number {
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 4px;
-}
-
-.stat-label {
-    font-size: 12px;
-    opacity: 0.9;
-}
-
-.filter-tabs {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding: 16px 0;
-    margin-bottom: 20px;
-    -webkit-overflow-scrolling: touch;
-}
-
-.filter-tabs::-webkit-scrollbar {
-    display: none;
-}
-
-.filter-tab {
-    padding: 10px 20px;
-    background: white;
-    border: 2px solid #E0E0E0;
-    border-radius: 25px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-dark);
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.3s ease;
-}
-
-.filter-tab.active {
-    background: var(--pink-gradient);
-    border-color: var(--primary-color);
-    color: white;
-}
-
-.filter-tab:hover {
-    border-color: var(--primary-color);
-}
-
-.orders-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.order-card {
-    background: white;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-}
-
-.order-card:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
-}
-
-.order-header {
-    padding: 16px;
-    background: #F8F9FA;
-    border-bottom: 1px solid #E0E0E0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.order-number {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-.order-number span {
-    color: var(--primary-color);
-}
-
-.order-date {
-    font-size: 12px;
-    color: var(--text-light);
-}
-
-.order-body {
-    padding: 16px;
-}
-
-.order-items {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-.order-item {
-    display: flex;
-    gap: 12px;
-}
-
-.item-image {
-    width: 80px;
-    height: 80px;
-    border-radius: 12px;
-    object-fit: cover;
-    flex-shrink: 0;
-}
-
-.item-details {
-    flex: 1;
-}
-
-.item-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-dark);
-    margin-bottom: 4px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.item-meta {
-    font-size: 12px;
-    color: var(--text-light);
-    margin-bottom: 6px;
-}
-
-.item-price {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--primary-color);
-}
-
-.order-footer {
-    padding: 16px;
-    background: #F8F9FA;
-    border-top: 1px solid #E0E0E0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.order-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 20px;
-}
-
-.order-status i {
-    font-size: 12px;
-}
-
-.status-pending {
-    background: #FFF3E0;
-    color: #F57C00;
-}
-
-.status-confirmed {
-    background: #E3F2FD;
-    color: #1976D2;
-}
-
-.status-processing {
-    background: #F3E5F5;
-    color: #7B1FA2;
-}
-
-.status-shipped {
-    background: #E8F5E9;
-    color: #388E3C;
-}
-
-.status-delivered {
-    background: #C8E6C9;
-    color: #2E7D32;
-}
-
-.status-cancelled {
-    background: #FFEBEE;
-    color: #C62828;
-}
-
-.order-total {
-    text-align: right;
-}
-
-.total-label {
-    font-size: 12px;
-    color: var(--text-light);
-    margin-bottom: 4px;
-}
-
-.total-amount {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-dark);
-}
-
-.order-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 16px;
-}
-
-.btn-action {
-    flex: 1;
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: center;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-.btn-primary {
-    background: var(--pink-gradient);
-    color: white;
-    border: none;
-    box-shadow: 0 2px 8px rgba(233, 30, 99, 0.3);
-}
-
-.btn-primary:hover {
-    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.4);
-    transform: translateY(-1px);
-}
-
-.btn-secondary {
-    background: white;
-    color: var(--text-dark);
-    border: 2px solid #E0E0E0;
-}
-
-.btn-secondary:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-.empty-orders {
-    text-align: center;
-    padding: 60px 20px;
-    background: white;
-    border-radius: 16px;
-}
-
-.empty-icon {
-    font-size: 64px;
-    color: #E0E0E0;
-    margin-bottom: 20px;
-}
-
-.empty-title {
-    font-size: 22px;
-    font-weight: 600;
-    color: var(--text-dark);
-    margin-bottom: 8px;
-}
-
-.empty-text {
-    color: var(--text-light);
-    margin-bottom: 24px;
-}
-
-.btn-shop {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 14px 32px;
-    background: var(--pink-gradient);
-    color: white;
-    border-radius: 25px;
-    text-decoration: none;
-    font-weight: 600;
-    box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
-    transition: all 0.3s ease;
-}
-
-.btn-shop:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(233, 30, 99, 0.4);
-    color: white;
-}
-
-@media (min-width: 768px) {
-    .orders-container {
-        padding: 40px 20px;
-    }
-    
-    .orders-header {
-        padding: 32px;
-    }
-    
-    .orders-header h1 {
-        font-size: 32px;
-    }
-    
-    .order-item {
-        flex-direction: row;
-    }
-    
-    .item-image {
-        width: 100px;
-        height: 100px;
-    }
-}
-</style>
-
 <div class="orders-container">
-    <!-- Orders Header -->
-    <div class="orders-header">
-        <h1>My Orders</h1>
-        <p>Track and manage all your orders</p>
-        
-        <!-- Order Statistics -->
-        <div class="orders-stats">
-            <div class="stat-card">
-                <div class="stat-number">{{ orders.count }}</div>
-                <div class="stat-label">Total Orders</div>
-            </div>
-            <div class="stat-card green">
-                <div class="stat-number">{{ orders|length }}</div>
-                <div class="stat-label">Delivered</div>
-            </div>
-            <div class="stat-card orange">
-                <div class="stat-number">0</div>
-                <div class="stat-label">In Transit</div>
-            </div>
-            <div class="stat-card blue">
-                <div class="stat-number">0</div>
-                <div class="stat-label">Processing</div>
-            </div>
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">My Orders</h1>
+            <p class="page-subtitle">View and track all your orders</p>
         </div>
-    </div>
-
-    <!-- Filter Tabs -->
-    <div class="filter-tabs">
-        <div class="filter-tab active" onclick="filterOrders('all')">All Orders</div>
-        <div class="filter-tab" onclick="filterOrders('processing')">Processing</div>
-        <div class="filter-tab" onclick="filterOrders('shipped')">Shipped</div>
-        <div class="filter-tab" onclick="filterOrders('delivered')">Delivered</div>
-        <div class="filter-tab" onclick="filterOrders('cancelled')">Cancelled</div>
-    </div>
-
-    {% if orders %}
-        <!-- Orders List -->
+        
+        {% if orders %}
         <div class="orders-list">
             {% for order in orders %}
-                <div class="order-card" data-status="{{ order.status }}">
-                    <!-- Order Header -->
-                    <div class="order-header">
-                        <div>
-                            <div class="order-number">
-                                Order <span>#{{ order.order_number }}</span>
-                            </div>
-                            <div class="order-date">
-                                Placed on {{ order.created_at|date:"d M, Y" }}
-                            </div>
-                        </div>
+            <div class="order-card">
+                <div class="order-header">
+                    <div class="order-info">
+                        <h3 class="order-number">Order #{{ order.order_number }}</h3>
+                        <p class="order-date">Placed on {{ order.created_at|date:"F d, Y" }}</p>
                     </div>
-
-                    <!-- Order Body -->
-                    <div class="order-body">
-                        <!-- Order Items -->
-                        <div class="order-items">
-                            {% for item in order.items.all|slice:":2" %}
-                                <div class="order-item">
-                                    <img src="{% if item.product.primary_image %}{{ item.product.primary_image.image.url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}" 
-                                         alt="{{ item.product.name }}" 
-                                         class="item-image"
-                                         onerror="this.src='{% static 'images/products/default.jpg' %}'">
-                                    <div class="item-details">
-                                        <div class="item-name">{{ item.product.name }}</div>
-                                        <div class="item-meta">
-                                            Qty: {{ item.quantity }} {% if item.variant %}| {{ item.variant.name }}{% endif %}
-                                        </div>
-                                        <div class="item-price">₹{{ item.price }}</div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                            
-                            {% if order.items.count > 2 %}
-                                <div style="font-size: 13px; color: var(--text-light); padding-left: 12px;">
-                                    +{{ order.items.count|add:"-2" }} more item{{ order.items.count|add:"-2"|pluralize }}
-                                </div>
-                            {% endif %}
+                    <span class="order-status badge badge-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'pending' %}warning{% else %}info{% endif %}">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+                
+                <div class="order-items">
+                    {% for item in order.items.all|slice:":3" %}
+                    <div class="order-item">
+                        <img src="{% if item.product.primary_image %}{{ item.product.primary_image.url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}" 
+                             alt="{{ item.product_name }}" class="item-thumb">
+                        <div class="item-info">
+                            <div class="item-name">{{ item.product_name }}</div>
+                            <div class="item-details">Qty: {{ item.quantity }} {% if item.variant_name %}| {{ item.variant_name }}{% endif %}</div>
                         </div>
-
-                        <!-- Order Actions -->
-                        <div class="order-actions">
-                            <a href="{% url 'orders:order_detail' order.order_number %}" class="btn-action btn-primary">
-                                <i class="fas fa-eye"></i>
-                                View Details
-                            </a>
-                            {% if order.status == 'delivered' %}
-                                <a href="#" class="btn-action btn-secondary">
-                                    <i class="fas fa-star"></i>
-                                    Rate Order
-                                </a>
-                            {% elif order.status != 'cancelled' %}
-                                <a href="#" class="btn-action btn-secondary">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    Track Order
-                                </a>
-                            {% endif %}
-                        </div>
+                        <div class="item-price">₹{{ item.total_price }}</div>
                     </div>
-
-                    <!-- Order Footer -->
-                    <div class="order-footer">
-                        <div class="order-status status-{{ order.status|lower }}">
-                            <i class="fas fa-{% if order.status == 'delivered' %}check-circle{% elif order.status == 'cancelled' %}times-circle{% elif order.status == 'shipped' %}truck{% else %}clock{% endif %}"></i>
-                            {{ order.get_status_display }}
-                        </div>
-                        <div class="order-total">
-                            <div class="total-label">Total Amount</div>
-                            <div class="total-amount">₹{{ order.total_amount }}</div>
-                        </div>
+                    {% endfor %}
+                    
+                    {% if order.items.count > 3 %}
+                    <div class="more-items">
+                        + {{ order.items.count|add:"-3" }} more item{{ order.items.count|add:"-3"|pluralize }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="order-footer">
+                    <div class="order-total">
+                        <span class="total-label">Total Amount:</span>
+                        <span class="total-amount">₹{{ order.total_amount }}</span>
+                    </div>
+                    <div class="order-actions">
+                        <a href="{% url 'orders:order_detail' order.order_number %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>
+                            View Details
+                        </a>
+                        {% if order.status in 'pending,confirmed' %}
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmCancel('{{ order.order_number }}')">
+                            <i class="fas fa-times me-1"></i>
+                            Cancel
+                        </button>
+                        {% endif %}
                     </div>
                 </div>
+            </div>
             {% endfor %}
         </div>
-    {% else %}
+        {% else %}
         <!-- Empty State -->
         <div class="empty-orders">
             <div class="empty-icon">
                 <i class="fas fa-shopping-bag"></i>
             </div>
             <h2 class="empty-title">No Orders Yet</h2>
-            <p class="empty-text">
-                You haven't placed any orders yet. Start shopping to see your orders here!
-            </p>
-            <a href="{% url 'products:product_list' %}" class="btn-shop">
-                <i class="fas fa-store"></i>
+            <p class="empty-text">You haven't placed any orders yet. Start shopping to create your first order!</p>
+            <a href="{% url 'products:product_list' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-shopping-cart me-2"></i>
                 Start Shopping
             </a>
         </div>
-    {% endif %}
+        {% endif %}
+    </div>
 </div>
 
-<script>
-function filterOrders(status) {
-    const tabs = document.querySelectorAll('.filter-tab');
-    const orders = document.querySelectorAll('.order-card');
+<!-- Cancel Confirmation Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this order? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Order</button>
+                <form method="POST" id="cancelForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Yes, Cancel Order</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .orders-container {
+        padding: 20px 0 80px;
+        background: #f8f9fa;
+    }
     
-    // Update active tab
-    tabs.forEach(tab => tab.classList.remove('active'));
-    event.target.classList.add('active');
+    .page-header {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
     
-    // Filter orders
-    orders.forEach(order => {
-        if (status === 'all') {
-            order.style.display = 'block';
-        } else {
-            const orderStatus = order.dataset.status.toLowerCase();
-            order.style.display = orderStatus === status ? 'block' : 'none';
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text-dark);
+    }
+    
+    .page-subtitle {
+        color: #666;
+        margin: 0;
+    }
+    
+    .order-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+    }
+    
+    .order-card:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .order-number {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        color: var(--text-dark);
+    }
+    
+    .order-date {
+        font-size: 13px;
+        color: #666;
+        margin: 0;
+    }
+    
+    .order-status {
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .badge-success {
+        background: #4CAF50;
+        color: white;
+    }
+    
+    .badge-danger {
+        background: #f44336;
+        color: white;
+    }
+    
+    .badge-warning {
+        background: #ff9800;
+        color: white;
+    }
+    
+    .badge-info {
+        background: #2196F3;
+        color: white;
+    }
+    
+    .order-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 12px 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .order-item:last-of-type {
+        border-bottom: none;
+    }
+    
+    .item-thumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    
+    .item-info {
+        flex: 1;
+    }
+    
+    .item-name {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: var(--text-dark);
+    }
+    
+    .item-details {
+        font-size: 13px;
+        color: #666;
+    }
+    
+    .item-price {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+    
+    .more-items {
+        text-align: center;
+        padding: 10px;
+        color: var(--primary-color);
+        font-size: 13px;
+        font-weight: 600;
+    }
+    
+    .order-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #f0f0f0;
+    }
+    
+    .order-total {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .total-label {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 4px;
+    }
+    
+    .total-amount {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+    
+    .order-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .empty-orders {
+        background: white;
+        border-radius: 12px;
+        padding: 60px 30px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .empty-icon {
+        font-size: 80px;
+        color: #e0e0e0;
+        margin-bottom: 25px;
+    }
+    
+    .empty-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: var(--text-dark);
+    }
+    
+    .empty-text {
+        color: #666;
+        margin-bottom: 30px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 20px;
         }
-    });
+        
+        .order-card {
+            padding: 15px;
+        }
+        
+        .order-header {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .order-footer {
+            flex-direction: column;
+            gap: 15px;
+            align-items: stretch;
+        }
+        
+        .order-actions {
+            flex-direction: column;
+        }
+        
+        .order-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_js %}
+<script>
+function confirmCancel(orderNumber) {
+    const cancelForm = document.getElementById('cancelForm');
+    cancelForm.action = `/orders/cancel/${orderNumber}/`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+    modal.show();
 }
 </script>
 {% endblock %}

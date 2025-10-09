@@ -1,391 +1,202 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from .models import Cart, CartItem
-from .forms import AddToCartForm
-from apps.products.models import Product, ProductVariant
-from decimal import Decimal
-import json
+from apps.products.models import Product, ProductVariant, ProductAddOn
 
 
+@login_required
 def cart_view(request):
-    """Display cart contents - supports both logged-in users and session cart"""
-    cart_items = []
-    cart_subtotal = 0
-    excluded_product_ids = []
+    """Display cart contents"""
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = cart.items.select_related('product', 'variant').prefetch_related('addons').all()
     
-    if request.user.is_authenticated:
-        # Database cart for logged-in users
-        cart, created = Cart.objects.get_or_create(user=request.user)
-        cart_items = cart.items.select_related('product', 'variant').all()
-        cart_subtotal = sum(item.total_price for item in cart_items)
-        excluded_product_ids = [item.product.id for item in cart_items]
+    # Get recommended products (products from same categories)
+    if cart_items.exists():
+        categories = [item.product.category for item in cart_items]
+        recommended_products = Product.objects.filter(
+            category__in=categories,
+            is_active=True,
+            stock_quantity__gt=0
+        ).exclude(
+            id__in=[item.product.id for item in cart_items]
+        ).select_related('category').prefetch_related('images')[:6]
     else:
-        # Session cart for anonymous users
-        session_cart = request.session.get('cart', {})
-        
-        for item_key, item_data in session_cart.items():
-            try:
-                product = Product.objects.get(id=item_data['product_id'], is_active=True)
-                variant = None
-                if item_data.get('variant_id'):
-                    variant = ProductVariant.objects.get(id=item_data['variant_id'])
-                
-                # Create a cart item-like object for template compatibility
-                class SessionCartItem:
-                    def __init__(self, product, variant, quantity, custom_data):
-                        self.product = product
-                        self.variant = variant
-                        self.quantity = quantity
-                        self.custom_name = custom_data.get('custom_name')
-                        self.custom_message = custom_data.get('custom_message')
-                        self.custom_flavor = custom_data.get('custom_flavor')
-                        self.custom_date = custom_data.get('custom_date')
-                        self.unit_price = variant.final_price if variant else product.current_price
-                        self.total_price = self.unit_price * quantity
-                        self.id = item_key  # Use item_key as ID for session items
-                
-                cart_item = SessionCartItem(product, variant, item_data['quantity'], item_data)
-                cart_items.append(cart_item)
-                cart_subtotal += cart_item.total_price
-                excluded_product_ids.append(product.id)
-                
-            except (Product.DoesNotExist, ProductVariant.DoesNotExist):
-                # Remove invalid items from session
-                del session_cart[item_key]
-                request.session.modified = True
-    
-    cart_total = cart_subtotal  # Add delivery charges if needed
+        # Show featured products if cart is empty
+        recommended_products = Product.objects.filter(
+            is_featured=True,
+            is_active=True,
+            stock_quantity__gt=0
+        ).select_related('category').prefetch_related('images')[:6]
     
     context = {
+        'cart': cart,
         'cart_items': cart_items,
-        'cart_subtotal': cart_subtotal,
-        'cart_total': cart_total,
-        'cart_count': len(cart_items),
-        'recommended_products': Product.objects.filter(
-            is_active=True, 
-            is_featured=True
-        ).exclude(id__in=excluded_product_ids)[:4]
+        'cart_subtotal': cart.total_price,
+        'cart_total': cart.total_price,
+        'recommended_products': recommended_products,
     }
     return render(request, 'cart/cart.html', context)
 
 
+@login_required
 @require_POST
 def add_to_cart(request):
-    """Add product to cart - supports both form POST and AJAX"""
+    """Add item to cart"""
+    product_id = request.POST.get('product_id')
+    variant_id = request.POST.get('variant_id')
+    quantity = int(request.POST.get('quantity', 1))
+    addon_ids = request.POST.getlist('addon_ids[]')  # Get list of addon IDs
+    action = request.POST.get('action', 'add')  # 'add' or 'buy_now'
 
-    # Check if this is an AJAX request
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.content_type == 'application/json'
+    # Debug: Print all POST data
+    print(f"POST data: {dict(request.POST)}")
+    print(f"Addon IDs received: {addon_ids}")
 
-    # Check if this is a "buy now" action
-    action = request.POST.get('action', 'add')
-
-    # Parse data from either JSON or POST
-    if is_ajax and request.content_type == 'application/json':
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'message': 'Invalid JSON'}, status=400)
-    else:
-        data = request.POST
-
-    # Create form with the data
-    form = AddToCartForm(data)
-
-    if not form.is_valid():
-        error_msg = ' '.join([f"{k}: {v[0]}" for k, v in form.errors.items()])
-        if is_ajax:
-            return JsonResponse({'success': False, 'message': error_msg}, status=400)
-        messages.error(request, error_msg)
-        return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
-
-    # Get cleaned data
-    product_id = form.cleaned_data['product_id']
-    variant_id = form.cleaned_data.get('variant_id')
-    quantity = form.cleaned_data['quantity']
-    custom_name = form.cleaned_data.get('custom_name', '').strip()
-    custom_message = form.cleaned_data.get('custom_message', '').strip()
-    custom_flavor = form.cleaned_data.get('custom_flavor', '').strip()
-    custom_date = form.cleaned_data.get('custom_date')
-
-    # Get product and variant
-    product = get_object_or_404(Product, id=product_id, is_active=True)
-    variant = None
-    if variant_id:
-        variant = get_object_or_404(ProductVariant, id=variant_id, product=product)
-
-    # Add to cart logic
     try:
-        if request.user.is_authenticated:
-            # Database cart for logged-in users
-            cart, created = Cart.objects.get_or_create(user=request.user)
+        product = Product.objects.get(id=product_id, is_active=True)
+        variant = None
 
-            # Create cart item
-            cart_item = CartItem.objects.create(
-                cart=cart,
-                product=product,
-                variant=variant,
-                quantity=quantity,
-                custom_name=custom_name if custom_name else None,
-                custom_message=custom_message if custom_message else None,
-                custom_flavor=custom_flavor if custom_flavor else None,
-                custom_date=custom_date if custom_date else None
-            )
+        if variant_id:
+            variant = ProductVariant.objects.get(id=variant_id, product=product)
 
-            # Calculate cart totals
-            cart_count = cart.total_items
-            cart_total = float(cart.total_price)
-        else:
-            # Session cart for anonymous users
-            if 'cart' not in request.session:
-                request.session['cart'] = {}
+        # Get or create cart
+        cart, created = Cart.objects.get_or_create(user=request.user)
 
-            cart_session = request.session['cart']
+        # Create new cart item (always create new to handle different addon combinations)
+        cart_item = CartItem.objects.create(
+            cart=cart,
+            product=product,
+            variant=variant,
+            quantity=quantity
+        )
 
-            # Create unique key for cart item (including customizations)
-            item_key = f"{product_id}"
-            if variant_id:
-                item_key += f"_v{variant_id}"
-            if custom_name or custom_message or custom_flavor:
-                item_key += f"_c{hash(f'{custom_name}{custom_message}{custom_flavor}')}"
+        # Add selected add-ons to the cart item
+        if addon_ids:
+            addons = ProductAddOn.objects.filter(id__in=addon_ids, is_active=True)
+            cart_item.addons.set(addons)
+            # Debug: print to console
+            print(f"Added {addons.count()} add-ons to cart item: {[a.name for a in addons]}")
 
-            # Add to session cart
-            if item_key in cart_session:
-                cart_session[item_key]['quantity'] += quantity
-            else:
-                price = float(variant.final_price if variant else product.current_price)
-                cart_session[item_key] = {
-                    'product_id': product_id,
-                    'variant_id': variant_id,
-                    'quantity': quantity,
-                    'price': price,
-                    'custom_name': custom_name,
-                    'custom_message': custom_message,
-                    'custom_flavor': custom_flavor,
-                    'custom_date': custom_date,
-                    'name': product.name
-                }
+        # Check if it's an AJAX request
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
-            request.session.modified = True
-
-            # Calculate session cart totals
-            cart_count = sum(item['quantity'] for item in cart_session.values())
-            cart_total = sum(item['quantity'] * item['price'] for item in cart_session.values())
-
-        success_message = f'{product.name} added to cart successfully!'
-
-        # Return appropriate response
         if is_ajax:
             return JsonResponse({
                 'success': True,
-                'message': success_message,
-                'cart_count': cart_count,
-                'cart_total': cart_total,
-                'item': {
-                    'name': product.name,
-                    'quantity': quantity,
-                    'price': float(variant.final_price if variant else product.current_price),
-                    'total': float((variant.final_price if variant else product.current_price) * quantity)
-                }
-            })
-        else:
-            # Regular form submission
-            messages.success(request, success_message)
-
-            # If "buy now" was clicked, redirect to cart, otherwise go back to product
-            if action == 'buy_now':
-                return redirect('cart:cart')
-            else:
-                return redirect(request.META.get('HTTP_REFERER', 'cart:cart'))
-
-    except Exception as e:
-        error_message = f'Error adding to cart: {str(e)}'
-        if is_ajax:
-            return JsonResponse({'success': False, 'message': error_message}, status=400)
-        messages.error(request, error_message)
-        return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
-
-
-@require_POST
-def update_cart_item(request, item_id):
-    """Update cart item quantity - supports both logged-in users and session cart"""
-    try:
-        data = json.loads(request.body)
-        quantity = int(data.get('quantity', 1))
-        
-        if request.user.is_authenticated:
-            # Database cart for logged-in users
-            cart_item = get_object_or_404(
-                CartItem, 
-                id=item_id, 
-                cart__user=request.user
-            )
-            
-            if quantity <= 0:
-                cart_item.delete()
-                message = 'Item removed from cart'
-            else:
-                cart_item.quantity = quantity
-                cart_item.save()
-                message = 'Cart updated'
-            
-            cart = cart_item.cart if quantity > 0 else Cart.objects.get(user=request.user)
-            
-            return JsonResponse({
-                'success': True,
-                'message': message,
+                'message': f'{product.name} added to cart!',
                 'cart_count': cart.total_items,
                 'cart_total': float(cart.total_price),
-                'item_total': float(cart_item.total_price) if quantity > 0 else 0
             })
         else:
-            # Session cart for anonymous users
-            session_cart = request.session.get('cart', {})
-            
-            if item_id in session_cart:
-                if quantity <= 0:
-                    del session_cart[item_id]
-                    message = 'Item removed from cart'
-                else:
-                    session_cart[item_id]['quantity'] = quantity
-                    message = 'Cart updated'
-                
-                request.session.modified = True
-                
-                # Calculate totals
-                cart_count = sum(item['quantity'] for item in session_cart.values())
-                cart_total = sum(item['quantity'] * item['price'] for item in session_cart.values())
-                item_total = session_cart[item_id]['quantity'] * session_cart[item_id]['price'] if item_id in session_cart else 0
-                
-                return JsonResponse({
-                    'success': True,
-                    'message': message,
-                    'cart_count': cart_count,
-                    'cart_total': cart_total,
-                    'item_total': item_total
-                })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Item not found in cart'
-                }, status=404)
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=400)
+            # Regular form submission - redirect to cart
+            from django.contrib import messages
+            messages.success(request, f'{product.name} added to cart!')
+            return redirect('cart:cart_view')
 
-
-@require_POST
-def remove_from_cart(request, item_id):
-    """Remove item from cart - supports both logged-in users and session cart"""
-    try:
-        if request.user.is_authenticated:
-            # Database cart for logged-in users
-            cart_item = get_object_or_404(
-                CartItem, 
-                id=item_id, 
-                cart__user=request.user
-            )
-            
-            product_name = cart_item.product.name
-            cart_item.delete()
-            
-            cart = Cart.objects.get(user=request.user)
-            
+    except Product.DoesNotExist:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
-                'success': True,
-                'message': f'{product_name} removed from cart',
-                'cart_count': cart.total_items,
-                'cart_total': float(cart.total_price)
-            })
+                'success': False,
+                'message': 'Product not found.',
+            }, status=404)
         else:
-            # Session cart for anonymous users
-            session_cart = request.session.get('cart', {})
-            
-            if item_id in session_cart:
-                product_name = session_cart[item_id]['name']
-                del session_cart[item_id]
-                request.session.modified = True
-                
-                # Calculate totals
-                cart_count = sum(item['quantity'] for item in session_cart.values())
-                cart_total = sum(item['quantity'] * item['price'] for item in session_cart.values())
-                
-                return JsonResponse({
-                    'success': True,
-                    'message': f'{product_name} removed from cart',
-                    'cart_count': cart_count,
-                    'cart_total': cart_total
-                })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Item not found in cart'
-                }, status=404)
-        
+            from django.contrib import messages
+            messages.error(request, 'Product not found.')
+            return redirect('products:product_list')
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=400)
+        print(f"Error in add_to_cart: {str(e)}")  # Debug
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': f'Error adding item to cart: {str(e)}',
+            }, status=500)
+        else:
+            from django.contrib import messages
+            messages.error(request, f'Error adding item to cart.')
+            return redirect('products:product_list')
 
 
 @login_required
-def get_cart_data(request):
-    """Get cart data for Ajax requests"""
+@require_POST
+def update_cart(request, item_id):
+    """Update cart item quantity (AJAX)"""
     try:
         cart = Cart.objects.get(user=request.user)
-        items = []
+        cart_item = CartItem.objects.get(id=item_id, cart=cart)
         
-        for item in cart.items.select_related('product', 'variant').all():
-            items.append({
-                'id': item.id,
-                'product': {
-                    'id': item.product.id,
-                    'name': item.product.name,
-                    'slug': item.product.slug,
-                    'image': item.product.primary_image.image.url if item.product.primary_image else None
-                },
-                'variant': {
-                    'id': item.variant.id,
-                    'name': item.variant.name
-                } if item.variant else None,
-                'quantity': item.quantity,
-                'unit_price': float(item.unit_price),
-                'total_price': float(item.total_price)
+        action = request.POST.get('action')
+        
+        if action == 'increase':
+            cart_item.quantity += 1
+        elif action == 'decrease':
+            cart_item.quantity -= 1
+        else:
+            # Set specific quantity
+            quantity = int(request.POST.get('quantity', 1))
+            cart_item.quantity = max(1, quantity)
+        
+        if cart_item.quantity <= 0:
+            cart_item.delete()
+            return JsonResponse({
+                'success': True,
+                'message': 'Item removed from cart.',
+                'cart_count': cart.total_items,
+                'cart_total': float(cart.total_price),
             })
-        
+        else:
+            cart_item.save()
+            return JsonResponse({
+                'success': True,
+                'message': 'Cart updated.',
+                'item_total': float(cart_item.total_price),
+                'cart_count': cart.total_items,
+                'cart_total': float(cart.total_price),
+            })
+    except CartItem.DoesNotExist:
         return JsonResponse({
-            'success': True,
-            'cart': {
-                'items': items,
-                'total_items': cart.total_items,
-                'total_price': float(cart.total_price)
-            }
-        })
-        
-    except Cart.DoesNotExist:
-        return JsonResponse({
-            'success': True,
-            'cart': {
-                'items': [],
-                'total_items': 0,
-                'total_price': 0
-            }
-        })
+            'success': False,
+            'message': 'Cart item not found.',
+        }, status=404)
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': str(e)
-        }, status=400)
+            'message': 'Error updating cart.',
+        }, status=500)
 
 
-@require_POST
 @login_required
+@require_POST
+def remove_from_cart(request, item_id):
+    """Remove item from cart (AJAX)"""
+    try:
+        cart = Cart.objects.get(user=request.user)
+        cart_item = CartItem.objects.get(id=item_id, cart=cart)
+        
+        product_name = cart_item.product.name
+        cart_item.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'{product_name} removed from cart.',
+            'cart_count': cart.total_items,
+            'cart_total': float(cart.total_price),
+        })
+    except CartItem.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Cart item not found.',
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error removing item.',
+        }, status=500)
+
+
+@login_required
+@require_POST
 def clear_cart(request):
     """Clear all items from cart"""
     try:
@@ -394,13 +205,10 @@ def clear_cart(request):
         
         return JsonResponse({
             'success': True,
-            'message': 'Cart cleared',
-            'cart_count': 0,
-            'cart_total': 0
+            'message': 'Cart cleared.',
         })
-        
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': str(e)
-        }, status=400)
+            'message': 'Error clearing cart.',
+        }, status=500)

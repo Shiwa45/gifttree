@@ -1,7 +1,9 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.db.models import Q
-from .models import SiteSettings
+from django.http import HttpResponse
+from django.template import loader
+from .models import SiteSettings, BannerImage
 from apps.products.models import Product, Category, Occasion
 from apps.blog.models import BlogPost
 
@@ -32,10 +34,10 @@ class HomeView(TemplateView):
             is_featured=True,
             is_active=True
         ).prefetch_related('products')[:8]
-        
-        # Banner images (if you have a banner model, otherwise will use defaults)
-        # context['banner_images'] = BannerImage.objects.filter(is_active=True)[:4]
-        
+
+        # Banner images for homepage slider
+        context['banner_images'] = BannerImage.objects.filter(is_active=True)[:5]
+
         return context
 
 
@@ -141,3 +143,63 @@ def home_view(request):
         'recent_blog_posts': recent_blog_posts,
     }
     return render(request, 'core/home.html', context)
+
+
+def offers_view(request):
+    """Display current offers and promotions"""
+
+    # Get products with discounts
+    featured_offers = Product.objects.filter(
+        is_featured=True,
+        discount_price__isnull=False,
+        is_active=True,
+        stock_quantity__gt=0
+    ).select_related('category').prefetch_related('images')[:12]
+
+    bestseller_offers = Product.objects.filter(
+        is_bestseller=True,
+        discount_price__isnull=False,
+        is_active=True,
+        stock_quantity__gt=0
+    ).select_related('category').prefetch_related('images')[:12]
+
+    all_offers = Product.objects.filter(
+        discount_price__isnull=False,
+        is_active=True,
+        stock_quantity__gt=0
+    ).select_related('category').prefetch_related('images')[:24]
+
+    total_savings = sum([
+        (p.base_price - p.discount_price) for p in all_offers
+    ])
+
+    context = {
+        'featured_offers': featured_offers,
+        'bestseller_offers': bestseller_offers,
+        'all_offers': all_offers,
+        'total_savings': total_savings,
+        'offers_count': all_offers.count(),
+    }
+
+    return render(request, 'core/offers.html', context)
+
+
+def sitemap_view(request):
+    """Generate XML sitemap for SEO"""
+    template = loader.get_template('sitemap.xml')
+
+    # Get all active categories and products
+    categories = Category.objects.filter(is_active=True)
+    products = Product.objects.filter(is_active=True, published=True)[:500]  # Limit to 500 products
+
+    context = {
+        'categories': categories,
+        'products': products,
+        'domain': request.get_host(),
+        'scheme': request.scheme,
+    }
+
+    return HttpResponse(
+        template.render(context, request),
+        content_type='application/xml'
+    )

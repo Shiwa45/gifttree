@@ -86,24 +86,21 @@
                     
                     <h5 class="connect-heading">CONNECT WITH US</h5>
                     <div class="social-links">
-                        <a href="#" class="social-link" title="Facebook">
+                        {% if site_settings.facebook_url %}
+                        <a href="{{ site_settings.facebook_url }}" target="_blank" rel="noopener" class="social-link" title="Facebook">
                             <i class="fab fa-facebook-f"></i>
                         </a>
-                        <a href="#" class="social-link" title="Twitter">
+                        {% endif %}
+                        {% if site_settings.twitter_url %}
+                        <a href="{{ site_settings.twitter_url }}" target="_blank" rel="noopener" class="social-link" title="Twitter">
                             <i class="fab fa-twitter"></i>
                         </a>
-                        <a href="#" class="social-link" title="Instagram">
+                        {% endif %}
+                        {% if site_settings.instagram_url %}
+                        <a href="{{ site_settings.instagram_url }}" target="_blank" rel="noopener" class="social-link" title="Instagram">
                             <i class="fab fa-instagram"></i>
                         </a>
-                        <a href="#" class="social-link" title="Pinterest">
-                            <i class="fab fa-pinterest"></i>
-                        </a>
-                        <a href="#" class="social-link" title="LinkedIn">
-                            <i class="fab fa-linkedin-in"></i>
-                        </a>
-                        <a href="#" class="social-link" title="YouTube">
-                            <i class="fab fa-youtube"></i>
-                        </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -138,12 +135,35 @@
             </div>
         </div>
 
+        <!-- International Delivery Section -->
+        {% if featured_countries %}
+        <div class="footer-countries">
+            <h5 class="countries-heading">
+                <i class="fas fa-globe"></i> We Deliver Worldwide
+            </h5>
+            <div class="countries-grid">
+                {% for country in featured_countries %}
+                <div class="country-item" title="{{ country.name }}">
+                    {% if country.flag_image %}
+                        <img src="{{ country.flag_image.url }}" alt="{{ country.name }}" class="country-flag">
+                    {% else %}
+                        <div class="country-flag-placeholder">
+                            <span>{{ country.code }}</span>
+                        </div>
+                    {% endif %}
+                    <span class="country-name">{{ country.name }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Footer Bottom -->
         <div class="footer-bottom">
             <div class="row align-items-center">
                 <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
                     <p class="copyright-text">
-                        &copy; 2025 GiftTree. All Rights Reserved. 
+                        {{ site_settings.copyright_text }}
                         <span class="divider">|</span>
                         <a href="#">Privacy Policy</a>
                         <span class="divider">|</span>
@@ -369,6 +389,105 @@
     color: var(--secondary-color);
 }
 
+/* International Delivery Section */
+.footer-countries {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 30px 0;
+    margin-top: 0;
+}
+
+.countries-heading {
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    text-align: center;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.countries-heading i {
+    color: var(--secondary-color);
+    font-size: 18px;
+}
+
+.countries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.country-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.country-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.country-flag {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.country-item:hover .country-flag {
+    border-color: var(--secondary-color);
+    transform: scale(1.1);
+}
+
+.country-flag-placeholder {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.country-item:hover .country-flag-placeholder {
+    border-color: var(--secondary-color);
+    transform: scale(1.1);
+}
+
+.country-flag-placeholder span {
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+}
+
+.country-name {
+    font-size: 13px;
+    color: #bdc3c7;
+    text-align: center;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.country-item:hover .country-name {
+    color: white;
+}
+
 /* Footer Bottom */
 .footer-bottom {
     padding: 25px 0;
@@ -477,6 +596,25 @@
         width: 45px;
         height: 45px;
     }
+
+    .countries-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+    }
+
+    .country-item {
+        padding: 12px 8px;
+    }
+
+    .country-flag,
+    .country-flag-placeholder {
+        width: 45px;
+        height: 45px;
+    }
+
+    .country-name {
+        font-size: 12px;
+    }
 }
 
 @media (max-width: 576px) {
@@ -498,6 +636,30 @@
         width: 36px;
         height: 36px;
         font-size: 14px;
+    }
+
+    .countries-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .country-item {
+        padding: 10px 6px;
+    }
+
+    .country-flag,
+    .country-flag-placeholder {
+        width: 40px;
+        height: 40px;
+    }
+
+    .country-name {
+        font-size: 11px;
+    }
+
+    .countries-heading {
+        font-size: 14px;
+        margin-bottom: 20px;
     }
 }
 </style>

@@ -28,6 +28,7 @@ urlpatterns = [
     path('account/', include('apps.users.urls')),
     path('reviews/', include('apps.reviews.urls')),
     path('blog/', include('apps.blog.urls')),
+    path('wallet/', include('apps.wallet.urls')),
 ]
 
 # Serve static and media files during development

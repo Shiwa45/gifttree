@@ -10,8 +10,8 @@
                 <span><i class="fas fa-clock"></i> Same Day Delivery</span>
             </div>
             <div class="right-info">
-                <span><i class="fas fa-phone"></i> Call: +91-9876543210</span>
-                <span><i class="fas fa-envelope"></i> support@gifttree.com</span>
+                <span><i class="fas fa-phone"></i> Call: {{ site_settings.contact_phone }}</span>
+                <span><i class="fas fa-envelope"></i> {{ site_settings.contact_email }}</span>
             </div>
         </div>
     </div>
@@ -21,11 +21,17 @@
         <div class="container">
             <div class="header-content">
                 <div class="logo">
-                    <h2>
-                        <a href="{% url 'core:home' %}" style="text-decoration: none; color: var(--primary-color);">
-                            GiftTree
-                        </a>
-                    </h2>
+                    <a href="{% url 'core:home' %}" class="logo-link">
+                        {% if site_settings.site_logo %}
+                            <img src="{{ site_settings.site_logo.url }}" alt="{{ site_settings.site_name }}" class="site-logo">
+                        {% else %}
+                            <h2 style="margin: 0;">
+                                <span style="text-decoration: none; color: var(--primary-color);">
+                                    {{ site_settings.site_name }}
+                                </span>
+                            </h2>
+                        {% endif %}
+                    </a>
                 </div>
                 
                 <div class="search-container">
@@ -38,11 +44,18 @@
                 </div>
                 
                 <div class="header-actions">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'wallet:dashboard' %}" class="wallet-display">
+                            <i class="fas fa-coins"></i>
+                            <span>{{ user.wallet.balance|floatformat:0 }} Coins</span>
+                        </a>
+                    {% endif %}
+
                     <a href="#" class="header-btn" onclick="showLocationModal()">
                         <i class="fas fa-map-marker-alt"></i>
                         Select City
                     </a>
-                    
+
                     {% if user.is_authenticated %}
                         <div class="user-dropdown">
                             <button class="header-btn user-menu-btn" onclick="toggleUserMenu()">
@@ -93,6 +106,49 @@
 </div>
 
 <style>
+/* Logo Styles */
+.site-logo {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+}
+
+.logo-link {
+    display: inline-block;
+    text-decoration: none;
+}
+
+/* Wallet Display */
+.wallet-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: #333;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 165, 0, 0.3);
+}
+
+.wallet-display:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 165, 0, 0.4);
+    color: #000;
+}
+
+.wallet-display i {
+    font-size: 18px;
+}
+
+.wallet-display span {
+    font-size: 14px;
+    white-space: nowrap;
+}
+
 /* Simple Dropdown Styles */
 .user-dropdown {
     position: relative;

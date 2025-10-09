@@ -477,8 +477,17 @@ class Command(BaseCommand):
         
         # International locations
         international_locations = [
-            {'name': 'India', 'state': 'All States', 'country': 'India', 'is_major_city': True, 'is_metro': False},
             {'name': 'USA', 'state': 'All States', 'country': 'United States', 'is_major_city': True, 'is_metro': False},
+            {'name': 'UK', 'state': 'All Regions', 'country': 'United Kingdom', 'is_major_city': True, 'is_metro': False},
+            {'name': 'UAE', 'state': 'All Emirates', 'country': 'United Arab Emirates', 'is_major_city': True, 'is_metro': False},
+            {'name': 'Australia', 'state': 'All States', 'country': 'Australia', 'is_major_city': True, 'is_metro': False},
+            {'name': 'Canada', 'state': 'All Provinces', 'country': 'Canada', 'is_major_city': True, 'is_metro': False},
+            {'name': 'France', 'state': 'All Regions', 'country': 'France', 'is_major_city': True, 'is_metro': False},
+            {'name': 'Singapore', 'state': 'All Districts', 'country': 'Singapore', 'is_major_city': True, 'is_metro': False},
+            {'name': 'Malaysia', 'state': 'All States', 'country': 'Malaysia', 'is_major_city': True, 'is_metro': False},
+            {'name': 'Qatar', 'state': 'All Municipalities', 'country': 'Qatar', 'is_major_city': True, 'is_metro': False},
+            {'name': 'South Africa', 'state': 'All Provinces', 'country': 'South Africa', 'is_major_city': True, 'is_metro': False},
+            {'name': 'Sweden', 'state': 'All Regions', 'country': 'Sweden', 'is_major_city': True, 'is_metro': False},
         ]
         
         # Create all locations

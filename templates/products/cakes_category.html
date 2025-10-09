@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load product_tags %}
+
+{% block title %}Send Cakes Online - {{ site_settings.site_name }}{% endblock %}
+
+{% block meta_description %}Order delicious cakes online for every occasion. Same day delivery available.{% endblock %}
+
+{% block content %}
+<style>
+.cakes-hero {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #FF6090 100%);
+    color: white;
+    padding: 60px 20px 40px;
+    text-align: center;
+}
+
+.cakes-hero h1 {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.cakes-hero p {
+    font-size: 18px;
+    opacity: 0.95;
+}
+
+.cakes-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.section-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.subcategories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 50px;
+}
+
+.subcategory-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.subcategory-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.subcategory-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.subcategory-name {
+    padding: 15px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.product-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.product-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 250px;
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-info {
+    padding: 15px;
+}
+
+.product-name {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.product-price {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.product-delivery {
+    font-size: 13px;
+    color: #666;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .cakes-hero h1 {
+        font-size: 24px;
+    }
+
+    .cakes-hero p {
+        font-size: 14px;
+    }
+
+    .cakes-container {
+        padding: 20px 12px;
+    }
+
+    .section-title {
+        font-size: 20px;
+        margin-bottom: 20px;
+    }
+
+    .subcategories-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .subcategory-image {
+        height: 120px;
+    }
+
+    .subcategory-name {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .product-image-wrapper {
+        height: 160px;
+    }
+
+    .product-info {
+        padding: 10px;
+    }
+
+    .product-name {
+        font-size: 13px;
+    }
+
+    .product-price {
+        font-size: 16px;
+    }
+
+    .product-delivery {
+        font-size: 11px;
+    }
+}
+</style>
+
+<!-- Hero Section -->
+<div class="cakes-hero">
+    <h1>🎂 Send Cakes Online</h1>
+    <p>Delicious cakes for every celebration</p>
+</div>
+
+<div class="cakes-container">
+    <!-- Cake Subcategories -->
+    {% if cake_subcategories %}
+    <section>
+        <h2 class="section-title">Shop by Type</h2>
+        <div class="subcategories-grid">
+            {% for subcategory in cake_subcategories %}
+            <a href="{% url 'products:category_detail' subcategory.slug %}" class="subcategory-card">
+                {% if subcategory.image %}
+                <img src="{{ subcategory.image.url }}" alt="{{ subcategory.name }}" class="subcategory-image">
+                {% else %}
+                <img src="{% static 'images/category/cake.webp' %}" alt="{{ subcategory.name }}" class="subcategory-image">
+                {% endif %}
+                <div class="subcategory-name">{{ subcategory.name }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Featured Cakes -->
+    <section>
+        <h2 class="section-title">Featured Cakes</h2>
+        <div class="products-grid">
+            {% for product in featured_cakes %}
+            <a href="{% url 'products:product_detail' product.slug %}" class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="{{ product|product_image_url }}"
+                         alt="{{ product.name }}"
+                         class="product-image"
+                         onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                </div>
+                <div class="product-info">
+                    <div class="product-name">{{ product.name }}</div>
+                    <div class="product-price">₹{{ product.current_price|floatformat:0 }}</div>
+                    <div class="product-delivery">🚚 Same Day Delivery</div>
+                </div>
+            </a>
+            {% empty %}
+            <p style="grid-column: 1 / -1; text-align: center; color: #666; padding: 40px 20px;">
+                No cakes available at the moment. Please check back later!
+            </p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

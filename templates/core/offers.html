@@ -1,0 +1,474 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load product_tags %}
+
+{% block title %}Special Offers & Deals - {{ site_settings.site_name }}{% endblock %}
+
+{% block meta_description %}Get amazing discounts on flowers, cakes, and gifts. Limited time offers with huge savings!{% endblock %}
+
+{% block content %}
+<style>
+/* Offers Page Styles */
+.offers-page {
+    background: #f5f5f5;
+    min-height: 100vh;
+    padding-bottom: 80px;
+}
+
+.offers-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #FF6090 100%);
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.offers-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.offers-header p {
+    font-size: 16px;
+    opacity: 0.95;
+    margin-bottom: 20px;
+}
+
+.savings-banner {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 15px 20px;
+    border-radius: 50px;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.savings-banner strong {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.offers-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.offers-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.section-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+}
+
+.view-all-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.view-all-link:hover {
+    text-decoration: underline;
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.product-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.product-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+    background: #f8f9fa;
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.discount-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #FF4444;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.product-info {
+    padding: 15px;
+}
+
+.product-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.4;
+}
+
+.product-pricing {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.current-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.original-price {
+    font-size: 16px;
+    color: #999;
+    text-decoration: line-through;
+}
+
+.savings {
+    font-size: 13px;
+    color: #4CAF50;
+    font-weight: 600;
+}
+
+.add-to-cart-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.add-to-cart-btn:hover {
+    background: #d81b60;
+}
+
+.no-offers {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.no-offers i {
+    font-size: 60px;
+    color: #ddd;
+    margin-bottom: 20px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .offers-header h1 {
+        font-size: 24px;
+    }
+
+    .offers-header p {
+        font-size: 14px;
+    }
+
+    .savings-banner strong {
+        font-size: 18px;
+    }
+
+    .offers-container {
+        padding: 12px;
+    }
+
+    .offers-section {
+        padding: 20px 15px;
+        margin-bottom: 20px;
+    }
+
+    .section-title {
+        font-size: 18px;
+    }
+
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .product-image-wrapper {
+        height: 160px;
+    }
+
+    .product-info {
+        padding: 10px;
+    }
+
+    .product-name {
+        font-size: 13px;
+    }
+
+    .current-price {
+        font-size: 16px;
+    }
+
+    .original-price {
+        font-size: 13px;
+    }
+
+    .add-to-cart-btn {
+        padding: 8px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .products-grid {
+        gap: 10px;
+    }
+
+    .product-card {
+        border-radius: 8px;
+    }
+
+    .product-image-wrapper {
+        height: 140px;
+    }
+
+    .product-name {
+        font-size: 12px;
+        -webkit-line-clamp: 2;
+    }
+
+    .current-price {
+        font-size: 14px;
+    }
+
+    .original-price {
+        font-size: 12px;
+    }
+
+    .savings {
+        font-size: 11px;
+    }
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+    .products-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+</style>
+
+<div class="offers-page">
+    <!-- Offers Header -->
+    <div class="offers-header">
+        <h1><i class="fas fa-percent"></i> SPECIAL OFFERS & DEALS</h1>
+        <p>Grab amazing discounts on your favorite products!</p>
+        {% if total_savings > 0 %}
+        <div class="savings-banner">
+            Total Savings Available: <strong>₹{{ total_savings|floatformat:0 }}</strong>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="offers-container">
+        <!-- Featured Offers -->
+        {% if featured_offers %}
+        <div class="offers-section">
+            <div class="section-header">
+                <h2 class="section-title">🌟 Featured Offers</h2>
+                <a href="{% url 'products:product_list' %}?filter=featured" class="view-all-link">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="products-grid">
+                {% for product in featured_offers %}
+                <a href="{% url 'products:product_detail' product.slug %}" class="product-card">
+                    <div class="product-image-wrapper">
+                        <img src="{{ product|product_image_url }}"
+                             alt="{{ product.name }}"
+                             class="product-image"
+                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                        {% if product.discount_percentage > 0 %}
+                        <div class="discount-badge">{{ product.discount_percentage|floatformat:0 }}% OFF</div>
+                        {% endif %}
+                    </div>
+                    <div class="product-info">
+                        <div class="product-name">{{ product.name }}</div>
+                        <div class="product-pricing">
+                            <span class="current-price">₹{{ product.current_price|floatformat:0 }}</span>
+                            {% if product.base_price > product.current_price %}
+                            <span class="original-price">₹{{ product.base_price|floatformat:0 }}</span>
+                            {% endif %}
+                        </div>
+                        {% if product.base_price > product.current_price %}
+                        <div class="savings">
+                            You Save: ₹{{ product.base_price|floatformat:0|add:"-"|add:product.current_price|floatformat:0 }}
+                        </div>
+                        {% endif %}
+                        <button class="add-to-cart-btn" onclick="event.preventDefault(); addToCart({{ product.id }})">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </button>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Bestseller Offers -->
+        {% if bestseller_offers %}
+        <div class="offers-section">
+            <div class="section-header">
+                <h2 class="section-title">🔥 Hot Deals</h2>
+                <a href="{% url 'products:product_list' %}?filter=bestseller" class="view-all-link">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="products-grid">
+                {% for product in bestseller_offers %}
+                <a href="{% url 'products:product_detail' product.slug %}" class="product-card">
+                    <div class="product-image-wrapper">
+                        <img src="{{ product|product_image_url }}"
+                             alt="{{ product.name }}"
+                             class="product-image"
+                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                        {% if product.discount_percentage > 0 %}
+                        <div class="discount-badge">{{ product.discount_percentage|floatformat:0 }}% OFF</div>
+                        {% endif %}
+                    </div>
+                    <div class="product-info">
+                        <div class="product-name">{{ product.name }}</div>
+                        <div class="product-pricing">
+                            <span class="current-price">₹{{ product.current_price|floatformat:0 }}</span>
+                            {% if product.base_price > product.current_price %}
+                            <span class="original-price">₹{{ product.base_price|floatformat:0 }}</span>
+                            {% endif %}
+                        </div>
+                        {% if product.base_price > product.current_price %}
+                        <div class="savings">
+                            You Save: ₹{{ product.base_price|floatformat:0|add:"-"|add:product.current_price|floatformat:0 }}
+                        </div>
+                        {% endif %}
+                        <button class="add-to-cart-btn" onclick="event.preventDefault(); addToCart({{ product.id }})">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </button>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- All Offers -->
+        {% if all_offers %}
+        <div class="offers-section">
+            <div class="section-header">
+                <h2 class="section-title">💰 All Offers ({{ offers_count }})</h2>
+            </div>
+            <div class="products-grid">
+                {% for product in all_offers %}
+                <a href="{% url 'products:product_detail' product.slug %}" class="product-card">
+                    <div class="product-image-wrapper">
+                        <img src="{{ product|product_image_url }}"
+                             alt="{{ product.name }}"
+                             class="product-image"
+                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                        {% if product.discount_percentage > 0 %}
+                        <div class="discount-badge">{{ product.discount_percentage|floatformat:0 }}% OFF</div>
+                        {% endif %}
+                    </div>
+                    <div class="product-info">
+                        <div class="product-name">{{ product.name }}</div>
+                        <div class="product-pricing">
+                            <span class="current-price">₹{{ product.current_price|floatformat:0 }}</span>
+                            {% if product.base_price > product.current_price %}
+                            <span class="original-price">₹{{ product.base_price|floatformat:0 }}</span>
+                            {% endif %}
+                        </div>
+                        {% if product.base_price > product.current_price %}
+                        <div class="savings">
+                            You Save: ₹{{ product.base_price|floatformat:0|add:"-"|add:product.current_price|floatformat:0 }}
+                        </div>
+                        {% endif %}
+                        <button class="add-to-cart-btn" onclick="event.preventDefault(); addToCart({{ product.id }})">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </button>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- No Offers Message -->
+        {% if not all_offers %}
+        <div class="offers-section">
+            <div class="no-offers">
+                <i class="fas fa-tags"></i>
+                <h2>No Offers Available</h2>
+                <p>Check back soon for amazing deals!</p>
+                <a href="{% url 'products:product_list' %}" class="btn btn-primary" style="margin-top: 20px; display: inline-block; padding: 12px 30px; text-decoration: none;">
+                    Browse All Products
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Add to cart functionality
+function addToCart(productId) {
+    // This would typically make an AJAX call to add the product to cart
+    showToast('Product added to cart!', 'success');
+
+    // Haptic feedback for mobile
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+}
+</script>
+{% endblock %}

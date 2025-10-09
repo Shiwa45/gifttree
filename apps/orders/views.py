@@ -3,45 +3,23 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
-from django.conf import settings
+from decimal import Decimal
+from datetime import datetime, timedelta
 from .models import Order, OrderItem, OrderTracking
+from .forms import (
+    CheckoutAddressForm, 
+    CheckoutDeliveryForm, 
+    CheckoutPaymentForm,
+    CouponForm
+)
 from apps.cart.models import Cart, CartItem
 from apps.users.models import Address
-from apps.products.models import Product, ProductVariant
-from decimal import Decimal
-import json
-from datetime import datetime, timedelta
-import razorpay
-import hmac
-import hashlib
-
-
-@login_required
-def order_list(request):
-    """Display user's orders"""
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')
-    context = {
-        'orders': orders,
-    }
-    return render(request, 'orders/order_list.html', context)
-
-
-@login_required
-def order_detail(request, order_number):
-    """Display order details"""
-    order = get_object_or_404(Order, order_number=order_number, user=request.user)
-    context = {
-        'order': order,
-        'order_items': order.items.all(),
-        'tracking': order.tracking.all(),
-    }
-    return render(request, 'orders/order_detail.html', context)
+from apps.core.models import SiteSettings
 
 
 def checkout_view(request):
-    """Checkout page"""
+    """Main checkout page"""
     cart_items = []
     addresses = []
     default_address = None
@@ -87,563 +65,438 @@ def checkout_view(request):
 
 
 @login_required
-@require_POST
+def checkout_address(request):
+    """Step 1: Address selection/entry"""
+    # Get or create cart
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = cart.items.select_related('product', 'variant').all()
+    
+    # Check if cart is empty
+    if not cart_items.exists():
+        messages.warning(request, 'Your cart is empty. Add some items before checkout.')
+        return redirect('cart:cart')
+    
+    if request.method == 'POST':
+        form = CheckoutAddressForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            # Store address data in session
+            if form.cleaned_data['use_existing']:
+                address = form.cleaned_data['existing_address']
+                request.session['checkout_address'] = {
+                    'full_name': address.full_name,
+                    'phone': address.phone,
+                    'address_line_1': address.address_line_1,
+                    'address_line_2': address.address_line_2,
+                    'city': address.city,
+                    'state': address.state,
+                    'pincode': address.pincode,
+                }
+            else:
+                request.session['checkout_address'] = {
+                    'full_name': form.cleaned_data['full_name'],
+                    'phone': form.cleaned_data['phone'],
+                    'address_line_1': form.cleaned_data['address_line_1'],
+                    'address_line_2': form.cleaned_data['address_line_2'],
+                    'city': form.cleaned_data['city'],
+                    'state': form.cleaned_data['state'],
+                    'pincode': form.cleaned_data['pincode'],
+                }
+                
+                # Save address if requested
+                if form.cleaned_data.get('save_address'):
+                    Address.objects.create(
+                        user=request.user,
+                        title='Home',
+                        full_name=form.cleaned_data['full_name'],
+                        phone=form.cleaned_data['phone'],
+                        address_line_1=form.cleaned_data['address_line_1'],
+                        address_line_2=form.cleaned_data['address_line_2'],
+                        city=form.cleaned_data['city'],
+                        state=form.cleaned_data['state'],
+                        pincode=form.cleaned_data['pincode'],
+                    )
+            
+            return redirect('orders:checkout_delivery')
+    else:
+        # Pre-fill with default address if available
+        default_address = Address.objects.filter(
+            user=request.user, 
+            is_default=True, 
+            is_active=True
+        ).first()
+        
+        initial_data = {}
+        if default_address:
+            initial_data = {
+                'use_existing': True,
+                'existing_address': default_address,
+            }
+        
+        form = CheckoutAddressForm(user=request.user, initial=initial_data)
+    
+    context = {
+        'form': form,
+        'cart_items': cart_items,
+        'cart': cart,
+        'step': 1,
+    }
+    return render(request, 'orders/checkout_address.html', context)
+
+
+@login_required
+def checkout_delivery(request):
+    """Step 2: Delivery options"""
+    # Check if address is in session
+    if 'checkout_address' not in request.session:
+        messages.warning(request, 'Please enter your delivery address first.')
+        return redirect('orders:checkout_address')
+    
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = cart.items.select_related('product', 'variant').all()
+    
+    if request.method == 'POST':
+        form = CheckoutDeliveryForm(request.POST)
+        if form.is_valid():
+            # Store delivery data in session
+            request.session['checkout_delivery'] = {
+                'delivery_option': form.cleaned_data['delivery_option'],
+                'delivery_date': form.cleaned_data.get('delivery_date').isoformat() if form.cleaned_data.get('delivery_date') else None,
+                'delivery_time_slot': form.cleaned_data.get('delivery_time_slot', ''),
+                'special_instructions': form.cleaned_data.get('special_instructions', ''),
+            }
+            
+            # Calculate delivery charge
+            delivery_charge = Decimal('0.00')
+            if form.cleaned_data['delivery_option'] == 'midnight':
+                delivery_charge = Decimal('99.00')
+            elif form.cleaned_data['delivery_option'] == 'fixed_time':
+                delivery_charge = Decimal('49.00')
+            
+            request.session['delivery_charge'] = str(delivery_charge)
+            
+            return redirect('orders:checkout_payment')
+    else:
+        # Pre-fill with session data if available
+        initial_data = request.session.get('checkout_delivery', {})
+        if initial_data.get('delivery_date'):
+            initial_data['delivery_date'] = datetime.fromisoformat(initial_data['delivery_date']).date()
+        form = CheckoutDeliveryForm(initial=initial_data)
+    
+    context = {
+        'form': form,
+        'cart_items': cart_items,
+        'cart': cart,
+        'step': 2,
+    }
+    return render(request, 'orders/checkout_delivery.html', context)
+
+
+@login_required
+def checkout_payment(request):
+    """Step 3: Payment and review"""
+    # Check if previous steps are completed
+    if 'checkout_address' not in request.session:
+        messages.warning(request, 'Please enter your delivery address first.')
+        return redirect('orders:checkout_address')
+    
+    if 'checkout_delivery' not in request.session:
+        messages.warning(request, 'Please select delivery options.')
+        return redirect('orders:checkout_delivery')
+    
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = cart.items.select_related('product', 'variant').all()
+    
+    # Calculate totals
+    subtotal = cart.total_price
+    delivery_charge = Decimal(request.session.get('delivery_charge', '0.00'))
+    discount = Decimal(request.session.get('discount_amount', '0.00'))
+    total_amount = subtotal + delivery_charge - discount
+    
+    if request.method == 'POST':
+        form = CheckoutPaymentForm(request.POST)
+        if form.is_valid():
+            # Store payment data in session
+            request.session['checkout_payment'] = {
+                'payment_method': form.cleaned_data['payment_method'],
+                'billing_same_as_shipping': form.cleaned_data['billing_same_as_shipping'],
+            }
+            
+            # Store billing address if different
+            if not form.cleaned_data['billing_same_as_shipping']:
+                request.session['checkout_billing'] = {
+                    'billing_name': form.cleaned_data['billing_name'],
+                    'billing_email': form.cleaned_data['billing_email'],
+                    'billing_phone': form.cleaned_data['billing_phone'],
+                    'billing_address_line_1': form.cleaned_data['billing_address_line_1'],
+                    'billing_address_line_2': form.cleaned_data['billing_address_line_2'],
+                    'billing_city': form.cleaned_data['billing_city'],
+                    'billing_state': form.cleaned_data['billing_state'],
+                    'billing_pincode': form.cleaned_data['billing_pincode'],
+                }
+            else:
+                # Use shipping address as billing
+                shipping_address = request.session['checkout_address']
+                request.session['checkout_billing'] = {
+                    'billing_name': shipping_address['full_name'],
+                    'billing_email': request.user.email,
+                    'billing_phone': shipping_address['phone'],
+                    'billing_address_line_1': shipping_address['address_line_1'],
+                    'billing_address_line_2': shipping_address['address_line_2'],
+                    'billing_city': shipping_address['city'],
+                    'billing_state': shipping_address['state'],
+                    'billing_pincode': shipping_address['pincode'],
+                }
+            
+            # Process order - call place_order directly
+            return place_order(request)
+    else:
+        # Pre-fill with user data
+        initial_data = {
+            'billing_same_as_shipping': True,
+            'billing_email': request.user.email,
+        }
+        form = CheckoutPaymentForm(initial=initial_data)
+    
+    context = {
+        'form': form,
+        'cart_items': cart_items,
+        'cart': cart,
+        'subtotal': subtotal,
+        'delivery_charge': delivery_charge,
+        'discount': discount,
+        'total_amount': total_amount,
+        'step': 3,
+        'address': request.session.get('checkout_address'),
+        'delivery': request.session.get('checkout_delivery'),
+    }
+    return render(request, 'orders/checkout_payment.html', context)
+
+
+@login_required
 @transaction.atomic
-def process_checkout(request):
-    """Process checkout and create order"""
-    try:
-        data = json.loads(request.body)
-        
-        # Get cart
-        cart = Cart.objects.get(user=request.user)
-        cart_items = cart.items.select_related('product', 'variant').all()
-        
-        if not cart_items.exists():
-            return JsonResponse({
-                'success': False,
-                'message': 'Your cart is empty'
-            }, status=400)
-        
-        # Get or create address
-        address_id = data.get('address_id')
-        if address_id:
-            address = get_object_or_404(Address, id=address_id, user=request.user)
-        else:
-            # Create new address from data
-            address = Address.objects.create(
-                user=request.user,
-                title=data.get('address_title', 'Home'),
-                full_name=data.get('full_name'),
-                phone=data.get('phone'),
-                address_line_1=data.get('address_line_1'),
-                address_line_2=data.get('address_line_2', ''),
-                city=data.get('city'),
-                state=data.get('state'),
-                pincode=data.get('pincode'),
-                is_default=data.get('is_default', False)
-            )
-        
-        # Calculate totals
-        subtotal = sum(item.total_price for item in cart_items)
-        delivery_charge = Decimal(data.get('delivery_charge', '0.00'))
-        total_amount = subtotal + delivery_charge
-        
-        # Create order
-        order = Order.objects.create(
-            user=request.user,
-            status='pending',
-            payment_status='pending',
-            
-            # Billing info (same as shipping for now)
-            billing_name=address.full_name,
-            billing_email=request.user.email,
-            billing_phone=address.phone,
-            billing_address_line_1=address.address_line_1,
-            billing_address_line_2=address.address_line_2,
-            billing_city=address.city,
-            billing_state=address.state,
-            billing_pincode=address.pincode,
-            
-            # Shipping info
-            shipping_name=address.full_name,
-            shipping_phone=address.phone,
-            shipping_address_line_1=address.address_line_1,
-            shipping_address_line_2=address.address_line_2,
-            shipping_city=address.city,
-            shipping_state=address.state,
-            shipping_pincode=address.pincode,
-            
-            # Pricing
-            subtotal=subtotal,
-            delivery_charge=delivery_charge,
-            total_amount=total_amount,
-            
-            # Delivery details
-            special_instructions=data.get('special_instructions', ''),
-            delivery_date=data.get('delivery_date'),
-            delivery_time_slot=data.get('delivery_time_slot', ''),
+def place_order(request):
+    """Process and create the order"""
+    # Validate all checkout data
+    required_session_keys = ['checkout_address', 'checkout_delivery', 'checkout_payment', 'checkout_billing']
+    for key in required_session_keys:
+        if key not in request.session:
+            messages.error(request, 'Checkout session expired. Please start again.')
+            return redirect('orders:checkout_address')
+    
+    cart = Cart.objects.get(user=request.user)
+    cart_items = cart.items.select_related('product', 'variant').all()
+    
+    if not cart_items.exists():
+        messages.error(request, 'Your cart is empty.')
+        return redirect('cart:cart')
+    
+    # Get data from session
+    shipping_address = request.session['checkout_address']
+    delivery_data = request.session['checkout_delivery']
+    billing_data = request.session['checkout_billing']
+    payment_data = request.session['checkout_payment']
+    
+    # Calculate amounts
+    subtotal = cart.total_price
+    delivery_charge = Decimal(request.session.get('delivery_charge', '0.00'))
+    total_amount = subtotal + delivery_charge
+    
+    # Create order
+    order = Order.objects.create(
+        user=request.user,
+        status='pending',
+        payment_status='pending',
+        # Billing info
+        billing_name=billing_data['billing_name'],
+        billing_email=billing_data['billing_email'],
+        billing_phone=billing_data['billing_phone'],
+        billing_address_line_1=billing_data['billing_address_line_1'],
+        billing_address_line_2=billing_data.get('billing_address_line_2', ''),
+        billing_city=billing_data['billing_city'],
+        billing_state=billing_data['billing_state'],
+        billing_pincode=billing_data['billing_pincode'],
+        # Shipping info
+        shipping_name=shipping_address['full_name'],
+        shipping_phone=shipping_address['phone'],
+        shipping_address_line_1=shipping_address['address_line_1'],
+        shipping_address_line_2=shipping_address.get('address_line_2', ''),
+        shipping_city=shipping_address['city'],
+        shipping_state=shipping_address['state'],
+        shipping_pincode=shipping_address['pincode'],
+        # Pricing
+        subtotal=subtotal,
+        delivery_charge=delivery_charge,
+        total_amount=total_amount,
+        # Delivery details
+        special_instructions=delivery_data.get('special_instructions', ''),
+        delivery_date=datetime.fromisoformat(delivery_data['delivery_date']).date() if delivery_data.get('delivery_date') else None,
+        delivery_time_slot=delivery_data.get('delivery_time_slot', ''),
+    )
+    
+    # Create order items
+    for cart_item in cart_items:
+        OrderItem.objects.create(
+            order=order,
+            product=cart_item.product,
+            variant=cart_item.variant,
+            product_name=cart_item.product.name,
+            variant_name=cart_item.variant.name if cart_item.variant else '',
+            quantity=cart_item.quantity,
+            unit_price=cart_item.unit_price,
+            total_price=cart_item.total_price,
         )
+    
+    # Create initial tracking entry
+    OrderTracking.objects.create(
+        order=order,
+        status='pending',
+        message='Order placed successfully',
+        location=shipping_address['city'],
+    )
+    
+    # Clear cart
+    cart_items.delete()
+    
+    # Clear checkout session
+    for key in ['checkout_address', 'checkout_delivery', 'checkout_payment', 'checkout_billing', 'delivery_charge', 'discount_amount']:
+        if key in request.session:
+            del request.session[key]
+    
+    # Handle payment
+    if payment_data['payment_method'] == 'online':
+        # Redirect to payment gateway (implement based on your payment provider)
+        # For now, we'll simulate successful payment
+        order.payment_status = 'paid'
+        order.status = 'confirmed'
+        order.save()
         
-        # Create order items
-        for cart_item in cart_items:
-            OrderItem.objects.create(
-                order=order,
-                product=cart_item.product,
-                variant=cart_item.variant,
-                product_name=cart_item.product.name,
-                variant_name=cart_item.variant.name if cart_item.variant else '',
-                quantity=cart_item.quantity,
-                unit_price=cart_item.unit_price,
-                total_price=cart_item.total_price
-            )
-        
-        # Create initial tracking entry
         OrderTracking.objects.create(
             order=order,
-            status='pending',
-            message='Order placed successfully',
-            location=address.city
+            status='confirmed',
+            message='Payment successful. Order confirmed.',
+            location=shipping_address['city'],
         )
         
-        # Clear cart
-        cart_items.delete()
-        
-        # Send order confirmation email (TODO)
-        # send_order_confirmation_email(order)
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Order placed successfully',
-            'order_number': order.order_number,
-            'redirect': f'/orders/{order.order_number}/'
-        })
-        
-    except Cart.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': 'Cart not found'
-        }, status=404)
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=400)
+        messages.success(request, 'Payment successful! Your order has been confirmed.')
+    else:
+        # Cash on Delivery
+        messages.success(request, 'Order placed successfully! Pay when you receive your order.')
+    
+    return redirect('orders:order_confirmation', order_number=order.order_number)
+
+
+@login_required
+def order_confirmation(request, order_number):
+    """Order confirmation page"""
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    order_items = order.items.all()
+    
+    context = {
+        'order': order,
+        'order_items': order_items,
+    }
+    return render(request, 'orders/order_confirmation.html', context)
+
+
+@login_required
+def order_list(request):
+    """Display user's orders"""
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    context = {
+        'orders': orders,
+    }
+    return render(request, 'orders/order_list.html', context)
+
+
+@login_required
+def order_detail(request, order_number):
+    """Display order details"""
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    order_items = order.items.all()
+    tracking = order.tracking.all()
+    
+    context = {
+        'order': order,
+        'order_items': order_items,
+        'tracking': tracking,
+    }
+    return render(request, 'orders/order_detail.html', context)
 
 
 @login_required
 @require_POST
 def cancel_order(request, order_number):
     """Cancel an order"""
-    try:
-        order = get_object_or_404(Order, order_number=order_number, user=request.user)
-        
-        # Check if order can be cancelled
-        if order.status in ['shipped', 'delivered', 'cancelled']:
-            return JsonResponse({
-                'success': False,
-                'message': f'Cannot cancel order with status: {order.get_status_display()}'
-            }, status=400)
-        
-        # Update order status
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    
+    # Only allow cancellation for pending or confirmed orders
+    if order.status in ['pending', 'confirmed']:
         order.status = 'cancelled'
         order.save()
         
-        # Add tracking entry
         OrderTracking.objects.create(
             order=order,
             status='cancelled',
             message='Order cancelled by customer',
         )
         
-        # TODO: Process refund if payment was made
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Order cancelled successfully'
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=400)
-
-
-@login_required
-@require_POST
-def reorder(request, order_number):
-    """Reorder items from a previous order"""
-    try:
-        order = get_object_or_404(Order, order_number=order_number, user=request.user)
-        
-        # Get or create cart
-        cart, created = Cart.objects.get_or_create(user=request.user)
-        
-        # Add order items to cart
-        added_count = 0
-        for order_item in order.items.all():
-            # Check if product is still available
-            if order_item.product.is_active and order_item.product.is_in_stock:
-                cart_item, created = CartItem.objects.get_or_create(
-                    cart=cart,
-                    product=order_item.product,
-                    variant=order_item.variant,
-                    defaults={'quantity': order_item.quantity}
-                )
-                
-                if not created:
-                    cart_item.quantity += order_item.quantity
-                    cart_item.save()
-                
-                added_count += 1
-        
-        if added_count == 0:
-            return JsonResponse({
-                'success': False,
-                'message': 'No items could be added to cart'
-            }, status=400)
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'{added_count} item(s) added to cart',
-            'cart_count': cart.total_items,
-            'redirect': '/cart/'
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=400)
-
-
-@login_required
-def track_order(request, order_number):
-    """Track order status"""
-    order = get_object_or_404(Order, order_number=order_number, user=request.user)
-    tracking_history = order.tracking.all()
+        messages.success(request, 'Order cancelled successfully.')
+    else:
+        messages.error(request, 'This order cannot be cancelled.')
     
-    context = {
-        'order': order,
-        'tracking_history': tracking_history,
-    }
-    
-    return render(request, 'orders/track_order.html', context)
+    return redirect('orders:order_detail', order_number=order_number)
 
 
 @login_required
 @require_POST
 def apply_coupon(request):
-    """Apply coupon code to cart"""
+    """Apply coupon code (AJAX)"""
     coupon_code = request.POST.get('coupon_code', '').strip().upper()
     
-    if not coupon_code:
-        return JsonResponse({
-            'success': False,
-            'message': 'Please enter a coupon code'
-        })
-    
-    # For now, simulate coupon validation
-    # TODO: Implement actual coupon system
+    # Dummy coupon validation - implement your coupon logic here
     valid_coupons = {
-        'SAVE10': {'type': 'percentage', 'value': 10, 'min_order': 500},
-        'FLOWER20': {'type': 'percentage', 'value': 20, 'min_order': 1000},
-        'FIRST15': {'type': 'percentage', 'value': 15, 'min_order': 300},
+        'SAVE10': {'discount': 10, 'type': 'percent'},
+        'FLOWER20': {'discount': 20, 'type': 'percent'},
+        'FIRST15': {'discount': 15, 'type': 'percent'},
+        'FLAT100': {'discount': 100, 'type': 'fixed'},
     }
     
-    if coupon_code not in valid_coupons:
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid coupon code'
-        })
-    
-    # Get user's cart
-    try:
+    if coupon_code in valid_coupons:
+        coupon = valid_coupons[coupon_code]
         cart = Cart.objects.get(user=request.user)
-        cart_total = cart.total_price
-    except Cart.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': 'Your cart is empty'
-        })
-    
-    coupon = valid_coupons[coupon_code]
-    
-    # Check minimum order value
-    if cart_total < coupon['min_order']:
-        return JsonResponse({
-            'success': False,
-            'message': f'Minimum order value ₹{coupon["min_order"]} required for this coupon'
-        })
-    
-    # Calculate discount
-    if coupon['type'] == 'percentage':
-        discount_amount = (cart_total * coupon['value']) / 100
-        discount_display = f'{coupon["value"]}% OFF'
-    else:
-        discount_amount = coupon['value']
-        discount_display = f'₹{coupon["value"]} OFF'
-    
-    # Store coupon in session
-    request.session['applied_coupon'] = {
-        'code': coupon_code,
-        'discount_amount': float(discount_amount),
-        'discount_display': discount_display,
-    }
-    
-    return JsonResponse({
-        'success': True,
-        'message': f'Coupon "{coupon_code}" applied successfully!',
-        'coupon': {
-            'code': coupon_code,
-            'discount_display': discount_display,
-            'discount_amount': float(discount_amount),
-        }
-    })
-
-
-@login_required
-@require_POST
-def remove_coupon(request):
-    """Remove applied coupon from cart"""
-    if 'applied_coupon' in request.session:
-        del request.session['applied_coupon']
-        request.session.modified = True
-    
-    return JsonResponse({
-        'success': True,
-        'message': 'Coupon removed'
-    })
-
-
-
-# Create: apps/orders/coupon_views.py
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from decimal import Decimal
-from .models import Coupon, CouponUsage
-from apps.cart.models import Cart
-
-
-@login_required
-@require_POST
-def apply_coupon(request):
-    """
-    Apply coupon code to cart
-    """
-    coupon_code = request.POST.get('coupon_code', '').strip().upper()
-    
-    if not coupon_code:
-        return JsonResponse({
-            'success': False,
-            'message': 'Please enter a coupon code'
-        })
-    
-    # Get user's cart
-    try:
-        cart = Cart.objects.get(user=request.user)
-    except Cart.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': 'Your cart is empty'
-        })
-    
-    # Calculate cart total
-    cart_total = cart.total_price
-    
-    if cart_total == 0:
-        return JsonResponse({
-            'success': False,
-            'message': 'Your cart is empty'
-        })
-    
-    # Check if coupon exists
-    try:
-        coupon = Coupon.objects.get(code=coupon_code)
-    except Coupon.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid coupon code'
-        })
-    
-    # Check if user can use this coupon
-    can_use, message = coupon.can_be_used_by_user(request.user, cart_total)
-    
-    if not can_use:
-        return JsonResponse({
-            'success': False,
-            'message': message
-        })
-    
-    # Calculate discount
-    discount_amount = coupon.calculate_discount(cart_total)
-    
-    # Store coupon in session
-    request.session['applied_coupon'] = {
-        'code': coupon.code,
-        'id': coupon.id,
-        'discount_type': coupon.discount_type,
-        'discount_value': float(coupon.discount_value),
-        'discount_amount': float(discount_amount),
-    }
-    
-    # Calculate new total
-    new_total = cart_total - discount_amount
-    
-    return JsonResponse({
-        'success': True,
-        'message': f'Coupon "{coupon.code}" applied successfully!',
-        'coupon': {
-            'code': coupon.code,
-            'discount_display': coupon.get_discount_display(),
-            'discount_amount': float(discount_amount),
-        },
-        'cart_subtotal': float(cart_total),
-        'discount_amount': float(discount_amount),
-        'new_total': float(new_total),
-    })
-
-
-@login_required
-@require_POST
-def remove_coupon(request):
-    """
-    Remove applied coupon from cart
-    """
-    # Remove coupon from session
-    if 'applied_coupon' in request.session:
-        del request.session['applied_coupon']
-        request.session.modified = True
-    
-    # Get cart total
-    try:
-        cart = Cart.objects.get(user=request.user)
-        cart_total = cart.total_price
-    except Cart.DoesNotExist:
-        cart_total = 0
-    
-    return JsonResponse({
-        'success': True,
-        'message': 'Coupon removed',
-        'cart_total': float(cart_total),
-    })
-
-
-@login_required
-def validate_coupon(request):
-    """
-    Validate coupon without applying (for real-time feedback)
-    """
-    coupon_code = request.GET.get('code', '').strip().upper()
-    
-    if not coupon_code:
-        return JsonResponse({
-            'valid': False,
-            'message': 'Please enter a coupon code'
-        })
-    
-    try:
-        coupon = Coupon.objects.get(code=coupon_code)
-    except Coupon.DoesNotExist:
-        return JsonResponse({
-            'valid': False,
-            'message': 'Invalid coupon code'
-        })
-    
-    # Check if coupon is valid
-    is_valid, message = coupon.is_valid()
-    
-    if not is_valid:
-        return JsonResponse({
-            'valid': False,
-            'message': message
-        })
-    
-    # Get cart total
-    try:
-        cart = Cart.objects.get(user=request.user)
-        cart_total = cart.total_price
-    except Cart.DoesNotExist:
-        cart_total = 0
-    
-    # Check if user can use coupon
-    can_use, user_message = coupon.can_be_used_by_user(request.user, cart_total)
-    
-    if not can_use:
-        return JsonResponse({
-            'valid': False,
-            'message': user_message
-        })
-    
-    # Calculate potential discount
-    discount_amount = coupon.calculate_discount(cart_total)
-    
-    return JsonResponse({
-        'valid': True,
-        'message': 'Valid coupon!',
-        'coupon': {
-            'code': coupon.code,
-            'description': coupon.description,
-            'discount_display': coupon.get_discount_display(),
-            'discount_amount': float(discount_amount),
-            'minimum_order_value': float(coupon.minimum_order_value),
-        }
-    })
-
-
-def get_available_coupons(request):
-    """
-    Get list of currently available coupons
-    """
-    from django.utils import timezone
-    
-    # Get active coupons
-    coupons = Coupon.objects.filter(
-        is_active=True,
-        valid_from__lte=timezone.now(),
-        valid_to__gte=timezone.now()
-    ).exclude(
-        usage_limit__isnull=False,
-        times_used__gte=models.F('usage_limit')
-    )
-    
-    # If user is authenticated, filter by user eligibility
-    if request.user.is_authenticated:
-        # Get cart total
-        try:
-            cart = Cart.objects.get(user=request.user)
-            cart_total = cart.total_price
-        except Cart.DoesNotExist:
-            cart_total = 0
+        subtotal = cart.total_price
         
-        coupon_list = []
-        for coupon in coupons:
-            can_use, message = coupon.can_be_used_by_user(request.user, cart_total)
-            
-            coupon_list.append({
-                'code': coupon.code,
-                'description': coupon.description,
-                'discount_display': coupon.get_discount_display(),
-                'minimum_order_value': float(coupon.minimum_order_value),
-                'can_use': can_use,
-                'message': message if not can_use else None,
-                'valid_to': coupon.valid_to.strftime('%d %b %Y'),
-            })
+        if coupon['type'] == 'percent':
+            discount = (subtotal * Decimal(coupon['discount'])) / Decimal('100')
+        else:
+            discount = Decimal(coupon['discount'])
+        
+        # Store in session
+        request.session['coupon_code'] = coupon_code
+        request.session['discount_amount'] = str(discount)
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Coupon "{coupon_code}" applied successfully!',
+            'discount': float(discount),
+        })
     else:
-        coupon_list = [
-            {
-                'code': coupon.code,
-                'description': coupon.description,
-                'discount_display': coupon.get_discount_display(),
-                'minimum_order_value': float(coupon.minimum_order_value),
-                'valid_to': coupon.valid_to.strftime('%d %b %Y'),
-            }
-            for coupon in coupons
-        ]
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid coupon code.',
+        })
+
+
+@login_required
+@require_POST
+def remove_coupon(request):
+    """Remove applied coupon (AJAX)"""
+    if 'coupon_code' in request.session:
+        del request.session['coupon_code']
+    if 'discount_amount' in request.session:
+        del request.session['discount_amount']
     
     return JsonResponse({
         'success': True,
-        'coupons': coupon_list
+        'message': 'Coupon removed.',
     })
-
-
-# Helper function to record coupon usage after order
-def record_coupon_usage(order, coupon, user, discount_amount):
-    """
-    Record that a coupon was used in an order
-    Call this after order confirmation
-    """
-    # Create usage record
-    CouponUsage.objects.create(
-        coupon=coupon,
-        user=user,
-        order=order,
-        discount_amount=discount_amount
-    )
-    
-    # Increment usage count
-    coupon.times_used += 1
-    coupon.save()

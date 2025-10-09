@@ -314,6 +314,10 @@ class Product(BaseModel):
     is_hot_selling = models.BooleanField(default=False, help_text="Hot selling product")
     is_must_try = models.BooleanField(default=False, help_text="Must try product")
     is_new_arrival = models.BooleanField(default=False, help_text="New arrival product")
+
+    # Phase 4: Personalization & Delivery
+    is_personalized = models.BooleanField(default=False, help_text="Product can be personalized")
+    delivery_days = models.PositiveIntegerField(default=1, help_text="Number of days for delivery")
     
     # ============================================
     # PRICING
@@ -510,6 +514,10 @@ class Product(BaseModel):
         """Get all images for the product"""
         return self.images.filter(is_active=True).order_by('sort_order', 'position')
 
+    def get_available_addons(self):
+        """Get available add-ons for this product"""
+        return ProductAddOn.objects.filter(is_active=True)[:6]
+
 
 class ProductImage(BaseModel):
     """Multiple images for products - supports both local files and external URLs"""
@@ -650,3 +658,70 @@ class CSVImportLog(models.Model):
     
     def __str__(self):
         return f"Import: {self.filename} - {self.status}"
+
+
+class SellerInventory(BaseModel):
+    """Product inventory at seller locations"""
+    seller_location = models.ForeignKey('users.SellerLocation', on_delete=models.CASCADE, related_name='inventory')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='seller_inventory')
+    variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, null=True, blank=True, related_name='seller_inventory')
+
+    # Stock
+    stock_quantity = models.PositiveIntegerField(default=0)
+    reserved_quantity = models.PositiveIntegerField(default=0, help_text="Quantity in pending orders")
+    reorder_level = models.PositiveIntegerField(default=5, help_text="Minimum stock before reorder")
+
+    # Pricing (seller can have different pricing)
+    seller_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Leave empty to use product base price")
+
+    # Status
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['seller_location', 'product']
+        unique_together = ['seller_location', 'product', 'variant']
+        verbose_name = 'Seller Inventory'
+        verbose_name_plural = 'Seller Inventories'
+
+    def __str__(self):
+        variant_str = f" ({self.variant.display_name})" if self.variant else ""
+        return f"{self.seller_location.name} - {self.product.name}{variant_str} ({self.available_quantity} available)"
+
+    @property
+    def available_quantity(self):
+        """Calculate available quantity after reserved"""
+        return max(0, self.stock_quantity - self.reserved_quantity)
+
+    @property
+    def is_in_stock(self):
+        """Check if product is in stock at this location"""
+        return self.available_quantity > 0
+
+    @property
+    def needs_reorder(self):
+        """Check if stock is below reorder level"""
+        return self.stock_quantity <= self.reorder_level
+
+    def get_price(self):
+        """Get seller price or fall back to product price"""
+        if self.seller_price:
+            return self.seller_price
+        if self.variant:
+            return self.variant.final_price
+        return self.product.current_price
+
+
+class ProductAddOn(BaseModel):
+    """Add-on products that can be purchased with main products"""
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    image = models.ImageField(upload_to='addons/', blank=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Product Add-On'
+        verbose_name_plural = 'Product Add-Ons'
+
+    def __str__(self):
+        return f"{self.name} - ₹{self.price}"

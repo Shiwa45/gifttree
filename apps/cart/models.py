@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from apps.core.models import BaseModel
-from apps.products.models import Product, ProductVariant
+from apps.products.models import Product, ProductVariant, ProductAddOn
 
 User = get_user_model()
 
@@ -10,6 +10,11 @@ class Cart(BaseModel):
     """Shopping cart for users"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cart')
     session_key = models.CharField(max_length=40, blank=True, null=True)
+
+    # Cart abandonment fields
+    abandonment_email_sent = models.BooleanField(default=False, help_text="Whether abandonment email has been sent")
+    abandonment_email_sent_at = models.DateTimeField(blank=True, null=True, help_text="When abandonment email was sent")
+    last_activity = models.DateTimeField(auto_now=True, help_text="Last time cart was updated")
 
     def __str__(self):
         return f"Cart for {self.user.email if self.user else self.session_key}"
@@ -29,6 +34,9 @@ class CartItem(BaseModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, blank=True, null=True)
     quantity = models.PositiveIntegerField(default=1)
+
+    # Add-ons
+    addons = models.ManyToManyField(ProductAddOn, blank=True, related_name='cart_items')
 
     # Customization fields
     custom_message = models.TextField(blank=True, null=True, help_text="Custom message/text on product")
@@ -52,8 +60,16 @@ class CartItem(BaseModel):
         return self.product.current_price
 
     @property
+    def addons_price(self):
+        """Calculate total price of all add-ons"""
+        return sum(addon.price for addon in self.addons.all())
+
+    @property
     def total_price(self):
-        return self.unit_price * self.quantity
+        """Calculate total including product price and add-ons"""
+        base_total = self.unit_price * self.quantity
+        addons_total = self.addons_price * self.quantity
+        return base_total + addons_total
 
     @property
     def has_customization(self):

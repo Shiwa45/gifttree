@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Wallet - {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<style>
+/* Wallet Dashboard Styles */
+.wallet-page {
+    background: #f5f5f5;
+    min-height: 100vh;
+    padding: 20px 0 80px;
+}
+
+.wallet-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Page Header */
+.page-header {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.page-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+/* Wallet Card */
+.wallet-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 30px;
+    color: white;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.wallet-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.wallet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    position: relative;
+    z-index: 1;
+}
+
+.wallet-title {
+    font-size: 16px;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+.wallet-icon {
+    font-size: 40px;
+}
+
+.wallet-balance {
+    position: relative;
+    z-index: 1;
+}
+
+.balance-label {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 5px;
+}
+
+.balance-amount {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.balance-subtext {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.stat-icon.credit {
+    background: #e8f5e9;
+    color: #4CAF50;
+}
+
+.stat-icon.debit {
+    background: #ffebee;
+    color: #f44336;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #666;
+}
+
+/* Transactions Section */
+.transactions-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #333;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Transaction List */
+.transaction-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.transaction-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.transaction-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.transaction-icon.credit {
+    background: linear-gradient(135deg, #4CAF50, #66BB6A);
+    color: white;
+}
+
+.transaction-icon.debit {
+    background: linear-gradient(135deg, #f44336, #ef5350);
+    color: white;
+}
+
+.transaction-details {
+    flex: 1;
+}
+
+.transaction-type {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.transaction-desc {
+    font-size: 13px;
+    color: #666;
+}
+
+.transaction-date {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+}
+
+.transaction-amount {
+    text-align: right;
+    margin-left: 15px;
+}
+
+.amount-value {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.amount-value.credit {
+    color: #4CAF50;
+}
+
+.amount-value.debit {
+    color: #f44336;
+}
+
+.balance-after {
+    font-size: 11px;
+    color: #999;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+}
+
+.empty-state i {
+    font-size: 80px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    font-size: 14px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .wallet-page {
+        padding: 12px 0 80px;
+    }
+
+    .wallet-container {
+        padding: 0 12px;
+    }
+
+    .page-header {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .page-header h1 {
+        font-size: 22px;
+    }
+
+    .wallet-card {
+        padding: 25px 20px;
+        margin-bottom: 20px;
+        border-radius: 16px;
+    }
+
+    .wallet-header {
+        margin-bottom: 20px;
+    }
+
+    .wallet-title {
+        font-size: 14px;
+    }
+
+    .wallet-icon {
+        font-size: 32px;
+    }
+
+    .balance-amount {
+        font-size: 36px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        padding: 15px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+    }
+
+    .transactions-section {
+        padding: 20px 15px;
+        border-radius: 16px;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .section-title {
+        font-size: 18px;
+    }
+
+    .filter-buttons {
+        width: 100%;
+        justify-content: flex-start;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 5px;
+    }
+
+    .filter-btn {
+        padding: 6px 14px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .transaction-item {
+        padding: 12px;
+    }
+
+    .transaction-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
+        margin-right: 12px;
+    }
+
+    .transaction-type {
+        font-size: 14px;
+    }
+
+    .transaction-desc {
+        font-size: 12px;
+    }
+
+    .transaction-date {
+        font-size: 11px;
+    }
+
+    .amount-value {
+        font-size: 16px;
+    }
+
+    .balance-after {
+        font-size: 10px;
+    }
+}
+</style>
+
+<div class="wallet-page">
+    <div class="wallet-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><i class="fas fa-wallet"></i> My Wallet</h1>
+        </div>
+
+        <!-- Wallet Card -->
+        <div class="wallet-card">
+            <div class="wallet-header">
+                <div class="wallet-title">GiftTree Wallet</div>
+                <div class="wallet-icon">💰</div>
+            </div>
+            <div class="wallet-balance">
+                <div class="balance-label">Current Balance</div>
+                <div class="balance-amount">₹{{ wallet.balance|floatformat:0 }}</div>
+                <div class="balance-subtext">Available to spend on your next order</div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value">{{ total_credits }}</div>
+                        <div class="stat-label">Total Credits</div>
+                    </div>
+                    <div class="stat-icon credit">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value">{{ total_debits }}</div>
+                        <div class="stat-label">Total Debits</div>
+                    </div>
+                    <div class="stat-icon debit">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Section -->
+        <div class="transactions-section">
+            <div class="section-header">
+                <h2 class="section-title">Transaction History</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active">All</button>
+                    <button class="filter-btn">Credits</button>
+                    <button class="filter-btn">Debits</button>
+                </div>
+            </div>
+
+            {% if transactions %}
+            <div class="transaction-list">
+                {% for transaction in transactions %}
+                <div class="transaction-item">
+                    <div class="transaction-icon {{ transaction.transaction_type }}">
+                        {% if transaction.transaction_type == 'credit' %}
+                        <i class="fas fa-plus"></i>
+                        {% else %}
+                        <i class="fas fa-minus"></i>
+                        {% endif %}
+                    </div>
+                    <div class="transaction-details">
+                        <div class="transaction-type">
+                            {% if transaction.transaction_type == 'credit' %}
+                            Money Added
+                            {% else %}
+                            Money Spent
+                            {% endif %}
+                        </div>
+                        <div class="transaction-desc">
+                            {{ transaction.description|default:"No description" }}
+                        </div>
+                        <div class="transaction-date">
+                            {{ transaction.created_at|date:"d M Y, h:i A" }}
+                        </div>
+                    </div>
+                    <div class="transaction-amount">
+                        <div class="amount-value {{ transaction.transaction_type }}">
+                            {% if transaction.transaction_type == 'credit' %}+{% else %}-{% endif %}₹{{ transaction.amount|floatformat:0 }}
+                        </div>
+                        <div class="balance-after">Bal: ₹{{ transaction.balance_after|floatformat:0 }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-receipt"></i>
+                <h3>No Transactions Yet</h3>
+                <p>Your transaction history will appear here</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Filter functionality
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        // Remove active from all
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        // Add active to clicked
+        this.classList.add('active');
+
+        const filter = this.textContent.toLowerCase();
+        const transactions = document.querySelectorAll('.transaction-item');
+
+        transactions.forEach(item => {
+            if (filter === 'all') {
+                item.style.display = 'flex';
+            } else if (filter === 'credits' && item.querySelector('.transaction-icon.credit')) {
+                item.style.display = 'flex';
+            } else if (filter === 'debits' && item.querySelector('.transaction-icon.debit')) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,7 +1,7 @@
 # apps/products/views.py - COMPLETE FINAL VERSION
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, TemplateView
 from django.db.models import Q, Count, Min, Max, Prefetch, Avg
 from django.core.paginator import Paginator
 from django.contrib import messages
@@ -205,23 +205,44 @@ class ProductDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         # Add all product images in order
         context['product_images'] = self.object.all_images
-        
+
         # Add product variants
         context['product_variants'] = self.object.variants.filter(is_active=True).order_by('sort_order')
-        
+
         # Calculate discount percentage
         context['discount_percentage'] = self.object.discount_percentage
-        
-        # Add related products from same category
-        context['related_products'] = Product.objects.filter(
+
+        # FIX: Get related products from same category (increased to 6)
+        from django.db import models
+        related_products = Product.objects.filter(
             category=self.object.category,
             is_active=True,
-            published=True
-        ).exclude(pk=self.object.pk).select_related('category').prefetch_related('images')[:4]
-        
+            published=True,
+            stock_quantity__gt=0
+        ).exclude(
+            pk=self.object.pk
+        ).select_related('category').prefetch_related('images')[:6]
+
+        # DEBUG logging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Found {related_products.count()} related products for {self.object.name}")
+
+        context['related_products'] = related_products
+
+        # BONUS: recommended products (bestsellers or featured from same category)
+        context['recommended_products'] = Product.objects.filter(
+            category=self.object.category,
+            is_active=True,
+            published=True,
+            stock_quantity__gt=0
+        ).filter(
+            models.Q(is_bestseller=True) | models.Q(is_featured=True)
+        ).exclude(pk=self.object.pk)[:4]
+
         # Check stock status
         context['in_stock'] = self.object.is_in_stock
         context['low_stock'] = 0 < self.object.stock_quantity <= 5
@@ -250,7 +271,30 @@ class ProductDetailView(DetailView):
                 is_active=True,
                 published=True
             ).select_related('category').prefetch_related('images')[:8]
-        
+
+        # Add available add-ons
+        context['available_addons'] = self.object.get_available_addons()
+
+        # Add product reviews
+        try:
+            from apps.reviews.models import Review
+            reviews = Review.objects.filter(
+                product=self.object,
+                is_approved=True,
+                is_active=True
+            ).select_related('user')[:10]
+
+            context['product_reviews'] = reviews
+            context['reviews_count'] = reviews.count()
+
+            if reviews.exists():
+                avg = sum([r.rating for r in reviews]) / reviews.count()
+                context['average_rating'] = round(avg, 1)
+        except:
+            context['product_reviews'] = []
+            context['reviews_count'] = 0
+            context['average_rating'] = 0
+
         return context
 
 
@@ -885,6 +929,35 @@ class LocationDetailView(ListView):
             context['page_title'] = f'Delivery to {location_name}'
         return context
 
+
+class CakeCategoryView(TemplateView):
+    """Cakes category page with subcategories"""
+    template_name = 'products/cakes_category.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            cakes_category = Category.objects.get(slug='cakes', is_active=True)
+        except Category.DoesNotExist:
+            cakes_category = None
+
+        context['cakes_category'] = cakes_category
+
+        if cakes_category:
+            context['cake_subcategories'] = Category.objects.filter(
+                parent=cakes_category,
+                is_active=True
+            ).order_by('sort_order')
+
+        context['featured_cakes'] = Product.objects.filter(
+            is_featured=True,
+            is_active=True
+        ).select_related('category').prefetch_related('images')[:8]
+
+        return context
+
+
 @require_http_methods(["GET"])
 def quick_view(request, product_id):
     """Quick view API for product details"""
@@ -956,3 +1029,132 @@ def quick_view(request, product_id):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+@require_http_methods(["GET"])
+def check_pincode_availability(request):
+    """
+    API endpoint to check if a product is available for a given pincode
+    GET params: pincode, product_id, variant_id (optional)
+    """
+    pincode = request.GET.get('pincode', '').strip()
+    product_id = request.GET.get('product_id')
+    variant_id = request.GET.get('variant_id')
+
+    if not pincode or not product_id:
+        return JsonResponse({
+            'success': False,
+            'error': 'Pincode and product_id are required'
+        }, status=400)
+
+    # Validate pincode format (6 digits)
+    if not pincode.isdigit() or len(pincode) != 6:
+        return JsonResponse({
+            'success': False,
+            'available': False,
+            'message': 'Please enter a valid 6-digit pincode'
+        })
+
+    try:
+        product = Product.objects.get(id=product_id, is_active=True, published=True)
+        variant = None
+
+        if variant_id:
+            try:
+                variant = ProductVariant.objects.get(id=variant_id, product=product, is_active=True)
+            except ProductVariant.DoesNotExist:
+                pass
+
+        # Check availability
+        is_available, seller_location, available_quantity, delivery_days = product.check_availability_by_pincode(
+            pincode, variant
+        )
+
+        if is_available:
+            return JsonResponse({
+                'success': True,
+                'available': True,
+                'message': f'Available! Delivery in {delivery_days} days',
+                'delivery_days': delivery_days,
+                'seller_location': {
+                    'name': seller_location.name,
+                    'city': seller_location.city,
+                    'state': seller_location.state
+                } if seller_location else None,
+                'pincode_info': {
+                    'pincode': pincode,
+                    'is_serviceable': True
+                }
+            })
+        else:
+            return JsonResponse({
+                'success': True,
+                'available': False,
+                'message': 'Sorry, this product is not available for your pincode',
+                'pincode_info': {
+                    'pincode': pincode,
+                    'is_serviceable': False
+                }
+            })
+
+    except Product.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Product not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def validate_pincode(request):
+    """
+    API endpoint to validate and get pincode details
+    GET params: pincode
+    """
+    from apps.users.models import Pincode
+
+    pincode = request.GET.get('pincode', '').strip()
+
+    if not pincode:
+        return JsonResponse({
+            'success': False,
+            'error': 'Pincode is required'
+        }, status=400)
+
+    # Validate pincode format
+    if not pincode.isdigit() or len(pincode) != 6:
+        return JsonResponse({
+            'success': False,
+            'valid': False,
+            'message': 'Please enter a valid 6-digit pincode'
+        })
+
+    try:
+        pincode_obj = Pincode.objects.get(pincode=pincode)
+
+        return JsonResponse({
+            'success': True,
+            'valid': True,
+            'serviceable': pincode_obj.is_serviceable and pincode_obj.is_active,
+            'pincode_data': {
+                'pincode': pincode_obj.pincode,
+                'area': pincode_obj.area,
+                'city': pincode_obj.city,
+                'district': pincode_obj.district,
+                'state': pincode_obj.state,
+                'delivery_days': pincode_obj.delivery_days
+            },
+            'message': f'{pincode_obj.city}, {pincode_obj.state}' if pincode_obj.is_serviceable else 'Pincode not serviceable'
+        })
+
+    except Pincode.DoesNotExist:
+        return JsonResponse({
+            'success': True,
+            'valid': False,
+            'serviceable': False,
+            'message': 'Pincode not found in our database'
+        })

@@ -1,263 +1,368 @@
-# GiftTree - E-commerce Platform
+# 🎁 MyGiftTree - E-Commerce Platform
 
-GiftTree is a Django-based e-commerce platform for sending flowers, cakes, and gifts online. This project is inspired by MyFlowerTree and features a pink-themed, mobile-first responsive design.
+A feature-rich Django-based e-commerce platform for flowers, cakes, and gifts with same-day delivery, wallet system, and advanced features.
 
-## Features
+![Django](https://img.shields.io/badge/Django-5.x-green)
+![Python](https://img.shields.io/badge/Python-3.11+-blue)
+![License](https://img.shields.io/badge/License-Proprietary-red)
 
-- **Product Management**: Categories, products with variants, and inventory management
-- **User Management**: Custom user model with profile and address management
-- **Shopping Cart**: Session-based and user-based cart functionality
-- **Order Management**: Complete order lifecycle with tracking
-- **Review System**: Product reviews with ratings and images
-- **Admin Interface**: Enhanced Django admin with inline editing
-- **Responsive Design**: Mobile-first Bootstrap 5 implementation
+## 🌟 Features
 
-## Project Structure
+### Core E-Commerce
+- 🛍️ **Product Catalog** - Browse flowers, cakes, gifts, and more
+- 🛒 **Shopping Cart** - Add products, variants, and add-ons
+- 💳 **Secure Checkout** - Multi-step checkout with validation
+- 📦 **Order Management** - Track orders from placement to delivery
+- 🔍 **Advanced Search** - Filter by category, price, occasion, recipient
+- ⭐ **Product Reviews** - Customer ratings and reviews with images
+
+### Payment & Wallet
+- 💰 **Wallet System** - Earn and redeem coins on purchases
+  - 200 coins welcome bonus on signup
+  - 10% cashback on orders (max 50 coins)
+  - 25 coins for sharing feedback
+- 💳 **Razorpay Integration** - Secure online payments
+- 🎫 **Coupon System** - Discount codes and promotions
+- 📊 **Transaction History** - Complete wallet transaction log
+
+### User Features
+- 👤 **User Accounts** - Registration, login, profile management
+- 📍 **Multiple Addresses** - Save delivery addresses
+- 📧 **Email Notifications** - Order updates, feedback requests
+- 🔔 **Cart Abandonment** - Automated reminder emails after 24hrs
+- 🌍 **International Delivery** - Ship to 10+ countries
+
+### Admin Features
+- 📊 **Comprehensive Dashboard** - Manage products, orders, users
+- 🎨 **Banner Management** - Homepage slider with images
+- 🏷️ **Category Management** - Organize products hierarchically
+- 📈 **Analytics** - Track sales, revenue, popular products
+- 🎁 **Product Add-ons** - Chocolates, greeting cards, etc.
+- 🌐 **Multi-Tenant Ready** - Seller location management
+
+### SEO & Performance
+- 🔍 **SEO Optimized** - Sitemap, robots.txt, structured data
+- ⚡ **Performance** - Database caching, GZip compression
+- 📱 **Mobile Responsive** - Optimized for all devices
+- 🖼️ **Lazy Loading** - Fast page load times
+- 🎯 **Schema.org Markup** - Rich snippets for search engines
+
+### Advanced Features
+- 🎂 **Product Personalization** - Custom messages, names, dates
+- 📝 **Blog System** - Content marketing with categories and tags
+- 🎨 **Featured Sections** - Chocolate gifts, unique gifts, bestsellers
+- 📧 **Auto Feedback Emails** - Sent 24hrs after delivery
+- 🔒 **Security Hardened** - HTTPS, HSTS, XSS protection
+
+## 🛠️ Tech Stack
+
+### Backend
+- **Framework:** Django 5.x
+- **Language:** Python 3.11+
+- **Database:** SQLite (dev) / PostgreSQL (production)
+- **Cache:** Database cache / Redis (production)
+- **Task Queue:** Celery (optional)
+
+### Frontend
+- **CSS Framework:** Bootstrap 5
+- **Icons:** Font Awesome 6
+- **JavaScript:** Vanilla JS
+- **Templates:** Django Templates
+
+### Integrations
+- **Payment Gateway:** Razorpay
+- **Email:** SMTP (configurable)
+- **Storage:** Local / Cloud (configurable)
+
+## 📋 Requirements
+
+- Python 3.11 or higher
+- pip (Python package manager)
+- virtualenv or venv
+- Git
+
+## 🚀 Installation
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/yourusername/gifttree.git
+cd gifttree
+```
+
+### 2. Create Virtual Environment
+
+```bash
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# Linux/Mac
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+# Django Settings
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Database (PostgreSQL for production)
+DB_NAME=gifttree
+DB_USER=postgres
+DB_PASSWORD=yourpassword
+DB_HOST=localhost
+DB_PORT=5432
+
+# Razorpay
+RAZORPAY_KEY_ID=your_key_id
+RAZORPAY_KEY_SECRET=your_key_secret
+
+# Email
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=your_email@gmail.com
+EMAIL_HOST_PASSWORD=your_app_password
+
+# Site Configuration
+SITE_NAME=MyGiftTree
+SITE_DOMAIN=localhost:8000
+DEFAULT_FROM_EMAIL=noreply@mygifttree.com
+```
+
+### 5. Database Setup
+
+```bash
+# Run migrations
+python manage.py migrate
+
+# Create cache table
+python manage.py createcachetable
+
+# Create superuser
+python manage.py createsuperuser
+
+# Populate initial data
+python manage.py populate_countries
+python manage.py create_wallets
+```
+
+### 6. Collect Static Files
+
+```bash
+python manage.py collectstatic --noinput
+```
+
+### 7. Run Development Server
+
+```bash
+python manage.py runserver
+```
+
+Visit http://localhost:8000
+
+## 📁 Project Structure
 
 ```
 gifttree/
+├── apps/
+│   ├── core/              # Core functionality, site settings
+│   ├── users/             # User authentication, profiles
+│   ├── products/          # Product catalog, categories
+│   ├── cart/              # Shopping cart management
+│   ├── orders/            # Order processing, checkout
+│   ├── reviews/           # Product reviews and ratings
+│   ├── blog/              # Blog posts and content
+│   └── wallet/            # Wallet system and transactions
+├── gifttree/
+│   ├── settings/
+│   │   ├── base.py        # Base settings
+│   │   ├── development.py # Development settings
+│   │   └── production.py  # Production settings
+│   ├── urls.py            # Main URL configuration
+│   └── wsgi.py            # WSGI configuration
+├── templates/             # HTML templates
+│   ├── base.html
+│   ├── core/
+│   ├── products/
+│   ├── cart/
+│   ├── orders/
+│   ├── emails/            # Email templates
+│   └── includes/          # Reusable components
+├── static/                # Static files (CSS, JS, images)
+│   ├── css/
+│   ├── js/
+│   ├── images/
+│   └── robots.txt
+├── media/                 # User uploaded files
 ├── manage.py
 ├── requirements.txt
-├── .env
-├── .gitignore
-├── README.md
-├── gifttree/
-│   ├── settings/          # Split settings for different environments
-│   ├── urls.py
-│   └── wsgi.py
-├── apps/
-│   ├── core/              # Core functionality and base models
-│   ├── users/             # User management with custom user model
-│   ├── products/          # Product catalog with categories and variants
-│   ├── cart/              # Shopping cart functionality
-│   ├── orders/            # Order management and tracking
-│   └── reviews/           # Product review system
-├── static/                # Static files (CSS, JS, images)
-├── media/                 # User uploaded files
-└── templates/             # HTML templates
+├── .env.example
+└── README.md
 ```
 
-## Quick Start
-
-### Prerequisites
-
-- Python 3.8+
-- pip
-- Virtual environment (recommended)
-
-### Installation
-
-1. **Clone the repository** (if applicable)
-   ```bash
-   cd gifttree
-   ```
-
-2. **Create and activate virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment variables**
-   - Copy `.env` file and update values as needed
-   - Generate a new SECRET_KEY for production
-
-5. **Run migrations**
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-
-6. **Create superuser**
-   ```bash
-   python manage.py createsuperuser
-   ```
-
-7. **Load sample data** (optional)
-   ```bash
-   python manage.py create_sample_data
-   ```
-
-8. **Run development server**
-   ```bash
-   python manage.py runserver
-   ```
-
-9. **Access the application**
-   - Frontend: http://127.0.0.1:8000/
-   - Admin: http://127.0.0.1:8000/admin/
-
-## Configuration
-
-### Environment Variables
-
-Create a `.env` file in the project root with the following variables:
-
-```env
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-DATABASE_URL=sqlite:///db.sqlite3
-RAZORPAY_KEY_ID=your-razorpay-key
-RAZORPAY_KEY_SECRET=your-razorpay-secret
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
-```
-
-### Settings
-
-The project uses split settings:
-
-- `base.py`: Common settings for all environments
-- `development.py`: Development-specific settings
-- `production.py`: Production-specific settings
-
-Default environment is development. For production, set:
-```bash
-export DJANGO_SETTINGS_MODULE=gifttree.settings.production
-```
-
-## Database Models
-
-### Core Models
-- **BaseModel**: Abstract model with common fields (created_at, updated_at, is_active)
-- **SiteSettings**: Global site configuration
-
-### User Models
-- **CustomUser**: Extended user model with email as username
-- **UserProfile**: Additional user profile information
-- **Address**: User delivery addresses
-
-### Product Models
-- **Category**: Hierarchical product categories
-- **Occasion**: Special occasions for products
-- **Product**: Main product model with pricing and inventory
-- **ProductImage**: Multiple images per product
-- **ProductVariant**: Product variations (size, color, etc.)
-
-### Cart Models
-- **Cart**: User shopping cart
-- **CartItem**: Individual cart items
-
-### Order Models
-- **Order**: Customer orders with billing/shipping info
-- **OrderItem**: Individual order items
-- **OrderTracking**: Order status tracking
-
-### Review Models
-- **Review**: Product reviews with ratings
-- **ReviewImage**: Images attached to reviews
-
-## Admin Interface
-
-Access the admin interface at `/admin/` with your superuser credentials.
-
-Features:
-- Enhanced product management with inline images and variants
-- User management with addresses
-- Order management with tracking
-- Category and occasion management
-- Site settings configuration
-
-## API Endpoints
-
-The project is ready for API integration. URL patterns are organized by app:
-
-- `/` - Core/Home
-- `/products/` - Product catalog
-- `/cart/` - Shopping cart
-- `/orders/` - Order management
-- `/account/` - User account
-- `/reviews/` - Review system
-
-## Management Commands
-
-### create_sample_data
-
-Creates sample data for development:
+## 🎯 Key Commands
 
 ```bash
-python manage.py create_sample_data
+# Run development server
+python manage.py runserver
 
-# Clear existing data and create new
-python manage.py create_sample_data --clear
-```
+# Create migrations
+python manage.py makemigrations
 
-Creates:
-- Categories and subcategories
-- Occasions
-- Sample products with variants
-- Sample users
-- User addresses
+# Apply migrations
+python manage.py migrate
 
-## Development
+# Create superuser
+python manage.py createsuperuser
 
-### Running Tests
+# Collect static files
+python manage.py collectstatic
 
-```bash
+# Create cache table
+python manage.py createcachetable
+
+# Populate countries
+python manage.py populate_countries
+
+# Create wallets for existing users
+python manage.py create_wallets
+
+# Run tests
 python manage.py test
+
+# Check deployment readiness
+python manage.py check --deploy
 ```
 
-### Code Quality
+## 🔧 Configuration
 
-The project follows Django best practices:
-- Split settings for different environments
-- Custom user model
-- Proper model relationships
-- Admin customization
-- Static file organization
+### Admin Panel
+Access at: http://localhost:8000/admin
 
-### Adding New Features
+Configure:
+- Site Settings (contact info, delivery charges)
+- Banner Images (homepage slider)
+- Categories and Products
+- Coupons and Discounts
+- Countries for delivery
 
-1. Create migrations for model changes:
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
+### Payment Gateway
 
-2. Update admin configurations in `admin.py`
-3. Add URL patterns in app `urls.py`
-4. Create/update templates
-5. Add static files as needed
+1. Sign up for Razorpay account
+2. Get API keys (test/live mode)
+3. Add to `.env` file
+4. Test with Razorpay test cards
 
-## Deployment
+### Email Configuration
 
-### Production Checklist
+Configure SMTP settings in `.env` for:
+- Order confirmations
+- Cart abandonment reminders
+- Feedback requests
+- Password resets
 
-1. Set `DEBUG = False`
-2. Configure proper database (PostgreSQL recommended)
-3. Set up static file serving
-4. Configure email backend
-5. Set up SSL/HTTPS
-6. Configure caching (Redis recommended)
-7. Set up logging
-8. Configure backup strategy
+## 📊 Features by Phase
 
-### Environment Variables for Production
+### Phase 1: Foundation ✅
+- Project setup and structure
+- Multi-tenant architecture
+- Site settings management
 
-```env
-SECRET_KEY=your-production-secret-key
-DEBUG=False
-DATABASE_URL=postgresql://user:password@localhost/gifttree
-REDIS_URL=redis://localhost:6379/1
-```
+### Phase 2: Bug Fixes ✅
+- Mobile menu improvements
+- Responsive design fixes
+- Performance optimizations
 
-## Contributing
+### Phase 3: Content & Features ✅
+- Blog system
+- Advanced menu system
+- Product reviews
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+### Phase 4: Advanced Features ✅
+- Wallet system (200 coins bonus)
+- International delivery
+- Razorpay integration
+- Cart abandonment tracking
+- Auto feedback emails
 
-## License
+### Phase 5: Final Polish ✅
+- Banner management
+- SEO optimization
+- Performance tuning
+- Security hardening
+- Documentation
 
-This project is for educational purposes.
+## 🔒 Security Features
 
-## Support
+- HTTPS enforcement in production
+- HSTS headers
+- XSS protection
+- CSRF protection
+- SQL injection protection
+- Secure session cookies
+- Content Security Policy
+- Secure password hashing
 
-For support or questions, please contact the development team.
+## 🌐 SEO Features
+
+- Dynamic sitemap.xml
+- robots.txt configuration
+- Schema.org structured data
+- Meta tags optimization
+- Image alt text
+- Clean URL structure
+- Page load optimization
+
+## 📱 Mobile Features
+
+- Responsive design
+- Touch-optimized UI
+- Bottom navigation bar
+- Mobile-friendly forms
+- Fast loading times
+- Progressive Web App ready
+
+## 🤝 Contributing
+
+This is a proprietary project. For access or collaboration:
+- Contact: support@mygifttree.com
+
+## 📄 License
+
+Proprietary - All Rights Reserved
+© 2024 MyGiftTree
+
+## 🆘 Support
+
+- **Email:** support@mygifttree.com
+- **Phone:** +91-9351221905
+- **Documentation:** See DEPLOYMENT.md
+- **Issues:** Contact support team
+
+## 🎉 Acknowledgments
+
+- Django Framework
+- Bootstrap Team
+- Font Awesome
+- Razorpay Payment Gateway
+- All contributors and testers
+
+---
+
+**Built with ❤️ by MyGiftTree Team**
+
+Last Updated: January 2025
+Version: 1.0.0

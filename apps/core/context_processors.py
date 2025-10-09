@@ -110,10 +110,19 @@ def global_context(request):
     except:
         cart_count = 0
     
+    # Get site settings
+    from apps.core.models import SiteSettings, Country
+    site_settings = SiteSettings.get_settings()
+
+    # Get featured countries for footer
+    featured_countries = Country.objects.filter(is_featured=True, is_active=True)[:6]
+
     return {
         'main_categories': main_categories,
         'main_occasions': main_occasions,
         'cart_count': cart_count,
+        'site_settings': site_settings,
+        'featured_countries': featured_countries,
     }
 
 
@@ -136,7 +145,7 @@ def _build_flowers_menu():
             MenuItem("Bestseller"),
             MenuItem("Korean Paper Bouquets", badges=[{"name": "New", "background_color": "#FF4444", "color": "#FFFFFF"}]),
             MenuItem("Crochet Flowers", badges=[{"name": "New", "background_color": "#FF4444", "color": "#FFFFFF"}]),
-            MenuItem("MFT Signature Boxes"),
+            MenuItem("Signature Boxes"),
             MenuItem("Floral Bouquets", badges=[{"name": "Hot Selling", "background_color": "#FF6600", "color": "#FFFFFF"}]),
             MenuItem("Premium Basket Arrangements"),
             MenuItem("Floral Hampers", badges=[{"name": "New", "background_color": "#FF4444", "color": "#FFFFFF"}]),

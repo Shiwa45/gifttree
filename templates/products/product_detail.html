@@ -6,6 +6,41 @@
 
 {% block meta_description %}{{ product.description|truncatewords:20 }}{% endblock %}
 
+{% block extra_head %}
+<!-- Structured Data for SEO (Schema.org JSON-LD) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org/",
+  "@type": "Product",
+  "name": "{{ product.name|escapejs }}",
+  "image": "{{ request.scheme }}://{{ request.get_host }}{% if product.primary_image %}{{ product.primary_image.get_image_url }}{% endif %}",
+  "description": "{{ product.description|striptags|truncatewords:50|escapejs }}",
+  "sku": "{{ product.sku }}",
+  "brand": {
+    "@type": "Brand",
+    "name": "MyGiftTree"
+  },
+  "offers": {
+    "@type": "Offer",
+    "url": "{{ request.build_absolute_uri }}",
+    "priceCurrency": "INR",
+    "price": "{{ product.current_price }}",
+    "priceValidUntil": "2025-12-31",
+    "availability": "{% if product.is_in_stock %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
+    "seller": {
+      "@type": "Organization",
+      "name": "MyGiftTree"
+    }
+  }{% if product.reviews.exists %},
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "{{ product.average_rating|default:'5' }}",
+    "reviewCount": "{{ product.reviews.count }}"
+  }{% endif %}
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <style>
 /* Product Detail Page Styles */
@@ -395,6 +430,202 @@
     line-height: 1.6;
 }
 
+/* Product Add-Ons Section */
+.addons-section {
+    background: white;
+    padding: 30px 20px;
+    margin: 20px auto;
+    max-width: 1200px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.addons-section .section-title {
+    font-size: 22px;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.addons-section .section-title i {
+    color: var(--secondary-color);
+}
+
+.addons-subtitle {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+.addons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.addon-card {
+    position: relative;
+    background: #f9f9f9;
+    border-radius: 12px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    cursor: pointer;
+}
+
+.addon-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    border-color: var(--primary-color);
+}
+
+.addon-card.selected {
+    border-color: var(--primary-color);
+    background: #fff5f8;
+}
+
+.addon-checkbox-wrapper {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+}
+
+.addon-checkbox {
+    display: none;
+}
+
+.addon-checkbox-label {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid #ddd;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.addon-checkbox:checked + .addon-checkbox-label {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.addon-checkbox:checked + .addon-checkbox-label::after {
+    content: '\2713';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.addon-image-wrapper {
+    width: 100%;
+    height: 150px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.addon-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.addon-card:hover .addon-image {
+    transform: scale(1.05);
+}
+
+.addon-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f5f5f5, #e9e9e9);
+    color: #ccc;
+}
+
+.addon-info {
+    text-align: center;
+}
+
+.addon-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+    line-height: 1.3;
+}
+
+.addon-description {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.addon-price {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.addons-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.selected-addons-list {
+    flex: 1;
+    font-size: 14px;
+    color: #666;
+}
+
+.no-addons-text {
+    color: #999;
+    font-style: italic;
+}
+
+.addon-tag {
+    display: inline-block;
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin: 4px;
+    font-size: 12px;
+}
+
+.addons-total {
+    font-size: 16px;
+    color: #333;
+}
+
+.addons-total strong {
+    font-size: 20px;
+    color: var(--primary-color);
+    margin-left: 10px;
+}
+
 /* Recommended Categories */
 .recommended-section {
     background: white;
@@ -663,6 +894,57 @@
     }
 }
 
+/* Mobile Responsive - Add-ons Section */
+@media (max-width: 768px) {
+    .addons-section {
+        padding: 20px 12px;
+        margin: 16px 0;
+    }
+
+    .addons-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .addon-image-wrapper {
+        height: 120px;
+    }
+
+    .addon-name {
+        font-size: 13px;
+    }
+
+    .addon-price {
+        font-size: 16px;
+    }
+
+    .addons-summary {
+        flex-direction: column;
+        gap: 12px;
+        padding: 15px;
+    }
+
+    .selected-addons-list {
+        width: 100%;
+        text-align: center;
+    }
+
+    .addons-total {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .addons-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .addon-card {
+        padding: 12px;
+    }
+}
+
 /* Mobile Responsive Styles (additional) */
 @media (max-width: 768px) {
     .product-grid {
@@ -865,6 +1147,279 @@ html, body, .product-detail-wrapper { overflow-x: hidden; }
 @media (max-width: 420px) {
   .category-grid { grid-template-columns: repeat(2, 1fr); }
   .products-grid { grid-template-columns: 1fr; }
+}
+
+/* Mobile Related Products Fix - Phase 2 */
+@media (max-width: 768px) {
+    .similar-products,
+    .find-more-section {
+        padding: 20px 12px;
+        margin: 16px 0;
+        background: white;
+    }
+
+    .similar-title,
+    .section-title {
+        font-size: 18px;
+        padding: 0 8px 12px;
+        margin-bottom: 12px;
+    }
+
+    .similar-scroll {
+        padding: 0 4px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .similar-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    .similar-row {
+        display: flex;
+        gap: 12px;
+        padding: 4px 0;
+    }
+
+    .similar-card,
+    .find-more-section .products-grid {
+        display: flex !important;
+        gap: 12px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 4px 0;
+    }
+
+    .find-more-section .products-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .find-more-section .product-card {
+        width: 130px !important;
+        min-width: 130px;
+        max-width: 130px;
+        flex-shrink: 0;
+        margin: 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 12px;
+        overflow: hidden;
+        background: white;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .find-more-section .product-card:active {
+        transform: scale(0.95);
+    }
+
+    .similar-image,
+    .find-more-section .product-image-wrapper {
+        width: 100%;
+        height: 130px !important;
+    }
+
+    .find-more-section .product-image {
+        width: 100%;
+        height: 130px !important;
+        object-fit: cover;
+    }
+
+    .similar-info,
+    .find-more-section .product-card-info {
+        padding: 8px;
+    }
+
+    .similar-name,
+    .find-more-section .product-card-name {
+        font-size: 12px;
+        line-height: 1.3;
+        margin-bottom: 4px;
+        font-weight: 500;
+        color: #333;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .similar-price,
+    .find-more-section .product-card-price {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+
+    .find-more-section .card-current-price {
+        font-size: 13px;
+    }
+
+    .find-more-section .card-original-price {
+        font-size: 11px;
+    }
+}
+
+/* Tablet */
+@media (min-width: 769px) and (max-width: 991px) {
+    .similar-card,
+    .find-more-section .product-card {
+        width: 160px !important;
+        min-width: 160px;
+    }
+
+    .similar-image,
+    .find-more-section .product-image {
+        height: 160px !important;
+    }
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+    .similar-products,
+    .find-more-section {
+        padding: 30px 40px;
+    }
+
+    .similar-card:hover,
+    .find-more-section .product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+}
+
+/* Bestseller Products - Horizontal Mobile Layout */
+@media (max-width: 768px) {
+    .bestseller-section {
+        padding: 20px 12px;
+        margin: 16px 0;
+    }
+
+    .bestseller-section .section-title {
+        font-size: 18px;
+        padding: 0 8px 12px;
+        margin-bottom: 12px;
+    }
+
+    .bestseller-section .products-grid {
+        display: flex !important;
+        gap: 12px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 4px 0;
+        margin-top: 12px;
+    }
+
+    .bestseller-section .products-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .bestseller-section .product-card {
+        width: 130px !important;
+        min-width: 130px;
+        max-width: 130px;
+        flex-shrink: 0;
+        margin: 0;
+    }
+
+    .bestseller-section .product-image-wrapper {
+        height: 130px !important;
+    }
+
+    .bestseller-section .product-card-info {
+        padding: 8px;
+    }
+
+    .bestseller-section .product-card-name {
+        font-size: 12px;
+        line-height: 1.3;
+        margin-bottom: 4px;
+        -webkit-line-clamp: 2;
+    }
+
+    .bestseller-section .product-card-price {
+        font-size: 13px;
+    }
+
+    .bestseller-section .card-current-price {
+        font-size: 13px;
+    }
+
+    .bestseller-section .card-original-price {
+        font-size: 11px;
+    }
+
+    .bestseller-section .product-card-delivery {
+        font-size: 10px;
+        margin-top: 4px;
+    }
+}
+
+/* Recommended Categories - Horizontal Mobile Layout with Images */
+@media (max-width: 768px) {
+    .recommended-section {
+        padding: 20px 12px;
+        margin: 16px 0;
+    }
+
+    .recommended-section .section-title {
+        font-size: 18px;
+        padding: 0 8px 12px;
+        margin-bottom: 12px;
+    }
+
+    .recommended-section .category-grid {
+        display: flex !important;
+        gap: 15px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 4px 0;
+    }
+
+    .recommended-section .category-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .recommended-section .category-card {
+        min-width: 90px;
+        max-width: 90px;
+        flex-shrink: 0;
+    }
+
+    .recommended-section .category-image {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 8px;
+        border: 2px solid #f0f0f0;
+    }
+
+    .recommended-section .category-name {
+        font-size: 11px;
+        line-height: 1.2;
+        text-align: center;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+}
+
+/* Tablet adjustments for bestseller and categories */
+@media (min-width: 769px) and (max-width: 991px) {
+    .bestseller-section .products-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+
+    .recommended-section .category-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
 }
 </style>
 
@@ -1141,6 +1696,25 @@ html, body, .product-detail-wrapper { overflow-x: hidden; }
                     </span>
                 </div>
 
+                <!-- Pincode Availability Checker -->
+                <div class="pincode-checker" style="margin-bottom: 20px;">
+                    <div style="background: #F5F5F5; padding: 16px; border-radius: 8px;">
+                        <div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px;">
+                            <i class="fas fa-map-marker-alt" style="color: var(--primary-color);"></i>
+                            Check Delivery Availability
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="pincodeInput" placeholder="Enter Pincode" maxlength="6"
+                                   style="flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                            <button type="button" id="checkPincodeBtn"
+                                    style="padding: 12px 20px; background: var(--primary-color); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                                CHECK
+                            </button>
+                        </div>
+                        <div id="pincodeResult" style="margin-top: 10px; font-size: 13px;"></div>
+                    </div>
+                </div>
+
                 <!-- Action Buttons -->
                 <form method="POST" action="{% url 'cart:add_to_cart' %}" id="addToCartForm">
                     {% csrf_token %}
@@ -1177,6 +1751,65 @@ html, body, .product-detail-wrapper { overflow-x: hidden; }
             </div>
         </div>
     </div>
+
+    <!-- Product Add-Ons Section -->
+    {% if available_addons %}
+    <div class="addons-section">
+        <h2 class="section-title">
+            <i class="fas fa-gift"></i> Make It Extra Special - Add Ons
+        </h2>
+        <p class="addons-subtitle">Personalize your gift with these perfect add-ons</p>
+
+        <div class="addons-grid">
+            {% for addon in available_addons %}
+            <div class="addon-card">
+                <div class="addon-checkbox-wrapper">
+                    <input type="checkbox"
+                           id="addon_{{ addon.id }}"
+                           name="addon_{{ addon.id }}"
+                           class="addon-checkbox"
+                           data-addon-id="{{ addon.id }}"
+                           data-addon-name="{{ addon.name }}"
+                           data-addon-price="{{ addon.price }}"
+                           onchange="toggleAddon(this)">
+                    <label for="addon_{{ addon.id }}" class="addon-checkbox-label"></label>
+                </div>
+
+                <div class="addon-image-wrapper">
+                    {% if addon.image %}
+                        <img src="{{ addon.image.url }}"
+                             alt="{{ addon.name }}"
+                             class="addon-image"
+                             loading="lazy">
+                    {% else %}
+                        <div class="addon-image-placeholder">
+                            <i class="fas fa-gift fa-3x"></i>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="addon-info">
+                    <h3 class="addon-name">{{ addon.name }}</h3>
+                    {% if addon.description %}
+                        <p class="addon-description">{{ addon.description|truncatewords:10 }}</p>
+                    {% endif %}
+                    <div class="addon-price">₹{{ addon.price|floatformat:0 }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="addons-summary">
+            <div class="selected-addons-list" id="selectedAddonsList">
+                <span class="no-addons-text">No add-ons selected</span>
+            </div>
+            <div class="addons-total">
+                <span>Add-ons Total:</span>
+                <strong id="addonsTotal">₹0</strong>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Care Instructions -->
     <div class="care-instructions-section">
@@ -1396,28 +2029,89 @@ function updateThumbnailBorders() {
 }
 
 // Check Delivery Availability
-function checkAvailability() {
-    const pincode = document.getElementById('pincodeInput').value;
+function checkPincodeAvailability() {
+    const pincode = document.getElementById('pincodeInput').value.trim();
+    const resultDiv = document.getElementById('pincodeResult');
+    const checkBtn = document.getElementById('checkPincodeBtn');
+
     if (!pincode) {
-        showNotification('error', 'Please enter a pincode');
+        resultDiv.innerHTML = '<span style="color: #d32f2f;">Please enter a pincode</span>';
         return;
     }
 
+    if (pincode.length !== 6 || !/^\d+$/.test(pincode)) {
+        resultDiv.innerHTML = '<span style="color: #d32f2f;">Please enter a valid 6-digit pincode</span>';
+        return;
+    }
+
+    // Show loading
+    checkBtn.disabled = true;
+    checkBtn.textContent = 'CHECKING...';
+    resultDiv.innerHTML = '<span style="color: #666;">Checking availability...</span>';
+
+    // Get selected variant if any
+    const variantId = document.getElementById('selectedVariantId')?.value || '';
+
     // Make AJAX request to check delivery availability
-    fetch(`/api/check-delivery/?pincode=${pincode}`)
+    const url = `/products/api/check-pincode/?pincode=${pincode}&product_id={{ product.id }}${variantId ? '&variant_id=' + variantId : ''}`;
+
+    fetch(url)
         .then(response => response.json())
         .then(data => {
-            if (data.available) {
-                showNotification('success', `Delivery available for pincode ${pincode}`);
+            if (data.success && data.available) {
+                resultDiv.innerHTML = `
+                    <div style="color: #2e7d32; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <strong>${data.message}</strong>
+                            ${data.seller_location ? `<div style="font-size: 12px; color: #666; margin-top: 4px;">Ships from ${data.seller_location.city}, ${data.seller_location.state}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            } else if (data.success && !data.available) {
+                resultDiv.innerHTML = `
+                    <div style="color: #d32f2f; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-times-circle"></i>
+                        <strong>${data.message}</strong>
+                    </div>
+                `;
             } else {
-                showNotification('error', data.message || `Delivery not available for pincode ${pincode}`);
+                resultDiv.innerHTML = `<span style="color: #d32f2f;">${data.error || 'Unable to check availability'}</span>`;
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showNotification('info', `Pincode ${pincode} - Please contact customer support for delivery information`);
+            resultDiv.innerHTML = '<span style="color: #d32f2f;">Error checking availability. Please try again.</span>';
+        })
+        .finally(() => {
+            checkBtn.disabled = false;
+            checkBtn.textContent = 'CHECK';
         });
 }
+
+// Add event listener for pincode check
+document.addEventListener('DOMContentLoaded', function() {
+    const checkPincodeBtn = document.getElementById('checkPincodeBtn');
+    const pincodeInput = document.getElementById('pincodeInput');
+
+    if (checkPincodeBtn) {
+        checkPincodeBtn.addEventListener('click', checkPincodeAvailability);
+    }
+
+    if (pincodeInput) {
+        pincodeInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                checkPincodeAvailability();
+            }
+        });
+
+        // Only allow numbers
+        pincodeInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    }
+});
 
 // Get CSRF token helper
 function getCookie(name) {
@@ -1615,6 +2309,81 @@ document.addEventListener('DOMContentLoaded', function() {
         selectVariant(firstVariant);
     }
 });
+
+// Add-ons functionality
+let selectedAddons = [];
+let addonsTotal = 0;
+
+function toggleAddon(checkbox) {
+    const card = checkbox.closest('.addon-card');
+    const addonId = parseInt(checkbox.dataset.addonId);
+    const addonName = checkbox.dataset.addonName;
+    const addonPrice = parseFloat(checkbox.dataset.addonPrice);
+
+    console.log('Toggle addon:', addonId, addonName, checkbox.checked);
+
+    if (checkbox.checked) {
+        // Add addon
+        card.classList.add('selected');
+        selectedAddons.push({
+            id: addonId,
+            name: addonName,
+            price: addonPrice
+        });
+        addonsTotal += addonPrice;
+    } else {
+        // Remove addon
+        card.classList.remove('selected');
+        selectedAddons = selectedAddons.filter(addon => addon.id !== addonId);
+        addonsTotal -= addonPrice;
+    }
+
+    console.log('Selected addons:', selectedAddons);
+    updateAddonsSummary();
+}
+
+function updateAddonsSummary() {
+    const listElement = document.getElementById('selectedAddonsList');
+    const totalElement = document.getElementById('addonsTotal');
+
+    if (selectedAddons.length === 0) {
+        listElement.innerHTML = '<span class="no-addons-text">No add-ons selected</span>';
+    } else {
+        listElement.innerHTML = selectedAddons.map(addon =>
+            `<span class="addon-tag">${addon.name} - ₹${addon.price.toFixed(0)}</span>`
+        ).join('');
+    }
+
+    totalElement.textContent = '₹' + addonsTotal.toFixed(0);
+
+    // Update hidden form inputs or localStorage for cart submission
+    // You can add hidden inputs to the product form to send selected addons
+    updateAddonFormInputs();
+}
+
+function updateAddonFormInputs() {
+    // Remove existing addon inputs
+    const form = document.getElementById('addToCartForm');
+    if (!form) {
+        console.error('Form not found!');
+        return;
+    }
+
+    const existingInputs = form.querySelectorAll('input[name="addon_ids[]"]');
+    existingInputs.forEach(input => input.remove());
+
+    // Add new addon inputs (using array notation for Django)
+    selectedAddons.forEach(addon => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'addon_ids[]';
+        input.value = addon.id;
+        form.appendChild(input);
+        console.log('Added hidden input:', input.name, input.value);
+    });
+
+    console.log('Form inputs updated. Total addon inputs:', form.querySelectorAll('input[name="addon_ids[]"]').length);
+}
 </script>
 
 {% endblock %}

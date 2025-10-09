@@ -1,0 +1,503 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delivery Address - Checkout | GiftTree{% endblock %}
+
+{% block content %}
+<!-- Mobile Header -->
+{% include 'includes/mobile_header.html' with show_back_button=True page_title="Delivery Address" %}
+
+<!-- Checkout Progress -->
+<div class="checkout-progress">
+    <div class="container">
+        <div class="progress-steps">
+            <div class="progress-step active">
+                <div class="step-number">1</div>
+                <div class="step-label">Address</div>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step">
+                <div class="step-number">2</div>
+                <div class="step-label">Delivery</div>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step">
+                <div class="step-number">3</div>
+                <div class="step-label">Payment</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="checkout-container">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Address Form Section -->
+                <div class="checkout-section">
+                    <h2 class="section-title">Select Delivery Address</h2>
+                    
+                    <form method="POST" id="addressForm">
+                        {% csrf_token %}
+                        
+                        <!-- Existing Addresses -->
+                        {% if form.fields.existing_address.queryset %}
+                        <div class="address-selection">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="use_existing" id="useExisting" 
+                                       {% if form.use_existing.value %}checked{% endif %}
+                                       onchange="toggleAddressForm()">
+                                <label class="form-check-label" for="useExisting">
+                                    Use an existing address
+                                </label>
+                            </div>
+                            
+                            <div id="existingAddresses" {% if not form.use_existing.value %}style="display: none;"{% endif %}>
+                                {% for address in form.fields.existing_address.queryset %}
+                                <div class="address-card {% if address == form.existing_address.value %}selected{% endif %}">
+                                    <input type="radio" name="existing_address" value="{{ address.id }}" id="addr_{{ address.id }}"
+                                           {% if address == form.existing_address.value %}checked{% endif %}>
+                                    <label for="addr_{{ address.id }}">
+                                        <div class="address-header">
+                                            <span class="address-title">{{ address.title }}</span>
+                                            {% if address.is_default %}
+                                            <span class="badge badge-primary">Default</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="address-body">
+                                            <p class="mb-1"><strong>{{ address.full_name }}</strong></p>
+                                            <p class="mb-1">{{ address.address_line_1 }}</p>
+                                            {% if address.address_line_2 %}
+                                            <p class="mb-1">{{ address.address_line_2 }}</p>
+                                            {% endif %}
+                                            <p class="mb-1">{{ address.city }}, {{ address.state }} - {{ address.pincode }}</p>
+                                            <p class="mb-0">Phone: {{ address.phone }}</p>
+                                        </div>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- New Address Form -->
+                        <div id="newAddressForm" {% if form.use_existing.value %}style="display: none;"{% endif %}>
+                            <h3 class="form-section-title">Enter New Address</h3>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_full_name" class="form-label">Full Name *</label>
+                                    {{ form.full_name }}
+                                    {% if form.full_name.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.full_name.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_phone" class="form-label">Phone Number *</label>
+                                    {{ form.phone }}
+                                    {% if form.phone.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.phone.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="id_address_line_1" class="form-label">Address Line 1 *</label>
+                                {{ form.address_line_1 }}
+                                {% if form.address_line_1.errors %}
+                                <div class="invalid-feedback d-block">{{ form.address_line_1.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="id_address_line_2" class="form-label">Address Line 2 (Optional)</label>
+                                {{ form.address_line_2 }}
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="id_city" class="form-label">City *</label>
+                                    {{ form.city }}
+                                    {% if form.city.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.city.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="id_state" class="form-label">State *</label>
+                                    {{ form.state }}
+                                    {% if form.state.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.state.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="id_pincode" class="form-label">Pincode *</label>
+                                    {{ form.pincode }}
+                                    {% if form.pincode.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.pincode.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                {{ form.save_address }}
+                                <label class="form-check-label" for="id_save_address">
+                                    Save this address for future orders
+                                </label>
+                            </div>
+                        </div>
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                Continue to Delivery Options
+                                <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Order Summary Sidebar -->
+                <div class="order-summary-sidebar sticky-top">
+                    <h3 class="summary-title">Order Summary</h3>
+                    
+                    <div class="summary-items">
+                        {% for item in cart_items %}
+                        <div class="summary-item">
+                            <img src="{% if item.product.primary_image %}{{ item.product.primary_image.url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}" 
+                                 alt="{{ item.product.name }}" class="item-thumb">
+                            <div class="item-info">
+                                <div class="item-name">{{ item.product.name }}</div>
+                                <div class="item-quantity">Qty: {{ item.quantity }}</div>
+                            </div>
+                            <div class="item-price">₹{{ item.total_price }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="summary-totals">
+                        <div class="summary-row">
+                            <span>Subtotal ({{ cart.total_items }} items)</span>
+                            <span>₹{{ cart.total_price }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Delivery Charges</span>
+                            <span class="text-success">FREE</span>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-total">
+                            <span>Total</span>
+                            <span>₹{{ cart.total_price }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checkout-progress {
+        background: white;
+        padding: 20px 0;
+        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 30px;
+    }
+    
+    .progress-steps {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .progress-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e0e0e0;
+        color: #999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-bottom: 8px;
+        transition: all 0.3s;
+    }
+    
+    .progress-step.active .step-number {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .step-label {
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+    }
+    
+    .progress-step.active .step-label {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .progress-line {
+        width: 80px;
+        height: 2px;
+        background: #e0e0e0;
+        margin: 0 10px;
+        margin-bottom: 25px;
+    }
+    
+    .checkout-container {
+        padding: 20px 0 80px;
+    }
+    
+    .checkout-section {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .section-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: var(--text-dark);
+    }
+    
+    .address-card {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .address-card:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(233, 30, 99, 0.1);
+    }
+    
+    .address-card.selected,
+    .address-card:has(input:checked) {
+        border-color: var(--primary-color);
+        background: rgba(233, 30, 99, 0.05);
+    }
+    
+    .address-card input[type="radio"] {
+        display: none;
+    }
+    
+    .address-card label {
+        cursor: pointer;
+        margin: 0;
+        width: 100%;
+    }
+    
+    .address-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .address-title {
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+    
+    .form-section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--text-dark);
+    }
+    
+    .form-actions {
+        margin-top: 30px;
+    }
+    
+    .order-summary-sidebar {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        top: 100px;
+    }
+    
+    .summary-title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: var(--text-dark);
+    }
+    
+    .summary-item {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .summary-item:last-child {
+        border-bottom: none;
+    }
+    
+    .item-thumb {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    
+    .item-info {
+        flex: 1;
+    }
+    
+    .item-name {
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+    
+    .item-quantity {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .item-price {
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+    
+    .summary-totals {
+        margin-top: 20px;
+    }
+    
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+    
+    .summary-divider {
+        height: 1px;
+        background: #e0e0e0;
+        margin: 15px 0;
+    }
+    
+    .summary-total {
+        display: flex;
+        justify-content: space-between;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+    
+    @media (max-width: 991px) {
+        .order-summary-sidebar {
+            margin-top: 30px;
+            position: static !important;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .progress-line {
+            width: 40px;
+        }
+        
+        .step-number {
+            width: 35px;
+            height: 35px;
+            font-size: 14px;
+        }
+        
+        .step-label {
+            font-size: 10px;
+        }
+        
+        .checkout-section {
+            padding: 20px 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_js %}
+<script>
+function toggleAddressForm() {
+    const useExisting = document.getElementById('useExisting').checked;
+    const existingAddresses = document.getElementById('existingAddresses');
+    const newAddressForm = document.getElementById('newAddressForm');
+    
+    if (useExisting && existingAddresses) {
+        existingAddresses.style.display = 'block';
+        newAddressForm.style.display = 'none';
+        
+        // Clear new address form fields
+        newAddressForm.querySelectorAll('input, textarea, select').forEach(field => {
+            if (field.type !== 'checkbox') {
+                field.value = '';
+            }
+        });
+    } else {
+        if (existingAddresses) {
+            existingAddresses.style.display = 'none';
+        }
+        newAddressForm.style.display = 'block';
+        
+        // Uncheck existing address radios
+        if (existingAddresses) {
+            existingAddresses.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.checked = false;
+            });
+        }
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers to address cards
+    document.querySelectorAll('.address-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'INPUT') {
+                const radio = this.querySelector('input[type="radio"]');
+                if (radio) {
+                    radio.checked = true;
+                    
+                    // Remove selected class from all cards
+                    document.querySelectorAll('.address-card').forEach(c => {
+                        c.classList.remove('selected');
+                    });
+                    
+                    // Add selected class to this card
+                    this.classList.add('selected');
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

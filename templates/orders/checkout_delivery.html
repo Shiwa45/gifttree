@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delivery Options - Checkout | GiftTree{% endblock %}
+
+{% block content %}
+<!-- Mobile Header -->
+{% include 'includes/mobile_header.html' with show_back_button=True page_title="Delivery Options" %}
+
+<!-- Checkout Progress -->
+<div class="checkout-progress">
+    <div class="container">
+        <div class="progress-steps">
+            <div class="progress-step completed">
+                <div class="step-number"><i class="fas fa-check"></i></div>
+                <div class="step-label">Address</div>
+            </div>
+            <div class="progress-line completed"></div>
+            <div class="progress-step active">
+                <div class="step-number">2</div>
+                <div class="step-label">Delivery</div>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step">
+                <div class="step-number">3</div>
+                <div class="step-label">Payment</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="checkout-container">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Delivery Options Section -->
+                <div class="checkout-section">
+                    <h2 class="section-title">Choose Delivery Option</h2>
+                    
+                    <form method="POST" id="deliveryForm">
+                        {% csrf_token %}
+                        
+                        <div class="delivery-options">
+                            {% for value, label in form.fields.delivery_option.choices %}
+                            <div class="delivery-option-card">
+                                <input type="radio" name="delivery_option" value="{{ value }}" id="delivery_{{ value }}"
+                                       {% if form.delivery_option.value == value %}checked{% endif %}
+                                       onchange="handleDeliveryChange('{{ value }}')">
+                                <label for="delivery_{{ value }}">
+                                    <div class="option-icon">
+                                        {% if value == 'same_day' %}
+                                        <i class="fas fa-shipping-fast"></i>
+                                        {% elif value == 'midnight' %}
+                                        <i class="fas fa-moon"></i>
+                                        {% else %}
+                                        <i class="fas fa-clock"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="option-details">
+                                        <div class="option-title">
+                                            {% if value == 'same_day' %}
+                                            Same Day Delivery
+                                            {% elif value == 'midnight' %}
+                                            Midnight Delivery
+                                            {% else %}
+                                            Fixed Time Delivery
+                                            {% endif %}
+                                        </div>
+                                        <div class="option-description">
+                                            {% if value == 'same_day' %}
+                                            Delivered within 3-6 hours
+                                            {% elif value == 'midnight' %}
+                                            Delivered between 12:00 AM - 12:30 AM
+                                            {% else %}
+                                            Choose your preferred delivery slot
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="option-price">
+                                        {% if value == 'same_day' %}
+                                        <span class="free-badge">FREE</span>
+                                        {% elif value == 'midnight' %}
+                                        <span class="price">₹99</span>
+                                        {% else %}
+                                        <span class="price">₹49</span>
+                                        {% endif %}
+                                    </div>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Date and Time Selection (shown only for fixed_time) -->
+                        <div id="dateTimeSelection" style="display: none;">
+                            <div class="row mt-4">
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_delivery_date" class="form-label">Delivery Date *</label>
+                                    {{ form.delivery_date }}
+                                    {% if form.delivery_date.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.delivery_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_delivery_time_slot" class="form-label">Time Slot *</label>
+                                    {{ form.delivery_time_slot }}
+                                    {% if form.delivery_time_slot.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.delivery_time_slot.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Special Instructions -->
+                        <div class="mt-4">
+                            <label for="id_special_instructions" class="form-label">Special Instructions (Optional)</label>
+                            {{ form.special_instructions }}
+                            <small class="text-muted">Any special instructions for the delivery person</small>
+                        </div>
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger mt-3">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="form-actions">
+                            <a href="{% url 'orders:checkout_address' %}" class="btn btn-outline-secondary btn-lg me-2">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Back
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg flex-fill">
+                                Continue to Payment
+                                <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Delivery Information Box -->
+                <div class="info-box">
+                    <h4><i class="fas fa-info-circle"></i> Delivery Information</h4>
+                    <ul>
+                        <li>Same day delivery is available for orders placed before 5 PM</li>
+                        <li>Midnight delivery is perfect for surprising loved ones</li>
+                        <li>Fixed time delivery allows you to choose a convenient slot</li>
+                        <li>We deliver across all major cities in India</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Order Summary Sidebar -->
+                <div class="order-summary-sidebar sticky-top">
+                    <h3 class="summary-title">Order Summary</h3>
+                    
+                    <div class="summary-items">
+                        {% for item in cart_items %}
+                        <div class="summary-item">
+                            <img src="{% if item.product.primary_image %}{{ item.product.primary_image.url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}" 
+                                 alt="{{ item.product.name }}" class="item-thumb">
+                            <div class="item-info">
+                                <div class="item-name">{{ item.product.name }}</div>
+                                <div class="item-quantity">Qty: {{ item.quantity }}</div>
+                            </div>
+                            <div class="item-price">₹{{ item.total_price }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="summary-totals">
+                        <div class="summary-row">
+                            <span>Subtotal ({{ cart.total_items }} items)</span>
+                            <span>₹{{ cart.total_price }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Delivery Charges</span>
+                            <span id="deliveryChargeDisplay" class="text-success">FREE</span>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-total">
+                            <span>Total</span>
+                            <span id="totalDisplay">₹{{ cart.total_price }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress-step.completed .step-number {
+        background: var(--secondary-color);
+        color: white;
+    }
+    
+    .progress-line.completed {
+        background: var(--secondary-color);
+    }
+    
+    .delivery-option-card {
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .delivery-option-card:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(233, 30, 99, 0.1);
+    }
+    
+    .delivery-option-card:has(input:checked) {
+        border-color: var(--primary-color);
+        background: rgba(233, 30, 99, 0.05);
+    }
+    
+    .delivery-option-card input[type="radio"] {
+        display: none;
+    }
+    
+    .delivery-option-card label {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        cursor: pointer;
+        margin: 0;
+        width: 100%;
+    }
+    
+    .option-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(233, 30, 99, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--primary-color);
+    }
+    
+    .option-details {
+        flex: 1;
+    }
+    
+    .option-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 4px;
+    }
+    
+    .option-description {
+        font-size: 14px;
+        color: #666;
+    }
+    
+    .option-price {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+    
+    .free-badge {
+        background: var(--secondary-color);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    
+    .info-box {
+        background: #f8f9fa;
+        border-left: 4px solid var(--primary-color);
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+    
+    .info-box h4 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: var(--text-dark);
+    }
+    
+    .info-box h4 i {
+        color: var(--primary-color);
+        margin-right: 8px;
+    }
+    
+    .info-box ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+    
+    .info-box li {
+        margin-bottom: 8px;
+        color: #666;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 30px;
+    }
+    
+    @media (max-width: 768px) {
+        .delivery-option-card label {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .option-details {
+            text-align: center;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .form-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_js %}
+<script>
+const subtotal = {{ cart.total_price }};
+
+function handleDeliveryChange(deliveryType) {
+    const dateTimeSelection = document.getElementById('dateTimeSelection');
+    const deliveryChargeDisplay = document.getElementById('deliveryChargeDisplay');
+    const totalDisplay = document.getElementById('totalDisplay');
+    
+    let deliveryCharge = 0;
+    
+    if (deliveryType === 'fixed_time') {
+        dateTimeSelection.style.display = 'block';
+        deliveryCharge = 49;
+    } else {
+        dateTimeSelection.style.display = 'none';
+        if (deliveryType === 'midnight') {
+            deliveryCharge = 99;
+        }
+    }
+    
+    // Update displays
+    if (deliveryCharge === 0) {
+        deliveryChargeDisplay.innerHTML = '<span class="text-success">FREE</span>';
+    } else {
+        deliveryChargeDisplay.textContent = '₹' + deliveryCharge;
+    }
+    
+    const total = subtotal + deliveryCharge;
+    totalDisplay.textContent = '₹' + total.toFixed(2);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const selectedDelivery = document.querySelector('input[name="delivery_option"]:checked');
+    if (selectedDelivery) {
+        handleDeliveryChange(selectedDelivery.value);
+    }
+    
+    // Set minimum date to tomorrow
+    const dateInput = document.getElementById('id_delivery_date');
+    if (dateInput) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const minDate = tomorrow.toISOString().split('T')[0];
+        dateInput.min = minDate;
+    }
+});
+</script>
+{% endblock %}

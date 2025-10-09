@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment - Checkout | GiftTree{% endblock %}
+
+{% block content %}
+<!-- Mobile Header -->
+{% include 'includes/mobile_header.html' with show_back_button=True page_title="Payment" %}
+
+<!-- Checkout Progress -->
+<div class="checkout-progress">
+    <div class="container">
+        <div class="progress-steps">
+            <div class="progress-step completed">
+                <div class="step-number"><i class="fas fa-check"></i></div>
+                <div class="step-label">Address</div>
+            </div>
+            <div class="progress-line completed"></div>
+            <div class="progress-step completed">
+                <div class="step-number"><i class="fas fa-check"></i></div>
+                <div class="step-label">Delivery</div>
+            </div>
+            <div class="progress-line completed"></div>
+            <div class="progress-step active">
+                <div class="step-number">3</div>
+                <div class="step-label">Payment</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="checkout-container">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Order Review Section -->
+                <div class="checkout-section">
+                    <h2 class="section-title">Review Your Order</h2>
+                    
+                    <!-- Delivery Address -->
+                    <div class="review-section">
+                        <div class="review-header">
+                            <h4>Delivery Address</h4>
+                            <a href="{% url 'orders:checkout_address' %}" class="edit-link">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                        </div>
+                        <div class="review-content">
+                            <p class="mb-1"><strong>{{ address.full_name }}</strong></p>
+                            <p class="mb-1">{{ address.address_line_1 }}</p>
+                            {% if address.address_line_2 %}
+                            <p class="mb-1">{{ address.address_line_2 }}</p>
+                            {% endif %}
+                            <p class="mb-1">{{ address.city }}, {{ address.state }} - {{ address.pincode }}</p>
+                            <p class="mb-0">Phone: {{ address.phone }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Delivery Option -->
+                    <div class="review-section">
+                        <div class="review-header">
+                            <h4>Delivery Option</h4>
+                            <a href="{% url 'orders:checkout_delivery' %}" class="edit-link">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                        </div>
+                        <div class="review-content">
+                            <p class="mb-1">
+                                <strong>
+                                    {% if delivery.delivery_option == 'same_day' %}
+                                    Same Day Delivery
+                                    {% elif delivery.delivery_option == 'midnight' %}
+                                    Midnight Delivery
+                                    {% else %}
+                                    Fixed Time Delivery
+                                    {% endif %}
+                                </strong>
+                            </p>
+                            {% if delivery.delivery_date %}
+                            <p class="mb-1">Date: {{ delivery.delivery_date }}</p>
+                            {% endif %}
+                            {% if delivery.delivery_time_slot %}
+                            <p class="mb-1">Time: {{ delivery.delivery_time_slot }}</p>
+                            {% endif %}
+                            {% if delivery.special_instructions %}
+                            <p class="mb-0">Instructions: {{ delivery.special_instructions }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payment Method Section -->
+                <div class="checkout-section">
+                    <h2 class="section-title">Select Payment Method</h2>
+                    
+                    <form method="POST" id="paymentForm">
+                        {% csrf_token %}
+                        
+                        <div class="payment-options">
+                            {% for value, label in form.fields.payment_method.choices %}
+                            <div class="payment-option-card">
+                                <input type="radio" name="payment_method" value="{{ value }}" id="payment_{{ value }}"
+                                       {% if form.payment_method.value == value %}checked{% endif %}>
+                                <label for="payment_{{ value }}">
+                                    <div class="option-icon">
+                                        {% if value == 'online' %}
+                                        <i class="fas fa-credit-card"></i>
+                                        {% else %}
+                                        <i class="fas fa-money-bill-wave"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="option-details">
+                                        <div class="option-title">{{ label }}</div>
+                                        <div class="option-description">
+                                            {% if value == 'online' %}
+                                            Safe and secure payment gateway
+                                            {% else %}
+                                            Pay with cash upon delivery
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-check-circle check-icon"></i>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Billing Address -->
+                        <div class="mt-4">
+                            <div class="form-check mb-3">
+                                {{ form.billing_same_as_shipping }}
+                                <label class="form-check-label" for="id_billing_same_as_shipping">
+                                    Billing address same as shipping address
+                                </label>
+                            </div>
+                            
+                            <div id="billingAddressForm" style="display: none;">
+                                <h3 class="form-section-title">Billing Address</h3>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_billing_name" class="form-label">Full Name *</label>
+                                        {{ form.billing_name }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_billing_email" class="form-label">Email *</label>
+                                        {{ form.billing_email }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_billing_phone" class="form-label">Phone *</label>
+                                        {{ form.billing_phone }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_billing_city" class="form-label">City *</label>
+                                        {{ form.billing_city }}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="id_billing_address_line_1" class="form-label">Address *</label>
+                                    {{ form.billing_address_line_1 }}
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_billing_state" class="form-label">State *</label>
+                                        {{ form.billing_state }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_billing_pincode" class="form-label">Pincode *</label>
+                                        {{ form.billing_pincode }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <a href="{% url 'orders:checkout_delivery' %}" class="btn btn-outline-secondary btn-lg me-2">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Back
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg flex-fill">
+                                <i class="fas fa-lock me-2"></i>
+                                Place Order
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Order Summary Sidebar -->
+                <div class="order-summary-sidebar sticky-top">
+                    <h3 class="summary-title">Order Summary</h3>
+                    
+                    <div class="summary-items">
+                        {% for item in cart_items %}
+                        <div class="summary-item">
+                            <img src="{% if item.product.primary_image %}{{ item.product.primary_image.url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}" 
+                                 alt="{{ item.product.name }}" class="item-thumb">
+                            <div class="item-info">
+                                <div class="item-name">{{ item.product.name }}</div>
+                                <div class="item-quantity">Qty: {{ item.quantity }}</div>
+                            </div>
+                            <div class="item-price">₹{{ item.total_price }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="summary-totals">
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span>₹{{ subtotal }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Delivery Charges</span>
+                            <span>{% if delivery_charge > 0 %}₹{{ delivery_charge }}{% else %}<span class="text-success">FREE</span>{% endif %}</span>
+                        </div>
+                        {% if discount > 0 %}
+                        <div class="summary-row text-success">
+                            <span>Discount</span>
+                            <span>-₹{{ discount }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="summary-divider"></div>
+                        <div class="summary-total">
+                            <span>Total Amount</span>
+                            <span>₹{{ total_amount }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="secure-payment">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>100% Secure Payment</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .review-section {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .review-header h4 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-dark);
+    }
+    
+    .edit-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .edit-link:hover {
+        text-decoration: underline;
+    }
+    
+    .review-content {
+        color: #666;
+        font-size: 14px;
+    }
+    
+    .payment-option-card {
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .payment-option-card:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(233, 30, 99, 0.1);
+    }
+    
+    .payment-option-card:has(input:checked) {
+        border-color: var(--primary-color);
+        background: rgba(233, 30, 99, 0.05);
+    }
+    
+    .payment-option-card input[type="radio"] {
+        display: none;
+    }
+    
+    .payment-option-card label {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        cursor: pointer;
+        margin: 0;
+        width: 100%;
+        position: relative;
+    }
+    
+    .check-icon {
+        color: var(--primary-color);
+        font-size: 24px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .payment-option-card:has(input:checked) .check-icon {
+        opacity: 1;
+    }
+    
+    .secure-payment {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+        padding: 15px;
+        background: #f0f8ff;
+        border-radius: 8px;
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .secure-payment i {
+        font-size: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .payment-option-card label {
+            flex-wrap: wrap;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .form-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_js %}
+<script>
+// Toggle billing address form
+document.getElementById('id_billing_same_as_shipping').addEventListener('change', function() {
+    const billingForm = document.getElementById('billingAddressForm');
+    if (this.checked) {
+        billingForm.style.display = 'none';
+    } else {
+        billingForm.style.display = 'block';
+    }
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const billingSame = document.getElementById('id_billing_same_as_shipping');
+    const billingForm = document.getElementById('billingAddressForm');
+    
+    if (!billingSame.checked) {
+        billingForm.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

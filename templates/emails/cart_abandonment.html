@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You Left Something Behind!</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #e91e63, #f06292);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .message {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.8;
+        }
+        .cart-items {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .cart-items h3 {
+            margin: 0 0 15px 0;
+            color: #e91e63;
+            font-size: 16px;
+        }
+        .cart-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+        .item-name {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+        .item-quantity {
+            font-size: 13px;
+            color: #666;
+            margin-right: 15px;
+        }
+        .item-price {
+            font-size: 15px;
+            font-weight: 600;
+            color: #e91e63;
+        }
+        .cart-total {
+            background: #fff3f8;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .total-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        .total-amount {
+            font-size: 20px;
+            font-weight: 700;
+            color: #e91e63;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #e91e63, #f06292);
+            color: white;
+            text-decoration: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
+        }
+        .incentive {
+            background: #fffbea;
+            border-left: 4px solid #ffd54f;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .incentive-text {
+            margin: 0;
+            color: #856404;
+            font-size: 14px;
+        }
+        .footer {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 25px 30px;
+            text-align: center;
+            font-size: 13px;
+        }
+        .footer a {
+            color: #f06292;
+            text-decoration: none;
+        }
+        .social-links {
+            margin: 15px 0;
+        }
+        .social-links a {
+            display: inline-block;
+            margin: 0 8px;
+            color: #ecf0f1;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎁 You Left Something Behind!</h1>
+            <p>Complete your order before items sell out</p>
+        </div>
+
+        <div class="content">
+            <p class="greeting">Hi {{ user.first_name|default:user.username }},</p>
+
+            <p class="message">
+                We noticed you left {{ cart.total_items }} item{{ cart.total_items|pluralize }} in your cart.
+                Don't worry, we've saved them for you! Complete your order now before they're gone.
+            </p>
+
+            <div class="cart-items">
+                <h3>Your Cart Items:</h3>
+                {% for item in items %}
+                <div class="cart-item">
+                    <div class="item-name">
+                        {{ item.product.name }}
+                        {% if item.variant %} - {{ item.variant.display_name }}{% endif %}
+                    </div>
+                    <div class="item-quantity">Qty: {{ item.quantity }}</div>
+                    <div class="item-price">₹{{ item.total_price }}</div>
+                </div>
+                {% endfor %}
+                {% if cart.total_items > 5 %}
+                <p style="margin: 10px 0 0 0; font-size: 13px; color: #666;">
+                    + {{ cart.total_items|add:"-5" }} more item{{ cart.total_items|add:"-5"|pluralize }}
+                </p>
+                {% endif %}
+            </div>
+
+            <div class="cart-total">
+                <span class="total-label">Cart Total:</span>
+                <span class="total-amount">₹{{ cart.total_price }}</span>
+            </div>
+
+            <div class="incentive">
+                <p class="incentive-text">
+                    <strong>💰 Special Offer!</strong> Use your wallet coins to get additional discounts on this order!
+                </p>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="{{ cart_url }}" class="cta-button">Complete Your Order →</a>
+            </div>
+
+            <p class="message" style="margin-top: 25px; font-size: 13px;">
+                Need help? Our customer support team is here for you 24/7.
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2024 {{ site_name }}. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#">Facebook</a> |
+                <a href="#">Instagram</a> |
+                <a href="#">Twitter</a>
+            </div>
+            <p style="margin-top: 15px; font-size: 12px; color: #95a5a6;">
+                You're receiving this email because you have items in your cart on {{ site_name }}.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

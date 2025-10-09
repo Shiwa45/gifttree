@@ -12,7 +12,9 @@ class Order(BaseModel):
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
         ('processing', 'Processing'),
+        ('ready_to_ship', 'Ready to Ship'),
         ('shipped', 'Shipped'),
+        ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
         ('refunded', 'Refunded'),
@@ -29,6 +31,10 @@ class Order(BaseModel):
     order_number = models.CharField(max_length=50, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+
+    # Multi-tenant: Assigned seller
+    assigned_seller = models.ForeignKey('users.Seller', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+    assigned_location = models.ForeignKey('users.SellerLocation', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
 
     # Billing Information
     billing_name = models.CharField(max_length=100)
@@ -53,6 +59,23 @@ class Order(BaseModel):
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
     delivery_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # Coupon fields
+    coupon = models.ForeignKey('Coupon', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+    coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    # Razorpay Payment Integration
+    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_signature = models.CharField(max_length=200, blank=True, null=True)
+    payment_method = models.CharField(max_length=50, default='cod', help_text="cod, razorpay, wallet")
+
+    # Wallet payment
+    wallet_coins_used = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Wallet coins used for this order")
+
+    # Feedback email tracking
+    feedback_email_sent = models.BooleanField(default=False)
+    feedback_email_sent_at = models.DateTimeField(blank=True, null=True)
 
     # Special Instructions
     special_instructions = models.TextField(blank=True)
@@ -83,6 +106,9 @@ class OrderItem(BaseModel):
     quantity = models.PositiveIntegerField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # Multi-tenant: Track which seller inventory this came from (disabled for now)
+    # seller_inventory = models.ForeignKey('products.SellerInventory', on_delete=models.SET_NULL, null=True, blank=True, related_name='order_items')
 
     def __str__(self):
         variant_str = f" ({self.variant_name})" if self.variant_name else ""

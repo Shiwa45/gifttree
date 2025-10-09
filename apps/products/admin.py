@@ -5,8 +5,8 @@ from django.utils.html import format_html
 from django.urls import path
 from .models import (
     Category, Occasion, Product, ProductImage, ProductVariant, CSVImportLog,
-    MenuBadge, MenuCategory, MenuSection, ProductType, Collection, 
-    Recipient, DeliveryLocation, MenuConfiguration
+    MenuBadge, MenuCategory, MenuSection, ProductType, Collection,
+    Recipient, DeliveryLocation, MenuConfiguration, SellerInventory, ProductAddOn
 )
 
 
@@ -33,6 +33,13 @@ class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
     extra = 0
     fields = ['name', 'price_adjustment', 'stock_quantity', 'sku_suffix', 'sort_order']
+
+
+class SellerInventoryInline(admin.TabularInline):
+    model = SellerInventory
+    extra = 0
+    fields = ['seller_location', 'variant', 'stock_quantity', 'reserved_quantity', 'seller_price', 'is_active']
+    raw_id_fields = ['seller_location', 'variant']
 
 
 # ============================================
@@ -267,8 +274,8 @@ class ProductAdmin(admin.ModelAdmin):
         }),
     )
 
-    inlines = [ProductImageInline, ProductVariantInline]
-    
+    inlines = [ProductImageInline, ProductVariantInline, SellerInventoryInline]
+
     actions = ['mark_as_published', 'mark_as_draft', 'mark_as_archived']
 
     def get_queryset(self, request):
@@ -404,3 +411,69 @@ def get_admin_urls(urls):
 
 admin_urls = admin.site.get_urls
 admin.site.get_urls = lambda: get_admin_urls(admin_urls())
+
+
+# ============================================
+# MULTI-TENANT INVENTORY ADMIN
+# ============================================
+
+@admin.register(SellerInventory)
+class SellerInventoryAdmin(admin.ModelAdmin):
+    list_display = ['product', 'variant', 'seller_location', 'stock_quantity', 'reserved_quantity', 'available_quantity_display', 'seller_price', 'is_active']
+    list_filter = ['seller_location__seller', 'seller_location__state', 'seller_location__city', 'is_active']
+    search_fields = ['product__name', 'product__sku', 'seller_location__name', 'seller_location__seller__business_name']
+    list_editable = ['stock_quantity', 'seller_price', 'is_active']
+    raw_id_fields = ['product', 'variant', 'seller_location']
+    readonly_fields = ['available_quantity_display', 'needs_reorder_display', 'created_at', 'updated_at']
+
+    fieldsets = (
+        ('Product & Location', {
+            'fields': ('product', 'variant', 'seller_location')
+        }),
+        ('Inventory', {
+            'fields': ('stock_quantity', 'reserved_quantity', 'available_quantity_display', 'reorder_level', 'needs_reorder_display')
+        }),
+        ('Pricing', {
+            'fields': ('seller_price',)
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'product', 'variant', 'seller_location', 'seller_location__seller'
+        )
+
+    def available_quantity_display(self, obj):
+        avail = obj.available_quantity
+        if avail > 0:
+            return format_html('<span style="color: green; font-weight: bold;">{}</span>', avail)
+        return format_html('<span style="color: red; font-weight: bold;">0</span>', avail)
+    available_quantity_display.short_description = 'Available'
+
+    def needs_reorder_display(self, obj):
+        if obj.needs_reorder:
+            return format_html('<span style="color: orange; font-weight: bold;">⚠ Yes</span>')
+        return format_html('<span style="color: green;">✓ No</span>')
+    needs_reorder_display.short_description = 'Needs Reorder'
+
+
+@admin.register(ProductAddOn)
+class ProductAddOnAdmin(admin.ModelAdmin):
+    list_display = ['name', 'price', 'image_preview', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['name', 'description']
+    list_editable = ['price', 'is_active']
+    readonly_fields = ['image_preview']
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="max-width: 50px; max-height: 50px;" />', obj.image.url)
+        return "No image"
+    image_preview.short_description = 'Image'

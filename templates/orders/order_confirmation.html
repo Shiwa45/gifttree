@@ -1,361 +1,370 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Confirmation - GiftTree</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Arial', sans-serif;
-            background-color: #f5f5f5;
-        }
-        .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-        }
-        .header {
-            background: linear-gradient(135deg, #E91E63 0%, #FF6090 100%);
-            color: white;
-            padding: 40px 30px;
-            text-align: center;
-        }
-        .logo {
-            font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .success-icon {
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            margin: 20px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-        }
-        .header h1 {
-            margin: 20px 0 10px;
-            font-size: 28px;
-        }
-        .header p {
-            margin: 0;
-            opacity: 0.9;
-        }
-        .content {
-            padding: 40px 30px;
-        }
-        .greeting {
-            font-size: 18px;
-            color: #333;
-            margin-bottom: 20px;
-        }
-        .order-info {
-            background: #F8F9FA;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #E0E0E0;
-        }
-        .info-row:last-child {
-            border-bottom: none;
-        }
-        .info-label {
-            color: #666;
-            font-size: 14px;
-        }
-        .info-value {
-            color: #333;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        .items-table th {
-            background: #F8F9FA;
-            padding: 12px;
-            text-align: left;
-            font-size: 14px;
-            color: #666;
-            border-bottom: 2px solid #E0E0E0;
-        }
-        .items-table td {
-            padding: 15px 12px;
-            border-bottom: 1px solid #F0F0F0;
-            font-size: 14px;
-            color: #333;
-        }
-        .product-name {
-            font-weight: 600;
-        }
-        .price {
-            font-weight: 700;
-            color: #E91E63;
-        }
-        .summary {
-            background: #FFF8F0;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 14px;
-        }
-        .summary-total {
-            display: flex;
-            justify-content: space-between;
-            padding: 15px 0 8px;
-            border-top: 2px solid #E91E63;
-            margin-top: 10px;
-            font-size: 18px;
-            font-weight: 700;
-            color: #E91E63;
-        }
-        .button {
-            display: inline-block;
-            background: linear-gradient(135deg, #E91E63 0%, #FF6090 100%);
-            color: white;
-            padding: 16px 40px;
-            text-decoration: none;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 16px;
-            margin: 20px 0;
-            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
-        }
-        .address-section {
-            background: #F8F9FA;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        .address-section h3 {
-            margin-top: 0;
-            color: #333;
-            font-size: 16px;
-        }
-        .address-text {
-            color: #666;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        .features {
-            display: flex;
-            justify-content: space-around;
-            margin: 30px 0;
-            padding: 20px;
-            background: #F8F9FA;
-            border-radius: 12px;
-        }
-        .feature {
-            text-align: center;
-            flex: 1;
-        }
-        .feature-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #E91E63 0%, #FF6090 100%);
-            border-radius: 50%;
-            margin: 0 auto 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-        }
-        .feature-text {
-            font-size: 12px;
-            color: #666;
-        }
-        .footer {
-            background: #333;
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        .footer-links {
-            margin: 20px 0;
-        }
-        .footer-links a {
-            color: white;
-            text-decoration: none;
-            margin: 0 15px;
-            font-size: 14px;
-        }
-        .social-icons {
-            margin: 20px 0;
-        }
-        .social-icons a {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            margin: 0 5px;
-            line-height: 40px;
-            color: white;
-            text-decoration: none;
-        }
-        .footer p {
-            margin: 10px 0;
-            font-size: 13px;
-            opacity: 0.8;
-        }
-    </style>
-</head>
-<body>
-    <div class="email-container">
-        <!-- Header -->
-        <div class="header">
-            <div class="logo">🎁 GiftTree</div>
-            <div class="success-icon">✓</div>
-            <h1>Order Confirmed!</h1>
-            <p>Thank you for your order</p>
-        </div>
-        
-        <!-- Content -->
-        <div class="content">
-            <p class="greeting">Hi {{ order.billing_name }},</p>
-            <p>Your order has been confirmed and will be processed soon. We'll send you another email when your order ships.</p>
-            
-            <!-- Order Details -->
-            <div class="order-info">
-                <h2 style="margin-top: 0; color: #333; font-size: 18px;">Order Details</h2>
-                <div class="info-row">
-                    <span class="info-label">Order Number:</span>
-                    <span class="info-value">#{{ order.order_number }}</span>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order Confirmed - Order #{{ order.order_number }} | GiftTree{% endblock %}
+
+{% block content %}
+<!-- Mobile Header -->
+{% include 'includes/mobile_header.html' with page_title="Order Confirmed" %}
+
+<div class="confirmation-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Success Message -->
+                <div class="success-card">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h1 class="success-title">Order Placed Successfully!</h1>
+                    <p class="success-message">
+                        Thank you for your order. Your order has been placed successfully and is being processed.
+                    </p>
+                    <div class="order-number-box">
+                        <span class="order-label">Order Number:</span>
+                        <span class="order-number">#{{ order.order_number }}</span>
+                    </div>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Order Date:</span>
-                    <span class="info-value">{{ order.created_at|date:"d M, Y" }}</span>
+                
+                <!-- Order Details -->
+                <div class="order-details-card">
+                    <h2 class="card-title">Order Details</h2>
+                    
+                    <div class="detail-section">
+                        <h4>Delivery Address</h4>
+                        <p class="mb-1"><strong>{{ order.shipping_name }}</strong></p>
+                        <p class="mb-1">{{ order.shipping_address_line_1 }}</p>
+                        {% if order.shipping_address_line_2 %}
+                        <p class="mb-1">{{ order.shipping_address_line_2 }}</p>
+                        {% endif %}
+                        <p class="mb-1">{{ order.shipping_city }}, {{ order.shipping_state }} - {{ order.shipping_pincode }}</p>
+                        <p class="mb-0">Phone: {{ order.shipping_phone }}</p>
+                    </div>
+                    
+                    {% if order.delivery_date %}
+                    <div class="detail-section">
+                        <h4>Delivery Schedule</h4>
+                        <p class="mb-1">Date: {{ order.delivery_date|date:"F d, Y" }}</p>
+                        {% if order.delivery_time_slot %}
+                        <p class="mb-0">Time: {{ order.delivery_time_slot }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="detail-section">
+                        <h4>Payment Information</h4>
+                        <p class="mb-1">Payment Status: 
+                            <span class="badge {% if order.payment_status == 'paid' %}badge-success{% else %}badge-warning{% endif %}">
+                                {{ order.get_payment_status_display }}
+                            </span>
+                        </p>
+                        <p class="mb-0">Total Amount: <strong>₹{{ order.total_amount }}</strong></p>
+                    </div>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Payment Status:</span>
-                    <span class="info-value">{{ order.get_payment_status_display }}</span>
+                
+                <!-- Order Items -->
+                <div class="order-items-card">
+                    <h2 class="card-title">Order Items</h2>
+                    
+                    <div class="items-list">
+                        {% for item in order_items %}
+                        <div class="order-item">
+                            <img src="{% if item.product.primary_image %}{{ item.product.primary_image.url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}" 
+                                 alt="{{ item.product_name }}" class="item-image">
+                            <div class="item-details">
+                                <div class="item-name">{{ item.product_name }}</div>
+                                {% if item.variant_name %}
+                                <div class="item-variant">{{ item.variant_name }}</div>
+                                {% endif %}
+                                <div class="item-quantity">Qty: {{ item.quantity }}</div>
+                            </div>
+                            <div class="item-price">₹{{ item.total_price }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="order-summary">
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span>₹{{ order.subtotal }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Delivery Charges</span>
+                            <span>{% if order.delivery_charge > 0 %}₹{{ order.delivery_charge }}{% else %}<span class="text-success">FREE</span>{% endif %}</span>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-total">
+                            <span>Total Amount</span>
+                            <span>₹{{ order.total_amount }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a href="{% url 'orders:order_detail' order.order_number %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-eye me-2"></i>
+                        View Order Details
+                    </a>
+                    <a href="{% url 'core:home' %}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-home me-2"></i>
+                        Continue Shopping
+                    </a>
+                </div>
+                
+                <!-- Email Confirmation Notice -->
+                <div class="email-notice">
+                    <i class="fas fa-envelope"></i>
+                    <span>A confirmation email has been sent to <strong>{{ order.billing_email }}</strong></span>
                 </div>
             </div>
-            
-            <!-- Order Items -->
-            <h3 style="color: #333;">Order Items</h3>
-            <table class="items-table">
-                <thead>
-                    <tr>
-                        <th>Product</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in order_items %}
-                    <tr>
-                        <td class="product-name">{{ item.product.name }}</td>
-                        <td>{{ item.quantity }}</td>
-                        <td class="price">₹{{ item.price }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            
-            <!-- Order Summary -->
-            <div class="summary">
-                <h3 style="margin-top: 0; color: #333;">Payment Summary</h3>
-                <div class="summary-row">
-                    <span>Subtotal:</span>
-                    <span>₹{{ order.subtotal|default:order.total_amount }}</span>
-                </div>
-                <div class="summary-row">
-                    <span>Delivery Charges:</span>
-                    <span>₹{{ order.delivery_charge|default:"0" }}</span>
-                </div>
-                {% if order.discount_amount %}
-                <div class="summary-row">
-                    <span>Discount:</span>
-                    <span style="color: #4CAF50;">- ₹{{ order.discount_amount }}</span>
-                </div>
-                {% endif %}
-                <div class="summary-total">
-                    <span>Total Amount:</span>
-                    <span>₹{{ order.total_amount }}</span>
-                </div>
-            </div>
-            
-            <!-- Delivery Address -->
-            <div class="address-section">
-                <h3>Delivery Address</h3>
-                <div class="address-text">
-                    <strong>{{ order.billing_name }}</strong><br>
-                    {{ order.billing_address }}<br>
-                    {{ order.billing_city }}, {{ order.billing_state }} - {{ order.billing_pincode }}<br>
-                    Phone: {{ order.billing_phone }}
-                </div>
-            </div>
-            
-            <!-- Track Order Button -->
-            <center>
-                <a href="http://{{ site_url }}/orders/{{ order.order_number }}/" class="button">
-                    Track Your Order
-                </a>
-            </center>
-            
-            <!-- Features -->
-            <div class="features">
-                <div class="feature">
-                    <div class="feature-icon">🚚</div>
-                    <div class="feature-text">Fast Delivery</div>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🔒</div>
-                    <div class="feature-text">Secure Payment</div>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">⭐</div>
-                    <div class="feature-text">Quality Products</div>
-                </div>
-            </div>
-            
-            <p style="color: #666; font-size: 14px; line-height: 1.6;">
-                If you have any questions about your order, please don't hesitate to contact our customer support team. We're here to help!
-            </p>
-        </div>
-        
-        <!-- Footer -->
-        <div class="footer">
-            <div class="logo">🎁 GiftTree</div>
-            <p>Spreading happiness, one gift at a time</p>
-            
-            <div class="footer-links">
-                <a href="http://{{ site_url }}/">Home</a>
-                <a href="http://{{ site_url }}/products/">Shop</a>
-                <a href="http://{{ site_url }}/account/profile/">My Account</a>
-                <a href="#">Contact Us</a>
-            </div>
-            
-            <div class="social-icons">
-                <a href="#">f</a>
-                <a href="#">t</a>
-                <a href="#">i</a>
-            </div>
-            
-            <p>© 2025 GiftTree. All rights reserved.</p>
-            <p style="font-size: 11px;">
-                You received this email because you placed an order on GiftTree.
-            </p>
         </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .confirmation-container {
+        padding: 40px 0 80px;
+        background: #f8f9fa;
+    }
+    
+    .success-card {
+        background: white;
+        border-radius: 16px;
+        padding: 50px 30px;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    
+    .success-icon {
+        font-size: 80px;
+        color: var(--secondary-color);
+        margin-bottom: 20px;
+        animation: scaleIn 0.5s ease;
+    }
+    
+    @keyframes scaleIn {
+        0% {
+            transform: scale(0);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+    
+    .success-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 15px;
+    }
+    
+    .success-message {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 30px;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .order-number-box {
+        display: inline-block;
+        background: rgba(76, 175, 80, 0.1);
+        padding: 15px 30px;
+        border-radius: 50px;
+        border: 2px dashed var(--secondary-color);
+    }
+    
+    .order-label {
+        font-size: 14px;
+        color: #666;
+        margin-right: 10px;
+    }
+    
+    .order-number {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--secondary-color);
+    }
+    
+    .order-details-card,
+    .order-items-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .card-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 25px;
+        color: var(--text-dark);
+    }
+    
+    .detail-section {
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .detail-section:last-child {
+        margin-bottom: 0;
+    }
+    
+    .detail-section h4 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--text-dark);
+    }
+    
+    .detail-section p {
+        font-size: 14px;
+        color: #666;
+    }
+    
+    .items-list {
+        margin-bottom: 30px;
+    }
+    
+    .order-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .order-item:last-child {
+        border-bottom: none;
+    }
+    
+    .item-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    
+    .item-details {
+        flex: 1;
+    }
+    
+    .item-name {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: var(--text-dark);
+    }
+    
+    .item-variant {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 4px;
+    }
+    
+    .item-quantity {
+        font-size: 13px;
+        color: #999;
+    }
+    
+    .item-price {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+    
+    .order-summary {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+    }
+    
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+    
+    .summary-divider {
+        height: 1px;
+        background: #ddd;
+        margin: 15px 0;
+    }
+    
+    .summary-total {
+        display: flex;
+        justify-content: space-between;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .action-buttons .btn {
+        flex: 1;
+    }
+    
+    .email-notice {
+        background: #e3f2fd;
+        padding: 15px 20px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #1976d2;
+    }
+    
+    .email-notice i {
+        font-size: 20px;
+    }
+    
+    .email-notice span {
+        font-size: 14px;
+    }
+    
+    @media (max-width: 768px) {
+        .success-card {
+            padding: 30px 20px;
+        }
+        
+        .success-title {
+            font-size: 24px;
+        }
+        
+        .order-number {
+            font-size: 20px;
+        }
+        
+        .order-details-card,
+        .order-items-card {
+            padding: 20px;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .item-image {
+            width: 60px;
+            height: 60px;
+        }
+    }
+</style>
+{% endblock %}
