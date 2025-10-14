@@ -7,7 +7,8 @@ from django.contrib.auth import login
 from django.contrib.auth import views as auth_views
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from .models import CustomUser, Address, Wishlist,UserProfile
+from django.db import transaction
+from .models import CustomUser, Address, Wishlist, UserProfile
 from apps.products.models import Product
 
 

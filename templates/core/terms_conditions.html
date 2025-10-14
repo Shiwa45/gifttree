@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Terms & Conditions - {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Hero Section -->
+    <section class="page-hero">
+        <div class="container">
+            <h1 class="page-title">Terms & Conditions</h1>
+            <p class="page-subtitle">Please read these terms carefully before using {{ site_settings.site_name }}</p>
+        </div>
+    </section>
+
+    <!-- Terms Content -->
+    <section class="terms-section">
+        <div class="container">
+            <div class="terms-content">
+                <div class="terms-intro mb-5">
+                    <p class="lead">
+                        Welcome to {{ site_settings.site_name }}. By accessing and using our website and services,
+                        you agree to comply with and be bound by the following terms and conditions.
+                        Please review them carefully.
+                    </p>
+                    <p class="text-muted">
+                        <i class="fas fa-calendar-alt"></i> Last Updated: January 2025
+                    </p>
+                </div>
+
+                <!-- Introduction -->
+                <div class="terms-block">
+                    <h2 class="terms-heading">
+                        <i class="fas fa-info-circle"></i> 1. Introduction
+                    </h2>
+                    <p>
+                        These Terms and Conditions govern your use of {{ site_settings.site_name }} website and services.
+                        By using our website, you accept these terms in full. If you disagree with any part of these terms,
+                        you must not use our website.
+                    </p>
+                    <p>
+                        {{ site_settings.site_name }} reserves the right to modify these terms at any time.
+                        We encourage you to review this page periodically for any changes.
+                    </p>
+                </div>
+
+                <!-- Use of Website -->
+                <div class="terms-block">
+                    <h2 class="terms-heading">
+                        <i class="fas fa-desktop"></i> 2. Use of the Website
+                    </h2>
+                    <p>You may use our website for lawful purposes only. You agree not to:</p>
+                    <ul class="terms-list">
+                        <li>Use the website in any way that causes damage to the website or impairs its availability</li>
+                        <li>Use the website for fraudulent purposes or in connection with any criminal activity</li>
+                        <li>Gather data about other users without their consent</li>
+                        <li>Transmit any material that is defamatory, offensive, or otherwise objectionable</li>
+                        <li>Reproduce, duplicate, copy, or resell any part of our website without permission</li>
+                    </ul>
+                </div>
+
+                <!-- Product Information -->
+                <div class="terms-block">
+                    <h2 class="terms-heading">
+                        <i class="fas fa-box"></i> 3. Product Information and Pricing
+                    </h2>
+                    <p>
+                        We strive to ensure that all product descriptions, images, and prices on our website are accurate.
+                        However, we do not warrant that product descriptions or other content is error-free.
+                    </p>
+                    <ul class="terms-list">
+                        <li>All prices are displayed in Indian Rupees (INR) unless otherwise stated</li>
+                        <li>Prices are subject to change without notice</li>
+                        <li>We reserve the right to correct any pricing errors on our website</li>
+                        <li>Product images are for illustration purposes; actual products may vary slightly</li>
+                        <li>Seasonal products and fresh items (flowers, cakes) may vary based on availability</li>
+                    </ul>
+                </div>
+
+                <!-- Order Acceptance -->
+                <div class="terms-block">
+                    <h2 class="terms-heading">
+                        <i class="fas fa-clipboard-check"></i> 4. Order Acceptance and Cancellation
+                    </h2>
+                    <p>
+                        <strong>Order Acceptance:</strong> Your order constitutes an offer to purchase products from us.
+                        All orders are subject to acceptance by {{ site_settings.site_name }}. We reserve the right to
+                        refuse or cancel any order for any reason.
+                    </p>
+                    <p>
+                        <strong>Order Cancellation:</strong>
+                    </p>
+                    <ul class="terms-list">
+                        <li>Orders can be cancelled up to 24 hours before the scheduled delivery time</li>
+                        <li>Cancellation requests must be made through your account or by contacting customer support</li>
+                        <li>Perishable items (flowers, cakes) may have stricter cancellation policies</li>
+                        <li>Refunds for cancelled orders will be processed within 7-10 business days</li>
+                        <li>Orders cannot be cancelled once they are out for delivery</li>
+                    </ul>
+                </div>
+
+                <!-- Delivery Terms -->
+                <div class="terms-block">
+                    <h2 class="terms-heading">
+                        <i class="fas fa-shipping-fast"></i> 5. Delivery Terms
+                    </h2>
+                    <p>
+                        We offer various delivery options including same-day, midnight, and scheduled delivery.
+                        Delivery availability depends on the location and product type.
+                    </p>
+                    <ul class="terms-list">
+                        <li><strong>Same-Day Delivery:</strong> Orders must be placed before 3:00 PM for same-day delivery</li>
+                        <li><strong>Midnight Delivery:</strong> Available in select cities; orders must be placed 24 hours in advance</li>
+                        <li><strong>Standard Delivery:</strong> Typically 2-5 business days depending on location</li>
+                        <li>Delivery times are estimates and not guaranteed</li>
+                        <li>We are not liable for delays caused by circumstances beyond our control</li>
+                        <li>A valid delivery address and contact number must be provided</li>
+                        <li>Recipient must be available to accept delivery; we are not responsible for failed deliveries due to incorrect information</li>
+                    </ul>
+                </div>
+
+                <!-- Returns and Refunds -->
+                <div class="terms-block">
+                    <h2 class="terms-heading">
+                        <i class="fas fa-undo"></i> 6. Returns and Refunds Policy
+                    </h2>
+                    <p>
+                        Due to the perishable nature of many of our products, returns are handled on a case-by-case basis.
+                    </p>
+                    <ul class="terms-list">
+                        <li><strong>Damaged Products:</strong> Report within 24 hours of delivery with photographic evidence</li>
+                        <li><strong>Wrong Products:</strong> Report within 24 hours; we will arrange replacement or refund</li>
+                        <li><strong>Quality Issues:</strong> We guarantee fresh, quality products; issues must be reported immediately</li>
+                        <li>Refunds will be processed to the original payment method within 7-10 business days</li>
+                        <li>Non-perishable items may be eligible for return within 7 days if unused and in original packaging</li>
+                        <li>Personalized and custom items cannot be returned unless defective</li>
+                    </ul>
+                </div>
+
+                <!-- Payment Terms -->
+                <div class="terms-block">
+                    <h2 class="terms-heading">
+                        <i class="fas fa-credit-card"></i> 7. Payment Terms
+                    </h2>
+                    <p>
+                        We accept various payment methods including credit/debit cards, net banking, UPI, and digital wallets.
+                    </p>
+                    <ul class="terms-list">
+                        <li>Payment must be made at the time of placing the order</li>
+                        <li>All transactions are secured using SSL encryption</li>
+                        <li>We do not store your complete credit/debit card information</li>
+                        <li>Cash on Delivery (COD) may be available for select locations and orders</li>
+                        <li>You are responsible for ensuring sufficient funds are available for payment</li>
+                        <li>Payment gateway charges, if any, will be clearly displayed before payment</li>
+                    </ul>
+                </div>
+
+                <!-- Intellectual Property -->
+                <div class="terms-block">
+                    <h2 class="terms-heading">
+                        <i class="fas fa-copyright"></i> 8. Intellectual Property
+                    </h2>
+                    <p>
+                        All content on {{ site_settings.site_name }}, including text, graphics, logos, images, and software,
+                        is the property of {{ site_settings.site_name }} or its content suppliers and is protected by
+                        copyright and intellectual property laws.
+                    </p>
+                    <ul class="terms-list">
+                        <li>You may not reproduce, distribute, or create derivative works from our content</li>
+                        <li>{{ site_settings.site_name }} trademarks may not be used without prior written permission</li>
+                        <li>Unauthorized use may result in legal action</li>
+                    </ul>
+                </div>
+
+                <!-- Limitation of Liability -->
+                <div class="terms-block">
+                    <h2 class="terms-heading">
+                        <i class="fas fa-shield-alt"></i> 9. Limitation of Liability
+                    </h2>
+                    <p>
+                        {{ site_settings.site_name }} shall not be liable for any indirect, incidental, special,
+                        or consequential damages arising out of or in connection with the use of our website or services.
+                    </p>
+                    <ul class="terms-list">
+                        <li>We are not responsible for delays or failures due to circumstances beyond our control</li>
+                        <li>Our liability is limited to the purchase price of the product in question</li>
+                        <li>We do not guarantee uninterrupted or error-free website operation</li>
+                        <li>We are not liable for any loss or damage arising from your failure to provide accurate information</li>
+                    </ul>
+                </div>
+
+                <!-- Governing Law -->
+                <div class="terms-block">
+                    <h2 class="terms-heading">
+                        <i class="fas fa-gavel"></i> 10. Governing Law
+                    </h2>
+                    <p>
+                        These Terms and Conditions are governed by and construed in accordance with the laws of India.
+                        Any disputes arising from these terms shall be subject to the exclusive jurisdiction of the courts
+                        located in [Your City].
+                    </p>
+                </div>
+
+                <!-- Contact -->
+                <div class="terms-block contact-block">
+                    <h2 class="terms-heading">
+                        <i class="fas fa-envelope"></i> Contact Us
+                    </h2>
+                    <p>
+                        If you have any questions about these Terms and Conditions, please contact us:
+                    </p>
+                    <div class="contact-info">
+                        <p><i class="fas fa-envelope"></i> Email: {{ site_settings.email }}</p>
+                        <p><i class="fas fa-phone"></i> Phone: {{ site_settings.phone }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+.page-container {
+    padding-top: 0;
+}
+
+.page-hero {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #FF6090 100%);
+    color: white;
+    padding: 80px 0;
+    text-align: center;
+}
+
+.page-title {
+    font-size: 42px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.page-subtitle {
+    font-size: 18px;
+    opacity: 0.95;
+}
+
+.terms-section {
+    padding: 80px 0;
+}
+
+.terms-content {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.terms-intro {
+    text-align: center;
+}
+
+.terms-intro .lead {
+    font-size: 18px;
+    color: var(--text-light);
+    line-height: 1.8;
+    margin-bottom: 20px;
+}
+
+.terms-block {
+    margin-bottom: 50px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.terms-block:last-child {
+    border-bottom: none;
+}
+
+.terms-heading {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.terms-heading i {
+    color: var(--primary-color);
+    margin-right: 12px;
+    font-size: 22px;
+}
+
+.terms-block p {
+    font-size: 16px;
+    color: var(--text-light);
+    line-height: 1.8;
+    margin-bottom: 16px;
+}
+
+.terms-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.terms-list li {
+    font-size: 16px;
+    color: var(--text-light);
+    line-height: 1.8;
+    margin-bottom: 12px;
+    padding-left: 28px;
+    position: relative;
+}
+
+.terms-list li:before {
+    content: "\f00c";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: var(--primary-color);
+    position: absolute;
+    left: 0;
+    top: 2px;
+}
+
+.contact-block {
+    background: #f8f9fa;
+    padding: 30px;
+    border-radius: 12px;
+    border: none;
+}
+
+.contact-info p {
+    font-size: 16px;
+    color: var(--text-dark);
+    margin-bottom: 12px;
+}
+
+.contact-info i {
+    color: var(--primary-color);
+    margin-right: 10px;
+    width: 20px;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 32px;
+    }
+
+    .page-subtitle {
+        font-size: 16px;
+    }
+
+    .page-hero {
+        padding: 60px 0;
+    }
+
+    .terms-section {
+        padding: 60px 0;
+    }
+
+    .terms-heading {
+        font-size: 20px;
+    }
+
+    .terms-intro .lead {
+        font-size: 16px;
+    }
+}
+</style>
+{% endblock %}

@@ -44,12 +44,7 @@
                 </div>
                 
                 <div class="header-actions">
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'wallet:dashboard' %}" class="wallet-display">
-                            <i class="fas fa-coins"></i>
-                            <span>{{ user.wallet.balance|floatformat:0 }} Coins</span>
-                        </a>
-                    {% endif %}
+
 
                     <a href="#" class="header-btn" onclick="showLocationModal()">
                         <i class="fas fa-map-marker-alt"></i>
@@ -153,6 +148,11 @@
 .user-dropdown {
     position: relative;
     display: inline-block;
+    cursor: pointer;
+}
+
+.user-menu-btn {
+    cursor: pointer;
 }
 
 .user-menu {
@@ -172,6 +172,10 @@
 
 .user-menu.show {
     display: block;
+}
+
+.user-dropdown:hover .user-menu-btn {
+    background: #f0f0f0;
 }
 
 .user-menu a {
@@ -218,11 +222,18 @@
     font-weight: 500;
     font-size: 15px;
     transition: all 0.3s;
+    cursor: pointer;
 }
 
 .nav-menu .nav-link:hover {
     background: var(--primary-color);
     color: white;
+}
+
+.mega-menu-item.active .nav-link,
+.mega-menu-item .nav-link:active {
+    background: rgba(233, 30, 99, 0.1);
+    color: var(--primary-color);
 }
 
 /* Mega Menu Styles */
@@ -244,7 +255,18 @@
     overflow-y: auto;
 }
 
+.mega-menu-item {
+    cursor: pointer;
+    position: relative;
+}
+
 .mega-menu-item:hover .mega-menu {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.mega-menu.open {
     display: block;
     opacity: 1;
     transform: translateY(0);
@@ -475,13 +497,49 @@ function toggleCategoryMenu(event, menuId) {
     }
 }
 
-// Toggle user menu function
-function toggleUserMenu() {
+// Toggle user menu function (supports both click and hover)
+function toggleUserMenu(event) {
+    if (event) {
+        event.stopPropagation();
+    }
     const userMenu = document.getElementById('userMenu');
     if (userMenu) {
         userMenu.classList.toggle('show');
     }
 }
+
+// Add hover support for user menu
+document.addEventListener('DOMContentLoaded', function() {
+    const userDropdown = document.querySelector('.user-dropdown');
+    const userMenu = document.getElementById('userMenu');
+    let userMenuTimer;
+    
+    if (userDropdown && userMenu) {
+        // Show on hover
+        userDropdown.addEventListener('mouseenter', function() {
+            clearTimeout(userMenuTimer);
+            userMenu.classList.add('show');
+        });
+        
+        // Hide on mouse leave
+        userDropdown.addEventListener('mouseleave', function() {
+            userMenuTimer = setTimeout(() => {
+                userMenu.classList.remove('show');
+            }, 200);
+        });
+        
+        // Keep menu open when hovering over it
+        userMenu.addEventListener('mouseenter', function() {
+            clearTimeout(userMenuTimer);
+        });
+        
+        userMenu.addEventListener('mouseleave', function() {
+            userMenuTimer = setTimeout(() => {
+                userMenu.classList.remove('show');
+            }, 200);
+        });
+    }
+});
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(event) {
@@ -510,16 +568,18 @@ document.addEventListener('DOMContentLoaded', function() {
     megaMenuItems.forEach(item => {
         const megaMenu = item.querySelector('.mega-menu');
         let hoverTimer;
+        let isMenuOpen = false;
 
         if (megaMenu) {
-            // Show on hover
-            item.addEventListener('mouseenter', function() {
+            // Function to show menu
+            function showMegaMenu() {
                 clearTimeout(hoverTimer);
                 
                 // Close other menus
                 if (activeMenu && activeMenu !== megaMenu) {
                     activeMenu.style.display = 'none';
                     activeMenu.style.opacity = '0';
+                    activeMenu.classList.remove('open');
                 }
                 
                 // Position the mega menu properly
@@ -533,11 +593,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     megaMenu.style.transform = 'translateY(0)';
                 }, 10);
                 
+                megaMenu.classList.add('open');
+                isMenuOpen = true;
                 activeMenu = megaMenu;
-            });
-
-            // Hide on mouse leave
-            item.addEventListener('mouseleave', function() {
+            }
+            
+            // Function to hide menu
+            function hideMegaMenu(delay = 150) {
                 hoverTimer = setTimeout(() => {
                     if (megaMenu) {
                         megaMenu.style.opacity = '0';
@@ -547,10 +609,38 @@ document.addEventListener('DOMContentLoaded', function() {
                         }, 300);
                     }
                     
+                    megaMenu.classList.remove('open');
+                    isMenuOpen = false;
+                    
                     if (activeMenu === megaMenu) {
                         activeMenu = null;
                     }
-                }, 150);
+                }, delay);
+            }
+            
+            // Show on hover
+            item.addEventListener('mouseenter', function() {
+                showMegaMenu();
+            });
+
+            // Show/Toggle on click
+            item.addEventListener('click', function(e) {
+                // Don't close if clicking links inside
+                if (!e.target.closest('a')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (isMenuOpen) {
+                        hideMegaMenu(0);
+                    } else {
+                        showMegaMenu();
+                    }
+                }
+            });
+
+            // Hide on mouse leave
+            item.addEventListener('mouseleave', function() {
+                hideMegaMenu(150);
             });
 
             // Prevent menu from closing when hovering over it
@@ -559,17 +649,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             megaMenu.addEventListener('mouseleave', function() {
-                hoverTimer = setTimeout(() => {
-                    megaMenu.style.opacity = '0';
-                    megaMenu.style.transform = 'translateY(-10px)';
-                    setTimeout(() => {
-                        megaMenu.style.display = 'none';
-                    }, 300);
-                    
-                    if (activeMenu === megaMenu) {
-                        activeMenu = null;
-                    }
-                }, 150);
+                hideMegaMenu(150);
             });
         }
     });

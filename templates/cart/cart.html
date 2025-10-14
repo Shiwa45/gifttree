@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load product_tags %}
 
 {% block title %}Shopping Cart - Review Your Order | GiftTree{% endblock %}
 
@@ -32,9 +33,10 @@
                         {% for item in cart_items %}
                         <div class="cart-item" data-item-id="{{ item.id }}">
                             <div class="item-image-wrapper">
-                                <img src="{% if item.product.primary_image %}{{ item.product.primary_image.url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}" 
-                                     alt="{{ item.product.name }}" 
+                                <img src="{{ item.product|product_image_url }}"
+                                     alt="{{ item.product.name }}"
                                      class="item-image"
+                                     onerror="this.src='{% static 'images/products/default.jpg' %}'"
                                      onclick="window.location.href='{{ item.product.get_absolute_url }}'">
                                 {% if item.product.is_bestseller %}
                                 <span class="item-badge bestseller">Bestseller</span>
@@ -152,9 +154,10 @@
                             {% for product in recommended_products %}
                             <div class="recommendation-card" onclick="window.location.href='{{ product.get_absolute_url }}'">
                                 <div class="rec-image-wrapper">
-                                    <img src="{% if product.primary_image %}{{ product.primary_image.url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}" 
-                                         alt="{{ product.name }}" 
-                                         class="rec-image">
+                                    <img src="{{ product|product_image_url }}"
+                                         alt="{{ product.name }}"
+                                         class="rec-image"
+                                         onerror="this.src='{% static 'images/products/default.jpg' %}'">
                                     {% if product.discount_percentage %}
                                     <span class="rec-discount">-{{ product.discount_percentage }}%</span>
                                     {% endif %}
@@ -327,9 +330,10 @@
                 <div class="featured-grid">
                     {% for product in recommended_products|slice:":4" %}
                     <div class="featured-card" onclick="window.location.href='{{ product.get_absolute_url }}'">
-                        <img src="{% if product.primary_image %}{{ product.primary_image.url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}" 
-                             alt="{{ product.name }}" 
-                             class="featured-image">
+                        <img src="{{ product|product_image_url }}"
+                             alt="{{ product.name }}"
+                             class="featured-image"
+                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
                         <div class="featured-info">
                             <h4 class="featured-name">{{ product.name|truncatechars:25 }}</h4>
                             <div class="featured-price">₹{{ product.current_price }}</div>

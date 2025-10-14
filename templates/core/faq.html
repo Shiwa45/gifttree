@@ -1,0 +1,782 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}FAQ - Frequently Asked Questions - {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Hero Section -->
+    <section class="page-hero">
+        <div class="container">
+            <h1 class="page-title">Frequently Asked Questions</h1>
+            <p class="page-subtitle">Find answers to common questions about {{ site_settings.site_name }}</p>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="container">
+            <!-- Search Box -->
+            <div class="faq-search-wrapper mb-5">
+                <div class="faq-search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="faqSearch" placeholder="Search for answers..." class="form-control">
+                </div>
+            </div>
+
+            <!-- FAQ Categories -->
+            <div class="faq-categories mb-5">
+                <button class="category-btn active" data-category="all">
+                    <i class="fas fa-th"></i> All Questions
+                </button>
+                <button class="category-btn" data-category="ordering">
+                    <i class="fas fa-shopping-cart"></i> Ordering
+                </button>
+                <button class="category-btn" data-category="delivery">
+                    <i class="fas fa-truck"></i> Delivery
+                </button>
+                <button class="category-btn" data-category="payment">
+                    <i class="fas fa-credit-card"></i> Payment
+                </button>
+                <button class="category-btn" data-category="returns">
+                    <i class="fas fa-undo"></i> Returns
+                </button>
+                <button class="category-btn" data-category="account">
+                    <i class="fas fa-user"></i> Account
+                </button>
+            </div>
+
+            <!-- FAQ Content -->
+            <div class="row">
+                <div class="col-lg-10 mx-auto">
+                    <!-- Ordering Process -->
+                    <div class="faq-category-section" data-category="ordering">
+                        <h2 class="category-heading">
+                            <i class="fas fa-shopping-cart"></i> Ordering Process
+                        </h2>
+                        <div class="accordion" id="orderingAccordion">
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#order1">
+                                    <h3>How do I place an order on {{ site_settings.site_name }}?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="order1" class="collapse show" data-bs-parent="#orderingAccordion">
+                                    <div class="faq-answer">
+                                        <p>Placing an order is simple:</p>
+                                        <ol>
+                                            <li>Browse our product categories and select the item you want</li>
+                                            <li>Click on "Add to Cart" after choosing your preferred options</li>
+                                            <li>Review your cart and click "Proceed to Checkout"</li>
+                                            <li>Enter delivery details and select delivery date/time</li>
+                                            <li>Choose your payment method and complete the purchase</li>
+                                            <li>You'll receive an order confirmation via email and SMS</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#order2">
+                                    <h3>Can I modify or cancel my order after placing it?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="order2" class="collapse" data-bs-parent="#orderingAccordion">
+                                    <div class="faq-answer">
+                                        <p>Yes, you can modify or cancel your order, but it depends on the order status:</p>
+                                        <ul>
+                                            <li><strong>Before Processing:</strong> You can cancel or modify the order through your account or by contacting customer support</li>
+                                            <li><strong>Within 24 hours of delivery:</strong> Changes may still be possible; contact us immediately</li>
+                                            <li><strong>Once dispatched:</strong> Cancellation is not possible, but you may refuse delivery</li>
+                                            <li><strong>Perishable items:</strong> Must be cancelled at least 24 hours before delivery</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#order3">
+                                    <h3>Can I send gifts to multiple addresses in one order?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="order3" class="collapse" data-bs-parent="#orderingAccordion">
+                                    <div class="faq-answer">
+                                        <p>Currently, each order can only be delivered to one address. To send gifts to multiple locations, you'll need to place separate orders for each delivery address. This ensures each recipient receives their gift on time.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#order4">
+                                    <h3>Do you offer gift wrapping services?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="order4" class="collapse" data-bs-parent="#orderingAccordion">
+                                    <div class="faq-answer">
+                                        <p>Yes! Most of our products come with complimentary gift wrapping. You can also:</p>
+                                        <ul>
+                                            <li>Add a personalized message card (free)</li>
+                                            <li>Choose premium gift wrapping options during checkout (additional charge may apply)</li>
+                                            <li>Request special packaging for delicate items</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delivery -->
+                    <div class="faq-category-section" data-category="delivery">
+                        <h2 class="category-heading">
+                            <i class="fas fa-truck"></i> Delivery Information
+                        </h2>
+                        <div class="accordion" id="deliveryAccordion">
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#delivery1">
+                                    <h3>What are your delivery options?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="delivery1" class="collapse show" data-bs-parent="#deliveryAccordion">
+                                    <div class="faq-answer">
+                                        <p>We offer several delivery options to suit your needs:</p>
+                                        <ul>
+                                            <li><strong>Same-Day Delivery:</strong> Order before 3 PM for delivery on the same day</li>
+                                            <li><strong>Midnight Delivery:</strong> Surprise your loved ones at midnight (available in select cities)</li>
+                                            <li><strong>Fixed Time Delivery:</strong> Choose a specific time slot for delivery</li>
+                                            <li><strong>Standard Delivery:</strong> Delivery within 2-5 business days</li>
+                                            <li><strong>International Delivery:</strong> Available for select products and countries</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#delivery2">
+                                    <h3>How can I track my order?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="delivery2" class="collapse" data-bs-parent="#deliveryAccordion">
+                                    <div class="faq-answer">
+                                        <p>Tracking your order is easy:</p>
+                                        <ol>
+                                            <li>Log into your {{ site_settings.site_name }} account</li>
+                                            <li>Go to "My Orders" section</li>
+                                            <li>Click on the order you want to track</li>
+                                            <li>View real-time status and tracking information</li>
+                                        </ol>
+                                        <p>You'll also receive SMS and email updates at every stage of delivery.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#delivery3">
+                                    <h3>What if no one is available to receive the delivery?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="delivery3" class="collapse" data-bs-parent="#deliveryAccordion">
+                                    <div class="faq-answer">
+                                        <p>If the recipient is unavailable:</p>
+                                        <ul>
+                                            <li>Our delivery executive will attempt to contact them via phone</li>
+                                            <li>They may leave the package with a neighbor or security (with permission)</li>
+                                            <li>For perishable items, we'll attempt redelivery the same day</li>
+                                            <li>If delivery fails, we'll contact you for further instructions</li>
+                                        </ul>
+                                        <p><strong>Tip:</strong> Ensure you provide a working contact number for smooth delivery.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#delivery4">
+                                    <h3>Do you deliver to remote areas?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="delivery4" class="collapse" data-bs-parent="#deliveryAccordion">
+                                    <div class="faq-answer">
+                                        <p>We deliver to most locations across India, including many remote areas. However:</p>
+                                        <ul>
+                                            <li>Delivery times may vary for remote locations</li>
+                                            <li>Some products (especially perishables) may not be available in all areas</li>
+                                            <li>Additional shipping charges may apply</li>
+                                            <li>Check pincode serviceability during checkout</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment -->
+                    <div class="faq-category-section" data-category="payment">
+                        <h2 class="category-heading">
+                            <i class="fas fa-credit-card"></i> Payment Methods
+                        </h2>
+                        <div class="accordion" id="paymentAccordion">
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#payment1">
+                                    <h3>What payment methods do you accept?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="payment1" class="collapse show" data-bs-parent="#paymentAccordion">
+                                    <div class="faq-answer">
+                                        <p>We accept multiple payment methods for your convenience:</p>
+                                        <ul>
+                                            <li><strong>Credit/Debit Cards:</strong> Visa, Mastercard, American Express, Rupay</li>
+                                            <li><strong>Net Banking:</strong> All major banks</li>
+                                            <li><strong>UPI:</strong> Google Pay, PhonePe, Paytm, BHIM</li>
+                                            <li><strong>Digital Wallets:</strong> Paytm, Mobikwik, Amazon Pay</li>
+                                            <li><strong>Cash on Delivery:</strong> Available for select locations</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#payment2">
+                                    <h3>Is it safe to use my credit/debit card on your website?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="payment2" class="collapse" data-bs-parent="#paymentAccordion">
+                                    <div class="faq-answer">
+                                        <p>Absolutely! Your payment security is our top priority:</p>
+                                        <ul>
+                                            <li>We use 256-bit SSL encryption for all transactions</li>
+                                            <li>We are PCI DSS compliant</li>
+                                            <li>We don't store your complete card details</li>
+                                            <li>All payments are processed through secure payment gateways</li>
+                                            <li>We never share your financial information with third parties</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#payment3">
+                                    <h3>What should I do if my payment fails?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="payment3" class="collapse" data-bs-parent="#paymentAccordion">
+                                    <div class="faq-answer">
+                                        <p>If your payment fails:</p>
+                                        <ol>
+                                            <li>Check if the amount was debited from your account</li>
+                                            <li>If debited, wait 24-48 hours for automatic refund</li>
+                                            <li>Try using a different payment method</li>
+                                            <li>Ensure your card has sufficient balance and is enabled for online transactions</li>
+                                            <li>Contact your bank if the issue persists</li>
+                                            <li>Reach out to our customer support for assistance</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Returns and Refunds -->
+                    <div class="faq-category-section" data-category="returns">
+                        <h2 class="category-heading">
+                            <i class="fas fa-undo"></i> Returns & Refunds
+                        </h2>
+                        <div class="accordion" id="returnsAccordion">
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#returns1">
+                                    <h3>What is your return and refund policy?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="returns1" class="collapse show" data-bs-parent="#returnsAccordion">
+                                    <div class="faq-answer">
+                                        <p>We want you to be completely satisfied with your purchase:</p>
+                                        <ul>
+                                            <li><strong>Damaged Products:</strong> Full refund or replacement within 24 hours of reporting</li>
+                                            <li><strong>Wrong Products:</strong> Immediate replacement or refund</li>
+                                            <li><strong>Quality Issues:</strong> Report within 24 hours with photos for resolution</li>
+                                            <li><strong>Non-perishable Items:</strong> Can be returned within 7 days if unused</li>
+                                            <li><strong>Perishable Items:</strong> Refund only in case of quality issues</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#returns2">
+                                    <h3>How long does it take to process a refund?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="returns2" class="collapse" data-bs-parent="#returnsAccordion">
+                                    <div class="faq-answer">
+                                        <p>Refund processing times:</p>
+                                        <ul>
+                                            <li><strong>Online Payment:</strong> 7-10 business days to your original payment method</li>
+                                            <li><strong>UPI/Wallets:</strong> 3-5 business days</li>
+                                            <li><strong>Cash on Delivery:</strong> Bank transfer within 7-10 business days</li>
+                                        </ul>
+                                        <p>You'll receive a confirmation email once the refund is initiated.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#returns3">
+                                    <h3>How do I report a damaged or incorrect product?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="returns3" class="collapse" data-bs-parent="#returnsAccordion">
+                                    <div class="faq-answer">
+                                        <p>To report an issue:</p>
+                                        <ol>
+                                            <li>Take clear photos of the product and packaging</li>
+                                            <li>Contact us within 24 hours of delivery</li>
+                                            <li>Provide your order number and details</li>
+                                            <li>Our team will review and respond within 24 hours</li>
+                                            <li>We'll arrange replacement or refund as appropriate</li>
+                                        </ol>
+                                        <p>Contact us at {{ site_settings.email }} or {{ site_settings.phone }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Management -->
+                    <div class="faq-category-section" data-category="account">
+                        <h2 class="category-heading">
+                            <i class="fas fa-user"></i> Account Management
+                        </h2>
+                        <div class="accordion" id="accountAccordion">
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#account1">
+                                    <h3>How do I create an account?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="account1" class="collapse show" data-bs-parent="#accountAccordion">
+                                    <div class="faq-answer">
+                                        <p>Creating an account is quick and easy:</p>
+                                        <ol>
+                                            <li>Click on "Sign Up" at the top of the page</li>
+                                            <li>Enter your name, email, and create a password</li>
+                                            <li>Verify your email address</li>
+                                            <li>Complete your profile with contact and address details</li>
+                                        </ol>
+                                        <p>Benefits of having an account include faster checkout, order tracking, and exclusive offers!</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#account2">
+                                    <h3>I forgot my password. How do I reset it?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="account2" class="collapse" data-bs-parent="#accountAccordion">
+                                    <div class="faq-answer">
+                                        <p>To reset your password:</p>
+                                        <ol>
+                                            <li>Click on "Login" and then "Forgot Password?"</li>
+                                            <li>Enter your registered email address</li>
+                                            <li>Check your email for a password reset link</li>
+                                            <li>Click the link and create a new password</li>
+                                            <li>Login with your new password</li>
+                                        </ol>
+                                        <p>If you don't receive the email, check your spam folder or contact support.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#account3">
+                                    <h3>How can I update my account information?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="account3" class="collapse" data-bs-parent="#accountAccordion">
+                                    <div class="faq-answer">
+                                        <p>To update your information:</p>
+                                        <ol>
+                                            <li>Log into your account</li>
+                                            <li>Go to "My Profile" or "Account Settings"</li>
+                                            <li>Update your personal details, addresses, or payment methods</li>
+                                            <li>Click "Save Changes"</li>
+                                        </ol>
+                                        <p>Keep your information updated to ensure smooth order processing and delivery.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product Care -->
+                    <div class="faq-category-section" data-category="all">
+                        <h2 class="category-heading">
+                            <i class="fas fa-heart"></i> Product Care
+                        </h2>
+                        <div class="accordion" id="careAccordion">
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#care1">
+                                    <h3>How do I care for fresh flowers?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="care1" class="collapse show" data-bs-parent="#careAccordion">
+                                    <div class="faq-answer">
+                                        <p>To keep your flowers fresh longer:</p>
+                                        <ul>
+                                            <li>Trim stems at a 45-degree angle before placing in water</li>
+                                            <li>Use clean water and change it every 2-3 days</li>
+                                            <li>Remove any leaves that would be underwater</li>
+                                            <li>Keep away from direct sunlight and heat</li>
+                                            <li>Remove wilted flowers to keep others fresh</li>
+                                            <li>Add flower food if provided</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#care2">
+                                    <h3>How should I store cakes?</h3>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div id="care2" class="collapse" data-bs-parent="#careAccordion">
+                                    <div class="faq-answer">
+                                        <p>Proper cake storage:</p>
+                                        <ul>
+                                            <li>Refrigerate immediately upon delivery if not consuming right away</li>
+                                            <li>Keep in an airtight container to prevent drying</li>
+                                            <li>Consume within 24-48 hours for best taste</li>
+                                            <li>Bring to room temperature 30 minutes before serving</li>
+                                            <li>Fondant cakes should not be refrigerated</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Still Have Questions -->
+            <div class="still-questions-section">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3>Still have questions?</h3>
+                        <p>Can't find what you're looking for? Our customer support team is here to help!</p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <a href="{% url 'core:contact_us' %}" class="btn btn-primary btn-contact-us">
+                            <i class="fas fa-headset"></i> Contact Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+.page-container {
+    padding-top: 0;
+}
+
+.page-hero {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #FF6090 100%);
+    color: white;
+    padding: 80px 0;
+    text-align: center;
+}
+
+.page-title {
+    font-size: 42px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.page-subtitle {
+    font-size: 18px;
+    opacity: 0.95;
+}
+
+.faq-section {
+    padding: 80px 0;
+}
+
+/* Search Box */
+.faq-search-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.faq-search-box {
+    position: relative;
+}
+
+.faq-search-box i {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 18px;
+}
+
+.faq-search-box input {
+    padding: 16px 20px 16px 55px;
+    border: 2px solid #e9ecef;
+    border-radius: 50px;
+    font-size: 16px;
+    width: 100%;
+}
+
+.faq-search-box input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(233, 30, 99, 0.1);
+}
+
+/* Category Buttons */
+.faq-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+}
+
+.category-btn {
+    background: white;
+    border: 2px solid #e9ecef;
+    color: var(--text-dark);
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.category-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.category-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.category-btn i {
+    margin-right: 6px;
+}
+
+/* FAQ Categories */
+.faq-category-section {
+    margin-bottom: 60px;
+}
+
+.category-heading {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 30px;
+    padding-bottom: 16px;
+    border-bottom: 3px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+}
+
+.category-heading i {
+    color: var(--primary-color);
+    margin-right: 12px;
+}
+
+/* FAQ Items */
+.faq-item {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.faq-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.1);
+}
+
+.faq-question {
+    padding: 24px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+}
+
+.faq-question h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+    flex: 1;
+}
+
+.faq-question i {
+    color: var(--primary-color);
+    font-size: 18px;
+    transition: transform 0.3s;
+}
+
+.faq-question[aria-expanded="true"] i {
+    transform: rotate(180deg);
+}
+
+.faq-answer {
+    padding: 0 24px 24px;
+}
+
+.faq-answer p {
+    font-size: 16px;
+    color: var(--text-light);
+    line-height: 1.8;
+    margin-bottom: 16px;
+}
+
+.faq-answer ul, .faq-answer ol {
+    padding-left: 20px;
+}
+
+.faq-answer li {
+    font-size: 16px;
+    color: var(--text-light);
+    line-height: 1.8;
+    margin-bottom: 10px;
+}
+
+/* Still Questions Section */
+.still-questions-section {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #FF6090 100%);
+    color: white;
+    padding: 50px;
+    border-radius: 16px;
+    margin-top: 60px;
+}
+
+.still-questions-section h3 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.still-questions-section p {
+    font-size: 16px;
+    margin-bottom: 0;
+    opacity: 0.95;
+}
+
+.btn-contact-us {
+    background: white;
+    color: var(--primary-color);
+    border: none;
+    padding: 14px 32px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.btn-contact-us:hover {
+    background: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 32px;
+    }
+
+    .page-subtitle {
+        font-size: 16px;
+    }
+
+    .page-hero {
+        padding: 60px 0;
+    }
+
+    .faq-section {
+        padding: 60px 0;
+    }
+
+    .faq-categories {
+        gap: 8px;
+    }
+
+    .category-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    .category-heading {
+        font-size: 24px;
+    }
+
+    .faq-question {
+        padding: 20px;
+    }
+
+    .faq-question h3 {
+        font-size: 16px;
+    }
+
+    .still-questions-section {
+        padding: 30px;
+        text-align: center;
+    }
+
+    .still-questions-section h3 {
+        font-size: 24px;
+    }
+
+    .btn-contact-us {
+        margin-top: 20px;
+    }
+}
+</style>
+
+<script>
+// FAQ Search
+document.getElementById('faqSearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const faqItems = document.querySelectorAll('.faq-item');
+
+    faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question h3').textContent.toLowerCase();
+        const answer = item.querySelector('.faq-answer').textContent.toLowerCase();
+
+        if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+});
+
+// Category Filter
+document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        // Update active button
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        const category = this.dataset.category;
+        const sections = document.querySelectorAll('.faq-category-section');
+
+        sections.forEach(section => {
+            if (category === 'all' || section.dataset.category === category) {
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

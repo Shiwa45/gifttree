@@ -1,7 +1,30 @@
+# Core Django
 Django==5.0.7
 Pillow==10.0.0
+
+# Configuration
 django-environ==0.11.2
-django-debug-toolbar==4.2.0
 python-decouple==3.8
+
+# Development Tools (can be removed in production if needed)
+django-debug-toolbar==4.2.0
+
+# Production Server
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# Payment Gateway
 razorpay==1.4.1
+
+# HTTP Requests
 requests==2.31.0
+
+# Database (uncomment if using PostgreSQL)
+# psycopg2-binary==2.9.9
+
+# Cache (uncomment if using Redis)
+# redis==5.0.1
+# django-redis==5.4.0
+
+# Optional: Better logging and monitoring
+# sentry-sdk==1.40.0

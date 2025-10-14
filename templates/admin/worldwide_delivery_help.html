@@ -1,0 +1,133 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}Worldwide Delivery - Help{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 20px auto; padding: 20px;">
+    <h1 style="color: #333; margin-bottom: 20px;">
+        <i class="fas fa-globe"></i> Worldwide Delivery Feature - Quick Guide
+    </h1>
+
+    <div style="background: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; margin-bottom: 20px;">
+        <h3 style="margin-top: 0;">✅ Feature Successfully Installed!</h3>
+        <p>The "We Deliver Worldwide" section is now live on your homepage with full admin management.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="color: #667eea; margin-top: 0;">
+                <i class="fas fa-flag"></i> Step 1: Add Countries
+            </h3>
+            <p>Go to <strong>Core → Countries</strong></p>
+            <ul>
+                <li>Add delivery countries</li>
+                <li>Upload flag images</li>
+                <li>Mark as "Featured" for homepage</li>
+                <li>Set sort order</li>
+            </ul>
+        </div>
+
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="color: #667eea; margin-top: 0;">
+                <i class="fas fa-box"></i> Step 2: Add Products
+            </h3>
+            <p>Go to <strong>Core → Worldwide Delivery Products</strong></p>
+            <ul>
+                <li>Select a product</li>
+                <li>Choose delivery countries</li>
+                <li>Set delivery days & charges</li>
+                <li>Mark as "Featured"</li>
+            </ul>
+        </div>
+
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="color: #667eea; margin-top: 0;">
+                <i class="fas fa-eye"></i> Step 3: View on Site
+            </h3>
+            <p>Visit your homepage and scroll down</p>
+            <ul>
+                <li>See featured countries</li>
+                <li>Browse worldwide products</li>
+                <li>Beautiful purple gradient design</li>
+                <li>Mobile responsive</li>
+            </ul>
+        </div>
+    </div>
+
+    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px;">
+        <h3 style="margin-top: 0;">💡 Pro Tips</h3>
+        <ul>
+            <li><strong>Flag Images</strong>: Use 200x200px circular flags for best results</li>
+            <li><strong>Featured Products</strong>: Choose 6-8 bestselling international products</li>
+            <li><strong>Delivery Days</strong>: Be realistic (account for customs: 5-10 days typical)</li>
+            <li><strong>Shipping Charges</strong>: Research competitive international rates</li>
+        </ul>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3 style="color: #333; margin-top: 0;">
+            <i class="fas fa-database"></i> Model Structure
+        </h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f5f5f5;">
+                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Field</th>
+                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>product</strong></td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">Link to your product</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>countries</strong></td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">Select delivery countries (multiple)</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>delivery_note</strong></td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">Special instructions (e.g., "Fresh daily")</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>estimated_delivery_days</strong></td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">Delivery timeframe (default: 7 days)</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>international_shipping_charge</strong></td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">Extra cost for international delivery</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>is_featured</strong></td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">Show on homepage? (Yes/No)</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>sort_order</strong></td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">Display order (lower = first)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+        <h3 style="margin-top: 0;">📚 Documentation</h3>
+        <p>For detailed documentation, see: <code>WORLDWIDE_DELIVERY_SETUP.md</code> in your project root.</p>
+        
+        <h4>Quick Links:</h4>
+        <ul>
+            <li><a href="/admin/core/country/" target="_blank">Manage Countries</a></li>
+            <li><a href="/admin/core/worldwidedeliveryproduct/" target="_blank">Manage Worldwide Products</a></li>
+            <li><a href="/" target="_blank">View Homepage</a></li>
+        </ul>
+    </div>
+</div>
+
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    h3 { color: #444; }
+    ul { line-height: 1.8; }
+    code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+</style>
+{% endblock %}
+
+
+

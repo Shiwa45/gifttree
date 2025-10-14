@@ -1,0 +1,395 @@
+{% load static %}
+{% load product_tags %}
+
+<!-- Worldwide Delivery Section -->
+{% if worldwide_products or featured_countries %}
+<div class="worldwide-delivery-section">
+    <div class="container">
+        <!-- Section Header -->
+        <div class="worldwide-header">
+            <h2 class="worldwide-title">
+                <i class="fas fa-globe"></i> We Deliver Worldwide
+            </h2>
+            <p class="worldwide-subtitle">Send gifts to your loved ones anywhere in the world</p>
+        </div>
+
+        <!-- Countries Grid -->
+        {% if featured_countries %}
+        <div class="countries-showcase">
+            <h3 class="countries-section-title">We Ship To</h3>
+            <div class="countries-grid">
+                {% for country in featured_countries %}
+                <a href="{% url 'core:country_products' country.code|lower %}" class="country-item" title="Shop products for {{ country.name }}">
+                    {% if country.flag_image %}
+                        <img src="{{ country.flag_image.url }}" alt="{{ country.name }}" class="country-flag">
+                    {% else %}
+                        <div class="country-flag-placeholder">
+                            <span>{{ country.code }}</span>
+                        </div>
+                    {% endif %}
+                    <span class="country-name">{{ country.name }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Worldwide Products -->
+        {% if worldwide_products %}
+        <div class="worldwide-products">
+            <div class="section-header">
+                <h3 class="section-title">International Bestsellers</h3>
+                <a href="{% url 'products:product_list' %}" class="view-all-btn">View All</a>
+            </div>
+            
+            <div class="products-scroll">
+                <div class="products-row">
+                    {% for item in worldwide_products %}
+                    <div class="product-card worldwide-product-card" onclick="window.location.href='{{ item.product.get_absolute_url }}'">
+                        <div class="product-image-wrapper">
+                            <img src="{{ item.product|product_image_url }}" alt="{{ item.product.name }}"
+                                onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                            <div class="product-badge worldwide-badge">
+                                <i class="fas fa-globe"></i> WORLDWIDE
+                            </div>
+                        </div>
+                        <div class="product-details">
+                            <div class="product-name">{{ item.product.name }}</div>
+                            <div class="product-price">₹{{ item.product.current_price|floatformat:0 }}</div>
+                            <div class="product-delivery international-delivery">
+                                <i class="fas fa-shipping-fast"></i> {{ item.estimated_delivery_days }} days delivery
+                            </div>
+                            {% if item.countries.exists %}
+                            <div class="available-countries">
+                                Ships to: {{ item.countries.count }} countries
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Features -->
+        <div class="worldwide-features">
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-globe-americas"></i></div>
+                <h4>150+ Countries</h4>
+                <p>Worldwide coverage</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                <h4>100% Secure</h4>
+                <p>Safe & tracked delivery</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-clock"></i></div>
+                <h4>Express Shipping</h4>
+                <p>Fast international delivery</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-headset"></i></div>
+                <h4>24/7 Support</h4>
+                <p>Global customer care</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Worldwide Delivery Section */
+.worldwide-delivery-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 50px 0;
+    margin: 20px 0;
+    color: white;
+}
+
+.worldwide-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.worldwide-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.worldwide-title i {
+    font-size: 36px;
+    color: #FFD700;
+}
+
+.worldwide-subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+    margin: 0;
+}
+
+/* Countries Showcase */
+.countries-showcase {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 40px;
+    backdrop-filter: blur(10px);
+}
+
+.countries-section-title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 24px;
+}
+
+.countries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.country-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.country-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.country-flag {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.country-item:hover .country-flag {
+    border-color: #FFD700;
+    transform: scale(1.1);
+}
+
+.country-flag-placeholder {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #E91E63, #FF4081);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.country-item:hover .country-flag-placeholder {
+    border-color: #FFD700;
+    transform: scale(1.1);
+}
+
+.country-flag-placeholder span {
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+}
+
+.country-name {
+    font-size: 13px;
+    color: white;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Worldwide Products */
+.worldwide-products {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 40px;
+    backdrop-filter: blur(10px);
+}
+
+.worldwide-products .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 0;
+    background: transparent;
+}
+
+.worldwide-products .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+}
+
+.worldwide-products .view-all-btn {
+    background: white;
+    color: #667eea;
+}
+
+.worldwide-products .view-all-btn:hover {
+    background: #f8f9fa;
+}
+
+.worldwide-badge {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: #333;
+    font-weight: 700;
+}
+
+.international-delivery {
+    color: #FFD700;
+    font-weight: 600;
+}
+
+.available-countries {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 6px;
+    font-style: italic;
+}
+
+/* Worldwide Features */
+.worldwide-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.worldwide-features .feature-item {
+    text-align: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.worldwide-features .feature-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-5px);
+}
+
+.worldwide-features .feature-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 215, 0, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    color: #FFD700;
+    font-size: 28px;
+}
+
+.worldwide-features h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 8px;
+}
+
+.worldwide-features p {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .worldwide-delivery-section {
+        padding: 30px 0;
+    }
+
+    .worldwide-title {
+        font-size: 24px;
+    }
+
+    .worldwide-title i {
+        font-size: 28px;
+    }
+
+    .worldwide-subtitle {
+        font-size: 14px;
+    }
+
+    .countries-showcase,
+    .worldwide-products {
+        padding: 20px;
+    }
+
+    .countries-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+    }
+
+    .country-flag,
+    .country-flag-placeholder {
+        width: 40px;
+        height: 40px;
+    }
+
+    .country-name {
+        font-size: 11px;
+    }
+
+    .worldwide-features {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .worldwide-features .feature-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+    }
+
+    .worldwide-features h4 {
+        font-size: 14px;
+    }
+
+    .worldwide-features p {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    .countries-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .country-item {
+        padding: 12px 8px;
+    }
+}
+</style>
+{% endif %}
+

@@ -1,286 +1,173 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load product_tags %}
 
-{% block title %}{{ product.name }} - GiftTree{% endblock %}
-
-{% block meta_description %}{{ product.description|truncatewords:20 }}{% endblock %}
-
-{% block extra_head %}
-<!-- Structured Data for SEO (Schema.org JSON-LD) -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org/",
-  "@type": "Product",
-  "name": "{{ product.name|escapejs }}",
-  "image": "{{ request.scheme }}://{{ request.get_host }}{% if product.primary_image %}{{ product.primary_image.get_image_url }}{% endif %}",
-  "description": "{{ product.description|striptags|truncatewords:50|escapejs }}",
-  "sku": "{{ product.sku }}",
-  "brand": {
-    "@type": "Brand",
-    "name": "MyGiftTree"
-  },
-  "offers": {
-    "@type": "Offer",
-    "url": "{{ request.build_absolute_uri }}",
-    "priceCurrency": "INR",
-    "price": "{{ product.current_price }}",
-    "priceValidUntil": "2025-12-31",
-    "availability": "{% if product.is_in_stock %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
-    "seller": {
-      "@type": "Organization",
-      "name": "MyGiftTree"
-    }
-  }{% if product.reviews.exists %},
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "{{ product.average_rating|default:'5' }}",
-    "reviewCount": "{{ product.reviews.count }}"
-  }{% endif %}
-}
-</script>
-{% endblock %}
+{% block title %}{{ product.name }} - Buy Online | GiftTree{% endblock %}
 
 {% block content %}
 <style>
-/* Product Detail Page Styles */
-.product-detail-wrapper {
-    background: #f5f5f5;
-    min-height: 100vh;
-    padding-bottom: 60px;
+/* Modern Product Detail Page Styles */
+:root {
+    --primary: #E91E63;
+    --secondary: #4CAF50;
+    --text-dark: #212121;
+    --text-light: #757575;
+    --border: #E0E0E0;
+    --bg-light: #F5F5F5;
 }
 
-/* Breadcrumb */
-.breadcrumb-nav {
-    background: white;
-    padding: 12px 20px;
-    font-size: 13px;
-    color: #666;
-}
-
-.breadcrumb-nav a {
-    color: #666;
-    text-decoration: none;
-    margin: 0 5px;
-}
-
-.breadcrumb-nav a:hover {
-    color: var(--primary-color);
-}
-
-.breadcrumb-nav span {
-    margin: 0 5px;
-}
-
-/* Main Product Section */
-.product-main-section {
-    background: white;
-    padding: 20px;
-    margin: 20px auto;
+.product-container {
     max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
+/* Mobile Header */
+.mobile-header {
+    display: none;
+    padding: 12px 16px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.mobile-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 16px;
+}
+
+.header-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    position: relative;
+}
+
+/* Product Layout */
 .product-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 40px;
+    margin-top: 20px;
 }
 
-/* Product Gallery */
-.product-gallery {
+/* Gallery Section */
+.gallery-section {
     position: relative;
-}
-
-.gallery-main-image {
-    width: 100%;
-    border-radius: 12px;
-    overflow: hidden;
-    position: relative;
-    background: #f8f9fa;
 }
 
 .main-image {
     width: 100%;
-    height: auto;
-    display: block;
-}
-
-.wishlist-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 40px;
-    height: 40px;
+    max-height: 500px;
+    object-fit: contain;
     background: white;
-    border: none;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    transition: all 0.3s ease;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border);
 }
 
-.wishlist-btn:hover {
-    background: var(--primary-color);
-    color: white;
-}
-
-.wishlist-btn i {
-    font-size: 18px;
-}
-
-.gallery-nav-btn {
+.image-badges {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 40px;
-    height: 40px;
-    background: white;
-    border: none;
-    border-radius: 50%;
+    top: 16px;
+    left: 16px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    z-index: 2;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.gallery-nav-btn.prev {
-    left: 15px;
-}
-
-.gallery-nav-btn.next {
-    right: 15px;
-}
-
-/* Product Info */
-.product-info-section {
-    padding: 10px 0;
-}
-
-.product-id {
+.badge {
+    padding: 6px 12px;
+    border-radius: 20px;
     font-size: 12px;
-    color: #999;
-    margin-bottom: 10px;
+    font-weight: 600;
+    color: white;
+    background: var(--primary);
+}
+
+.badge.discount {
+    background: #FF9800;
+}
+
+.thumbnail-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    overflow-x: auto;
+}
+
+.thumbnail {
+    width: 80px;
+    height: 80px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.thumbnail.active {
+    border-color: var(--primary);
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Info Section */
+.info-section {
+    padding: 0 20px;
 }
 
 .product-title {
     font-size: 28px;
-    font-weight: 700;
-    color: var(--text-dark);
-    margin-bottom: 15px;
-    line-height: 1.3;
-}
-
-.product-description {
-    font-size: 14px;
-    color: #666;
-    line-height: 1.8;
-    margin-bottom: 25px;
-    text-align: justify;
-}
-
-/* Delivery Pincode */
-.delivery-check {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 25px;
-}
-
-.delivery-input {
-    flex: 1;
-    padding: 12px 16px;
-    border: 2px solid #E0E0E0;
-    border-radius: 8px;
-    font-size: 14px;
-}
-
-.delivery-input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-}
-
-.check-btn {
-    padding: 12px 24px;
-    background: #333;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
     font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
+    margin-bottom: 12px;
+    color: var(--text-dark);
 }
 
-.check-btn:hover {
-    background: #555;
-}
-
-/* Features Grid */
-.product-features {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-    margin-bottom: 25px;
-}
-
-.feature-item {
+.rating-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 8px;
-}
-
-.feature-icon {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    color: #666;
-}
-
-.feature-content {
-    flex: 1;
-}
-
-.feature-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-dark);
-    margin-bottom: 2px;
-}
-
-.feature-subtitle {
-    font-size: 11px;
-    color: #999;
-}
-
-/* Price Section */
-.price-section {
-    background: #FFF8F0;
-    padding: 20px;
-    border-radius: 12px;
+    gap: 16px;
     margin-bottom: 20px;
 }
 
-.price-label {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 8px;
+.stars {
+    color: #FFC107;
 }
 
-.price-display {
+.rating-text {
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+.price-box {
+    background: var(--bg-light);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+
+.price-row {
     display: flex;
     align-items: baseline;
     gap: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .current-price {
@@ -290,1830 +177,1075 @@
 }
 
 .original-price {
-    font-size: 18px;
-    color: #999;
+    font-size: 20px;
+    color: var(--text-light);
     text-decoration: line-through;
 }
 
 .discount-badge {
-    padding: 4px 12px;
-    background: var(--primary-color);
-    color: white;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-/* Trust Badges */
-.trust-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.trust-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: #E8F5E9;
-    color: #2E7D32;
-    border-radius: 6px;
-    font-size: 11px;
-}
-
-.trust-badge i {
-    font-size: 12px;
-}
-
-/* Same Delivery Date */
-.same-delivery {
-    background: #E3F2FD;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.same-delivery i {
-    color: #1976D2;
-    font-size: 18px;
-}
-
-.same-delivery-text {
-    font-size: 13px;
-    color: #1565C0;
-    font-weight: 600;
-}
-
-/* Action Buttons */
-.action-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.btn-add-cart {
-    width: 100%;
-    padding: 16px;
-    background: white;
-    border: 2px solid var(--primary-color);
-    color: var(--primary-color);
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-add-cart:hover {
-    background: var(--primary-color);
-    color: white;
-}
-
-.btn-buy-now {
-    width: 100%;
-    padding: 16px;
-    background: var(--pink-gradient);
-    border: none;
-    color: white;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
-}
-
-.btn-buy-now:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(233, 30, 99, 0.4);
-}
-
-/* Care Instructions */
-.care-instructions-section {
-    background: white;
-    padding: 30px 20px;
-    margin: 20px auto;
-    max-width: 1200px;
-}
-
-.section-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text-dark);
-    margin-bottom: 20px;
-}
-
-.care-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.care-step {
-    padding-left: 0;
-}
-
-.step-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-dark);
-    margin-bottom: 5px;
-}
-
-.step-description {
-    font-size: 14px;
-    color: #666;
-    line-height: 1.6;
-}
-
-/* Product Add-Ons Section */
-.addons-section {
-    background: white;
-    padding: 30px 20px;
-    margin: 20px auto;
-    max-width: 1200px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.addons-section .section-title {
-    font-size: 22px;
-    color: var(--primary-color);
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.addons-section .section-title i {
-    color: var(--secondary-color);
-}
-
-.addons-subtitle {
-    color: #666;
-    font-size: 14px;
-    margin-bottom: 25px;
-}
-
-.addons-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 25px;
-}
-
-.addon-card {
-    position: relative;
-    background: #f9f9f9;
-    border-radius: 12px;
-    padding: 15px;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-    cursor: pointer;
-}
-
-.addon-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-    border-color: var(--primary-color);
-}
-
-.addon-card.selected {
-    border-color: var(--primary-color);
-    background: #fff5f8;
-}
-
-.addon-checkbox-wrapper {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 2;
-}
-
-.addon-checkbox {
-    display: none;
-}
-
-.addon-checkbox-label {
-    display: inline-block;
-    width: 24px;
-    height: 24px;
-    border: 2px solid #ddd;
-    border-radius: 50%;
-    background: white;
-    cursor: pointer;
-    position: relative;
-    transition: all 0.3s ease;
-}
-
-.addon-checkbox:checked + .addon-checkbox-label {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-}
-
-.addon-checkbox:checked + .addon-checkbox-label::after {
-    content: '\2713';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: white;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-.addon-image-wrapper {
-    width: 100%;
-    height: 150px;
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 12px;
-    background: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.addon-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-.addon-card:hover .addon-image {
-    transform: scale(1.05);
-}
-
-.addon-image-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #f5f5f5, #e9e9e9);
-    color: #ccc;
-}
-
-.addon-info {
-    text-align: center;
-}
-
-.addon-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 5px;
-    line-height: 1.3;
-}
-
-.addon-description {
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 8px;
-    line-height: 1.4;
-}
-
-.addon-price {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--primary-color);
-}
-
-.addons-summary {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    background: #f5f5f5;
-    border-radius: 8px;
-    margin-top: 20px;
-}
-
-.selected-addons-list {
-    flex: 1;
-    font-size: 14px;
-    color: #666;
-}
-
-.no-addons-text {
-    color: #999;
-    font-style: italic;
-}
-
-.addon-tag {
-    display: inline-block;
-    background: var(--primary-color);
+    background: var(--secondary);
     color: white;
     padding: 4px 12px;
     border-radius: 20px;
-    margin: 4px;
+    font-size: 14px;
+}
+
+.tax-note {
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+/* Variants */
+.variant-section {
+    margin-bottom: 24px;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.variant-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.variant-btn {
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+}
+
+.variant-btn.active {
+    border-color: var(--primary);
+    background: rgba(233, 30, 99, 0.05);
+}
+
+.variant-name {
+    font-weight: 600;
+    display: block;
+}
+
+.variant-price {
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+/* Delivery Section */
+.delivery-section {
+    background: #FFF8F0;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+
+.pincode-check {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.pincode-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.check-btn {
+    padding: 10px 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.delivery-slots {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.slot-card {
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.slot-card.active {
+    border-color: var(--primary);
+    background: rgba(233, 30, 99, 0.05);
+}
+
+.slot-icon {
+    font-size: 20px;
+    color: var(--primary);
+    margin-bottom: 4px;
+}
+
+.slot-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.slot-time {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+/* Add-ons */
+.addons-section {
+    margin-bottom: 24px;
+}
+
+.addon-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.addon-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.addon-card.selected {
+    border-color: var(--primary);
+    background: rgba(233, 30, 99, 0.05);
+}
+
+.addon-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 12px;
 }
 
-.addons-total {
-    font-size: 16px;
-    color: #333;
-}
-
-.addons-total strong {
-    font-size: 20px;
-    color: var(--primary-color);
-    margin-left: 10px;
-}
-
-/* Recommended Categories */
-.recommended-section {
-    background: white;
-    padding: 40px 20px;
-    margin: 20px auto;
-    max-width: 1200px;
-}
-
-.category-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.category-card {
-    text-align: center;
-    text-decoration: none;
-    transition: transform 0.3s ease;
-}
-
-.category-card:hover {
-    transform: translateY(-5px);
-}
-
-.category-image {
-    width: 100%;
-    height: 150px;
+.addon-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
     object-fit: cover;
-    border-radius: 12px;
-    margin-bottom: 10px;
 }
 
-.category-name {
-    font-size: 14px;
+.addon-info {
+    flex: 1;
+}
+
+.addon-name {
     font-weight: 600;
+    font-size: 14px;
+}
+
+.addon-desc {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.addon-price {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Action Buttons */
+.action-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.qty-selector {
+    display: flex;
+    align-items: center;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+}
+
+.qty-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.qty-input {
+    width: 60px;
+    text-align: center;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.btn-cart, .btn-buy {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-cart {
+    background: white;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+}
+
+.btn-buy {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-cart:disabled, .btn-buy:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* USP Icons */
+.usp-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 20px;
+    background: var(--bg-light);
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+
+.usp-item {
+    text-align: center;
+}
+
+.usp-icon {
+    font-size: 24px;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
+
+.usp-text {
+    font-size: 12px;
     color: var(--text-dark);
 }
 
-/* Best Seller Products */
-.bestseller-section {
-    background: white;
-    padding: 40px 20px;
-    margin: 20px auto;
-    max-width: 1200px;
+/* Tabs */
+.tabs-section {
+    margin-top: 40px;
 }
 
-.products-grid {
+.tab-headers {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    gap: 24px;
+    overflow-x: auto;
+}
+
+.tab-btn {
+    padding: 12px 0;
+    background: none;
+    border: none;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    position: relative;
+}
+
+.tab-btn.active {
+    color: var(--primary);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary);
+}
+
+.tab-content {
+    display: none;
+    padding: 24px 0;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Related Products */
+.related-section {
+    margin-top: 60px;
+    padding: 40px 0;
+    background: var(--bg-light);
+}
+
+.related-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+
+.related-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
-    margin-top: 20px;
 }
 
-.product-card {
+.related-card {
     background: white;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    transition: all 0.3s ease;
-    text-decoration: none;
+    transition: transform 0.3s;
+    cursor: pointer;
 }
 
-.product-card:hover {
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+.related-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
-.product-image-wrapper {
-    position: relative;
-    overflow: hidden;
-    height: 200px;
-}
-
-.product-image {
+.related-img {
     width: 100%;
-    height: 100%;
+    height: 200px;
     object-fit: cover;
 }
 
-.product-card-info {
-    padding: 15px;
+.related-info {
+    padding: 12px;
 }
 
-.product-card-name {
-    font-size: 14px;
+.related-name {
     font-weight: 600;
-    color: var(--text-dark);
     margin-bottom: 8px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.product-card-price {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.related-price {
+    color: var(--primary);
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* Mobile Sticky Footer */
+.mobile-footer {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 12px 16px;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+.mobile-price {
+    font-size: 20px;
+    font-weight: 700;
     margin-bottom: 8px;
 }
 
-.card-current-price {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text-dark);
-}
-
-.card-original-price {
-    font-size: 13px;
-    color: #999;
-    text-decoration: line-through;
-}
-
-.product-card-delivery {
-    font-size: 11px;
-    color: #4CAF50;
-}
-
-/* Find More Products */
-.find-more-section {
-    background: #f8f9fa;
-    padding: 40px 20px;
-    margin: 20px auto;
-    max-width: 1200px;
-}
-
-.filter-tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 30px;
-    border-bottom: 2px solid #E0E0E0;
-}
-
-.filter-tab {
-    padding: 12px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #666;
-    background: none;
-    border: none;
-    border-bottom: 3px solid transparent;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.filter-tab.active {
-    color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
-}
-
-.filter-content {
+.mobile-buttons {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-}
-
-.filter-link {
-    font-size: 13px;
-    color: #666;
-    text-decoration: none;
-    padding: 8px 0;
-}
-
-.filter-link:hover {
-    color: var(--primary-color);
-}
-
-.view-more-btn {
-    color: var(--primary-color);
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 10px;
-    display: inline-block;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+    .mobile-header {
+        display: block;
+    }
+    
+    .product-container {
+        padding: 0;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
     .product-grid {
         grid-template-columns: 1fr;
-        gap: 20px;
+        gap: 0;
     }
     
-    .product-features {
-        grid-template-columns: 1fr;
+    .gallery-section {
+        padding: 16px;
     }
     
-    .category-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 15px;
+    .main-image {
+        border-radius: 0;
+        border: none;
+        padding: 0;
+        max-width: 100%;
+        height: auto;
+        max-height: 400px;
     }
     
-    .products-grid {
+    .info-section {
+        padding: 16px;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .product-title {
+        font-size: 18px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+    }
+    
+    .current-price {
+        font-size: 24px;
+    }
+    
+    .original-price {
+        font-size: 16px;
+    }
+    
+    .price-box {
+        padding: 16px;
+    }
+    
+    .variant-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
+        gap: 8px;
     }
     
-    .filter-content {
+    .variant-btn {
+        padding: 10px 8px;
+        font-size: 14px;
+    }
+    
+    .variant-name {
+        font-size: 13px;
+    }
+    
+    .variant-price {
+        font-size: 12px;
+    }
+    
+    .delivery-section {
+        padding: 16px;
+    }
+    
+    .delivery-slots {
         grid-template-columns: 1fr;
+        gap: 8px;
     }
     
-    .product-main-section,
-    .care-instructions-section,
-    .recommended-section,
-    .bestseller-section,
-    .find-more-section {
-        margin: 10px;
-        padding: 20px 15px;
+    .slot-card {
+        padding: 10px;
     }
-}
-
-/* Variant Selection Styles */
-.variant-option {
-    transition: all 0.3s ease;
-}
-
-.variant-option:hover {
-    border-color: var(--primary-color) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.2);
-}
-
-.variant-option.active {
-    border-color: var(--primary-color) !important;
-    background: #fff5f8 !important;
-    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
-}
-
-.variant-option.active::after {
-    content: '✓';
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: var(--primary-color);
-    color: white;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-/* Notification Animations */
-@keyframes slideIn {
-    from {
-        transform: translateX(400px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOut {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(400px);
-        opacity: 0;
-    }
-}
-
-/* Mobile Responsive - Add-ons Section */
-@media (max-width: 768px) {
-    .addons-section {
-        padding: 20px 12px;
-        margin: 16px 0;
-    }
-
-    .addons-grid {
-        grid-template-columns: repeat(2, 1fr);
+    
+    .addon-grid {
+        grid-template-columns: 1fr;
         gap: 12px;
     }
-
-    .addon-image-wrapper {
-        height: 120px;
+    
+    .addon-card {
+        padding: 10px;
     }
-
+    
+    .addon-img {
+        width: 50px;
+        height: 50px;
+    }
+    
     .addon-name {
         font-size: 13px;
     }
-
+    
+    .addon-desc {
+        font-size: 11px;
+    }
+    
     .addon-price {
+        font-size: 13px;
+    }
+    
+    .usp-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 16px;
+    }
+    
+    .usp-icon {
+        font-size: 20px;
+    }
+    
+    .usp-text {
+        font-size: 11px;
+    }
+    
+    .tabs-section {
+        padding: 0 16px;
+    }
+    
+    .tab-headers {
+        gap: 16px;
+        padding-bottom: 2px;
+    }
+    
+    .tab-btn {
+        font-size: 14px;
+        padding: 10px 0;
+        white-space: nowrap;
+    }
+    
+    .tab-content {
+        padding: 16px 0;
+        font-size: 14px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .tab-content h3 {
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+    
+    .tab-content h4 {
+        font-size: 16px;
+        margin-top: 16px;
+        margin-bottom: 10px;
+    }
+    
+    .tab-content p {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    
+    .tab-content table {
+        font-size: 14px;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .tab-content td {
+        padding: 8px 0 !important;
+    }
+    
+    .related-section {
+        padding: 24px 16px;
+        margin-top: 40px;
+    }
+    
+    .related-title {
+        font-size: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .related-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .related-card {
+        border-radius: 8px;
+    }
+    
+    .related-img {
+        height: 140px;
+    }
+    
+    .related-info {
+        padding: 10px;
+    }
+    
+    .related-name {
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+    
+    .related-price {
         font-size: 16px;
     }
-
-    .addons-summary {
-        flex-direction: column;
-        gap: 12px;
-        padding: 15px;
+    
+    .mobile-footer {
+        display: block;
     }
-
-    .selected-addons-list {
-        width: 100%;
-        text-align: center;
+    
+    .action-row {
+        display: none;
     }
-
-    .addons-total {
-        width: 100%;
-        text-align: center;
+    
+    .mobile-price {
+        font-size: 18px;
     }
-}
-
-@media (max-width: 480px) {
-    .addons-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .addon-card {
-        padding: 12px;
-    }
-}
-
-/* Mobile Responsive Styles (additional) */
-@media (max-width: 768px) {
-    .product-grid {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-
-    .product-main-section {
-        padding: 15px;
-        margin: 10px;
-    }
-
-    .breadcrumb-nav {
-        padding: 10px 15px;
-        font-size: 12px;
-    }
-
-    .product-info h1 {
-        font-size: 20px !important;
-    }
-
-    .product-price {
-        font-size: 22px !important;
-    }
-
-    .action-buttons {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .btn-add-cart, .btn-buy-now {
-        width: 100%;
-        padding: 14px !important;
-    }
-
-    .variant-option {
-        padding: 12px !important;
-        font-size: 13px !important;
-    }
-
-    .product-tabs {
-        flex-wrap: wrap;
-    }
-
-    .tab-button {
-        flex: 1;
-        min-width: 100px;
-        font-size: 13px;
-        padding: 10px 15px;
-    }
-
-    .recommended-grid, .bestseller-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 12px;
-    }
-
-    .notification {
-        right: 10px !important;
-        left: 10px !important;
-        top: 10px !important;
-    }
-
-    .gallery-thumbnails {
+    
+    .mobile-buttons {
         gap: 8px;
     }
-
-    .thumbnail-item {
-        width: 60px !important;
-        height: 60px !important;
+    
+    .mobile-buttons .btn-cart,
+    .mobile-buttons .btn-buy {
+        padding: 10px 16px;
+        font-size: 14px;
+        border-radius: 8px;
     }
-
-    .delivery-info {
-        padding: 15px !important;
+    
+    body {
+        padding-bottom: 120px;
+        overflow-x: hidden;
     }
-
-    .pincode-checker {
-        flex-direction: column;
-        align-items: stretch !important;
+    
+    /* Ensure all images are responsive */
+    img {
+        max-width: 100%;
+        height: auto;
     }
-
-    .pincode-checker input {
-        width: 100%;
+    
+    /* Fix any potential overflow issues */
+    * {
+        max-width: 100%;
     }
-}
-
-@media (max-width: 480px) {
-    .product-info h1 {
-        font-size: 18px !important;
-    }
-
-    .product-price {
-        font-size: 20px !important;
-    }
-
-    .recommended-grid, .bestseller-grid {
-        grid-template-columns: 1fr !important;
-    }
-}
-
-/* ================================
-   💡 MOBILE OVERFLOW FIXES (APPENDED)
-   ================================ */
-html, body, .product-detail-wrapper { overflow-x: hidden; }
-*, *::before, *::after { box-sizing: border-box; }
-
-.product-title { word-break: break-word; overflow-wrap: anywhere; }
-.product-description { word-break: break-word; }
-
-/* Gallery safety */
-.gallery-main-image {
-    width: 100%;
-    max-width: 100%;
-    border-radius: 12px;
-    overflow: hidden;
-    background: #f8f9fa;
-}
-.gallery-main-image .main-image {
-    display: block;
-    width: 100%;
-    height: auto;
-    max-width: 100%;
-    object-fit: contain;
-}
-
-@media (max-width: 768px) {
-  .gallery-main-image { aspect-ratio: 1 / 1; }
-  .gallery-nav-btn {
-    top: auto;
-    bottom: 10px;
-    transform: none;
-    width: 36px; height: 36px;
-  }
-  .gallery-nav-btn.prev { left: 10px; }
-  .gallery-nav-btn.next { right: 10px; }
-}
-
-/* Thumbnails row scroll */
-.gallery-thumbnails {
-  display: flex !important;
-  gap: 10px;
-  margin-top: 15px;
-  overflow-x: auto !important;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  padding-bottom: 6px;
-}
-.gallery-thumbnails .thumbnail-img {
-  flex: 0 0 auto;
-  width: 70px !important;
-  height: 70px !important;
-  object-fit: cover;
-  border-radius: 8px;
-  scroll-snap-align: start;
-}
-
-/* Variants grid wrap */
-.variant-options {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
-  gap: 12px !important;
-}
-.variant-option {
-  min-width: 0;
-  word-break: break-word;
-}
-
-@media (max-width: 480px) {
-  .variant-options {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-  }
-  .variant-option { padding: 12px !important; }
-}
-
-/* Price row wrap */
-.price-display { flex-wrap: wrap; row-gap: 6px; }
-
-/* Delivery checker stacks on mobile */
-@media (max-width: 600px) {
-  .delivery-check { flex-direction: column; }
-  .check-btn { width: 100%; }
-}
-
-/* Product grid safety */
-.product-main-section,
-.care-instructions-section,
-.recommended-section,
-.bestseller-section,
-.find-more-section { max-width: 100%; }
-
-/* Cards safety */
-.product-image-wrapper { height: auto; }
-.product-image { width: 100%; height: auto; display: block; object-fit: cover; }
-
-/* Extra small grid guards */
-@media (max-width: 768px) {
-  .category-grid { grid-template-columns: repeat(3, 1fr); }
-  .products-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 420px) {
-  .category-grid { grid-template-columns: repeat(2, 1fr); }
-  .products-grid { grid-template-columns: 1fr; }
-}
-
-/* Mobile Related Products Fix - Phase 2 */
-@media (max-width: 768px) {
-    .similar-products,
-    .find-more-section {
-        padding: 20px 12px;
-        margin: 16px 0;
-        background: white;
-    }
-
-    .similar-title,
+    
+    /* Specific fixes for content sections */
     .section-title {
-        font-size: 18px;
-        padding: 0 8px 12px;
-        margin-bottom: 12px;
+        font-size: 15px;
+        margin-bottom: 10px;
     }
-
-    .similar-scroll {
-        padding: 0 4px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-    }
-
-    .similar-scroll::-webkit-scrollbar {
-        display: none;
-    }
-
-    .similar-row {
-        display: flex;
-        gap: 12px;
-        padding: 4px 0;
-    }
-
-    .similar-card,
-    .find-more-section .products-grid {
-        display: flex !important;
-        gap: 12px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        padding: 4px 0;
-    }
-
-    .find-more-section .products-grid::-webkit-scrollbar {
-        display: none;
-    }
-
-    .find-more-section .product-card {
-        width: 130px !important;
-        min-width: 130px;
-        max-width: 130px;
-        flex-shrink: 0;
-        margin: 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        border-radius: 12px;
-        overflow: hidden;
-        background: white;
-        cursor: pointer;
-        transition: transform 0.2s ease;
-        text-decoration: none;
-        color: inherit;
-    }
-
-    .find-more-section .product-card:active {
-        transform: scale(0.95);
-    }
-
-    .similar-image,
-    .find-more-section .product-image-wrapper {
-        width: 100%;
-        height: 130px !important;
-    }
-
-    .find-more-section .product-image {
-        width: 100%;
-        height: 130px !important;
-        object-fit: cover;
-    }
-
-    .similar-info,
-    .find-more-section .product-card-info {
+    
+    .pincode-input {
+        font-size: 14px;
         padding: 8px;
     }
-
-    .similar-name,
-    .find-more-section .product-card-name {
-        font-size: 12px;
-        line-height: 1.3;
-        margin-bottom: 4px;
-        font-weight: 500;
-        color: #333;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
+    
+    .check-btn {
+        padding: 8px 16px;
+        font-size: 14px;
     }
-
-    .similar-price,
-    .find-more-section .product-card-price {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--primary-color);
-    }
-
-    .find-more-section .card-current-price {
-        font-size: 13px;
-    }
-
-    .find-more-section .card-original-price {
-        font-size: 11px;
-    }
-}
-
-/* Tablet */
-@media (min-width: 769px) and (max-width: 991px) {
-    .similar-card,
-    .find-more-section .product-card {
-        width: 160px !important;
-        min-width: 160px;
-    }
-
-    .similar-image,
-    .find-more-section .product-image {
-        height: 160px !important;
-    }
-}
-
-/* Desktop */
-@media (min-width: 992px) {
-    .similar-products,
-    .find-more-section {
-        padding: 30px 40px;
-    }
-
-    .similar-card:hover,
-    .find-more-section .product-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-}
-
-/* Bestseller Products - Horizontal Mobile Layout */
-@media (max-width: 768px) {
-    .bestseller-section {
-        padding: 20px 12px;
-        margin: 16px 0;
-    }
-
-    .bestseller-section .section-title {
-        font-size: 18px;
-        padding: 0 8px 12px;
-        margin-bottom: 12px;
-    }
-
-    .bestseller-section .products-grid {
-        display: flex !important;
-        gap: 12px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        padding: 4px 0;
+    
+    .thumbnail-row {
+        gap: 8px;
         margin-top: 12px;
     }
-
-    .bestseller-section .products-grid::-webkit-scrollbar {
-        display: none;
+    
+    .thumbnail {
+        width: 60px;
+        height: 60px;
     }
-
-    .bestseller-section .product-card {
-        width: 130px !important;
-        min-width: 130px;
-        max-width: 130px;
-        flex-shrink: 0;
-        margin: 0;
+    
+    .rating-row {
+        margin-bottom: 16px;
+        flex-wrap: wrap;
     }
-
-    .bestseller-section .product-image-wrapper {
-        height: 130px !important;
-    }
-
-    .bestseller-section .product-card-info {
-        padding: 8px;
-    }
-
-    .bestseller-section .product-card-name {
-        font-size: 12px;
-        line-height: 1.3;
-        margin-bottom: 4px;
-        -webkit-line-clamp: 2;
-    }
-
-    .bestseller-section .product-card-price {
+    
+    .rating-text {
         font-size: 13px;
-    }
-
-    .bestseller-section .card-current-price {
-        font-size: 13px;
-    }
-
-    .bestseller-section .card-original-price {
-        font-size: 11px;
-    }
-
-    .bestseller-section .product-card-delivery {
-        font-size: 10px;
-        margin-top: 4px;
     }
 }
 
-/* Recommended Categories - Horizontal Mobile Layout with Images */
-@media (max-width: 768px) {
-    .recommended-section {
-        padding: 20px 12px;
-        margin: 16px 0;
+/* Extra small devices */
+@media (max-width: 480px) {
+    .product-title {
+        font-size: 16px;
     }
-
-    .recommended-section .section-title {
-        font-size: 18px;
-        padding: 0 8px 12px;
-        margin-bottom: 12px;
+    
+    .current-price {
+        font-size: 22px;
     }
-
-    .recommended-section .category-grid {
-        display: flex !important;
-        gap: 15px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        padding: 4px 0;
+    
+    .variant-grid {
+        grid-template-columns: 1fr;
     }
-
-    .recommended-section .category-grid::-webkit-scrollbar {
-        display: none;
+    
+    .usp-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
     }
-
-    .recommended-section .category-card {
-        min-width: 90px;
-        max-width: 90px;
-        flex-shrink: 0;
+    
+    .related-grid {
+        grid-template-columns: 1fr;
     }
-
-    .recommended-section .category-image {
-        width: 90px;
-        height: 90px;
-        border-radius: 50%;
-        object-fit: cover;
-        margin-bottom: 8px;
-        border: 2px solid #f0f0f0;
-    }
-
-    .recommended-section .category-name {
-        font-size: 11px;
-        line-height: 1.2;
-        text-align: center;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-}
-
-/* Tablet adjustments for bestseller and categories */
-@media (min-width: 769px) and (max-width: 991px) {
-    .bestseller-section .products-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-    }
-
-    .recommended-section .category-grid {
-        grid-template-columns: repeat(4, 1fr) !important;
+    
+    .mobile-slider {
+        height: 200px;
     }
 }
 </style>
 
-<!-- Breadcrumb -->
-<div class="breadcrumb-nav desktop-only">
-    <a href="{% url 'core:home' %}">Home</a>
-    <span>/</span>
-    <a href="{% url 'products:product_list' %}">Online Flower Delivery</a>
-    <span>/</span>
-    <span>{{ product.name }}</span>
+<!-- Mobile Header -->
+<div class="mobile-header">
+    <div class="mobile-header-content">
+        <button class="back-btn" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="header-actions">
+            <button class="header-btn" onclick="shareProduct()">
+                <i class="fas fa-share-alt"></i>
+            </button>
+            <button class="header-btn" onclick="toggleWishlist()">
+                <i class="far fa-heart" id="wishlistIcon"></i>
+            </button>
+            <a href="{% url 'cart:cart' %}" class="header-btn">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-badge">{{ cart_count|default:0 }}</span>
+            </a>
+        </div>
+    </div>
 </div>
 
-<div class="product-detail-wrapper">
-    <!-- Main Product Section -->
-    <div class="product-main-section">
-        <div class="product-grid">
-            <!-- Product Gallery -->
-            <div class="product-gallery">
-                <div class="gallery-main-image">
-                    <img src="{{ product|product_image_url }}"
-                         alt="{{ product.name }}"
-                         class="main-image"
-                         id="mainImage"
-                         onerror="this.src='{% static 'images/products/default.jpg' %}'">
-                    
-                    <button class="wishlist-btn" onclick="toggleWishlist({{ product.id }})">
-                        <i class="far fa-heart"></i>
-                    </button>
-                    
-                    <button class="gallery-nav-btn prev" onclick="previousImage()">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <button class="gallery-nav-btn next" onclick="nextImage()">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-
-                <!-- Image Thumbnails -->
-                {% if product.all_images %}
-                <div class="gallery-thumbnails" style="display: flex; gap: 10px; margin-top: 15px; overflow-x: auto;">
-                    {% for img in product.all_images %}
-                    <img src="{% if img.image_url %}{{ img.image_url }}{% elif img.image %}{{ img.image.url }}{% endif %}"
-                         alt="{{ product.name }}"
-                         style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 2px solid {% if forloop.first %}var(--primary-color){% else %}#ddd{% endif %};"
-                         onclick="changeMainImage({{ forloop.counter0 }})"
-                         class="thumbnail-img"
-                         data-index="{{ forloop.counter0 }}">
-                    {% endfor %}
-                </div>
+<div class="product-container">
+    <!-- CSRF Token for AJAX -->
+    {% csrf_token %}
+    
+    <div class="product-grid">
+        <!-- Gallery -->
+        <div class="gallery-section">
+            <div style="position: relative;">
+                {% if product.primary_image and product.primary_image.get_image_url %}
+                    <img src="{{ product.primary_image.get_image_url }}" alt="{{ product.name }}" class="main-image" id="mainImage">
+                {% elif product.all_images and product.all_images.0.get_image_url %}
+                    <img src="{{ product.all_images.0.get_image_url }}" alt="{{ product.name }}" class="main-image" id="mainImage">
+                {% else %}
+                    <img src="{% static 'images/products/rose.webp' %}" alt="{{ product.name }}" class="main-image" id="mainImage">
                 {% endif %}
+                
+                <div class="image-badges">
+                    {% if product.is_bestseller %}
+                        <span class="badge">Bestseller</span>
+                    {% endif %}
+                    {% if product.discount_percentage %}
+                        <span class="badge discount">{{ product.discount_percentage }}% OFF</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="thumbnail-row">
+                {% for image in product.all_images %}
+                    <div class="thumbnail {% if forloop.first %}active{% endif %}" 
+                         onclick="changeImage('{{ image.get_image_url|escapejs }}', this)">
+                        <img src="{{ image.get_image_url }}" alt="{{ product.name }}" data-fallback="{% static 'images/products/default.jpg' %}" onerror="this.src=this.dataset.fallback">
+                    </div>
+                {% empty %}
+                    {% if product.primary_image and product.primary_image.get_image_url %}
+                        <div class="thumbnail active">
+                            <img src="{{ product.primary_image.get_image_url }}" alt="{{ product.name }}" data-fallback="{% static 'images/products/default.jpg' %}" onerror="this.src=this.dataset.fallback">
+                        </div>
+                    {% else %}
+                        <div class="thumbnail active">
+                            <img src="{% static 'images/products/rose.webp' %}" alt="{{ product.name }}">
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="info-section">
+            <h1 class="product-title">{{ product.name }}</h1>
+            
+            <div class="rating-row">
+                <div class="stars">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star-half-alt"></i>
+                </div>
+                <span class="rating-text">4.5 (234 Reviews)</span>
             </div>
 
-            <!-- Product Info -->
-            <div class="product-info-section">
-                <div class="product-id">Product ID: {{ product.sku }}</div>
-                <h1 class="product-title">{{ product.name }}</h1>
+            <div class="price-box">
+                <div class="price-row">
+                    <span class="current-price">₹<span id="price">{{ product.current_price|floatformat:0 }}</span></span>
+                    {% if product.discount_price %}
+                        <span class="original-price">₹{{ product.base_price|floatformat:0 }}</span>
+                        <span class="discount-badge">Save ₹{{ product.base_price|add:"-"|add:product.current_price|floatformat:0 }}</span>
+                    {% endif %}
+                </div>
+                <p class="tax-note">Inclusive of all taxes</p>
+            </div>
+
+            {% if product.variants.all %}
+            <div class="variant-section">
+                <h3 class="section-title">Choose Size:</h3>
+                <div class="variant-grid">
+                    {% for variant in product.variants.all %}
+                        <button class="variant-btn {% if forloop.first %}active{% endif %}" 
+                                data-variant-id="{{ variant.id }}"
+                                onclick="selectVariant(this, {{ variant.final_price }})">
+                            <span class="variant-name">{{ variant.name }}</span>
+                            <span class="variant-price">₹{{ variant.final_price|floatformat:0 }}</span>
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="delivery-section">
+                <h3 class="section-title">Delivery Options:</h3>
+                <div class="pincode-check">
+                    <input type="text" class="pincode-input" placeholder="Enter Pincode" id="pincode" maxlength="6">
+                    <button class="check-btn" onclick="checkPincode()">Check</button>
+                </div>
+                <div id="pincode-message"></div>
                 
-                <p class="product-description">
-                    {{ product.description }}
-                </p>
-
-                <!-- Stock Status for non-variant products -->
-                {% if not product.variants.exists %}
-                <div class="stock-status" style="margin: 15px 0; padding: 12px; background: {% if product.stock_quantity > 0 %}#e8f5e9{% else %}#ffebee{% endif %}; border-radius: 8px; display: inline-block;">
-                    {% if product.stock_quantity > 0 %}
-                    <i class="fas fa-check-circle" style="color: #4CAF50;"></i>
-                    <span style="color: #2e7d32; font-weight: 600;">In Stock</span>
-                    {% else %}
-                    <i class="fas fa-times-circle" style="color: #f44336;"></i>
-                    <span style="color: #c62828; font-weight: 600;">Out of Stock</span>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <!-- Product Variants (Size/Weight Selection) -->
-                {% if product.variants.exists %}
-                <div class="variant-section" style="margin: 25px 0; padding: 20px; background: #f8f9fa; border-radius: 12px;">
-                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 15px; color: #333;">
-                        <i class="fas fa-weight"></i> Select Size/Weight
-                    </h3>
-
-                    <div class="variant-options" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
-                        {% for variant in product.variants.all %}
-                        <div class="variant-option {% if forloop.first %}active{% endif %}"
-                             data-variant-id="{{ variant.id }}"
-                             data-price="{{ variant.final_price }}"
-                             data-stock="{{ variant.stock_quantity }}"
-                             data-sku="{{ variant.full_sku }}"
-                             onclick="selectVariant(this)"
-                             style="position: relative; border: 2px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: white;">
-                            <div style="font-weight: 700; font-size: 14px; color: #333; margin-bottom: 5px;">
-                                {{ variant.option1_value|default:variant.name }}
-                            </div>
-                            <div style="font-size: 16px; font-weight: 700; color: var(--primary-color);">
-                                ₹{{ variant.final_price|floatformat:0 }}
-                            </div>
-                            {% if variant.compare_at_price and variant.compare_at_price > variant.final_price %}
-                            <div style="font-size: 12px; color: #999; text-decoration: line-through;">
-                                ₹{{ variant.compare_at_price|floatformat:0 }}
-                            </div>
-                            {% endif %}
-                            {% if variant.stock_quantity > 0 %}
-                            <div style="font-size: 11px; color: #4CAF50; margin-top: 5px;">
-                                <i class="fas fa-check-circle"></i> In Stock
-                            </div>
-                            {% else %}
-                            <div style="font-size: 11px; color: #f44336; margin-top: 5px;">
-                                <i class="fas fa-times-circle"></i> Out of Stock
-                            </div>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
+                <div class="delivery-slots">
+                    <div class="slot-card active" onclick="selectSlot(this, 0)">
+                        <div class="slot-icon">🚚</div>
+                        <div class="slot-name">Same Day</div>
+                        <div class="slot-time">Before 10 PM</div>
                     </div>
-
-                    <!-- Selected variant info (hidden input for cart) -->
-                    <input type="hidden" id="selectedVariantId" value="{{ product.variants.first.id }}">
-                    <input type="hidden" id="selectedVariantPrice" value="{{ product.variants.first.final_price }}">
-                    <input type="hidden" id="selectedVariantSku" value="{{ product.variants.first.full_sku }}">
-                </div>
-                {% endif %}
-
-                <!-- Product Customization -->
-                {% if product.allow_customization %}
-                <div class="customization-section" style="margin: 25px 0; padding: 20px; background: #fff3e0; border-radius: 12px; border: 1px solid #ffe0b2;">
-                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 15px; color: #e65100;">
-                        <i class="fas fa-magic"></i> Personalize Your Gift
-                    </h3>
-
-                    {% if product.customization_note %}
-                    <p style="font-size: 13px; color: #666; margin-bottom: 15px;">{{ product.customization_note }}</p>
-                    {% endif %}
-
-                    {% if product.allow_name_customization %}
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-size: 14px; font-weight: 600; color: #333; margin-bottom: 8px;">
-                            Name on Product (Optional)
-                        </label>
-                        <input type="text"
-                               id="customName"
-                               class="custom-input"
-                               placeholder="Enter name to be written"
-                               maxlength="50"
-                               style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                    <div class="slot-card" onclick="selectSlot(this, 99)">
+                        <div class="slot-icon">⏰</div>
+                        <div class="slot-name">Fixed Time</div>
+                        <div class="slot-time">+₹99</div>
                     </div>
-                    {% endif %}
-
-                    {% if product.allow_message_customization %}
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-size: 14px; font-weight: 600; color: #333; margin-bottom: 8px;">
-                            Custom Message (Optional)
-                        </label>
-                        <textarea id="customMessage"
-                                  class="custom-input"
-                                  placeholder="Enter your custom message"
-                                  rows="3"
-                                  maxlength="200"
-                                  style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
-                        <small style="color: #999; font-size: 12px;">Max 200 characters</small>
+                    <div class="slot-card" onclick="selectSlot(this, 149)">
+                        <div class="slot-icon">🌙</div>
+                        <div class="slot-name">Midnight</div>
+                        <div class="slot-time">+₹149</div>
                     </div>
-                    {% endif %}
-
-                    {% if product.allow_flavor_selection %}
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-size: 14px; font-weight: 600; color: #333; margin-bottom: 8px;">
-                            Select Flavor (Optional)
-                        </label>
-                        <select id="customFlavor"
-                                class="custom-input"
-                                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-                            <option value="">-- Select Flavor --</option>
-                            <option value="Vanilla">Vanilla</option>
-                            <option value="Chocolate">Chocolate</option>
-                            <option value="Strawberry">Strawberry</option>
-                            <option value="Butterscotch">Butterscotch</option>
-                            <option value="Black Forest">Black Forest</option>
-                            <option value="Pineapple">Pineapple</option>
-                            <option value="Red Velvet">Red Velvet</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    {% endif %}
-
-                    <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                        <i class="fas fa-info-circle"></i> Your customization details will be saved with this order
-                    </p>
-                </div>
-                {% endif %}
-
-                <!-- Delivery Pincode Check -->
-                <div class="delivery-check">
-                    <input type="text" 
-                           class="delivery-input" 
-                           placeholder="Enter Delivery Pincode" 
-                           id="pincodeInput">
-                    <button class="check-btn" onclick="checkAvailability()">
-                        CHECK AVAILABILITY
-                    </button>
-                </div>
-
-                <!-- Product Features -->
-                <div class="product-features">
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-shipping-fast"></i>
-                        </div>
-                        <div class="feature-content">
-                            <div class="feature-title">Delivery in 600+ Cities</div>
-                        </div>
-                    </div>
-
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <div class="feature-content">
-                            <div class="feature-title">100% Happiness Guarantee</div>
-                        </div>
-                    </div>
-
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="feature-content">
-                            <div class="feature-title">99.2% On-Time Delivery Avg</div>
-                        </div>
-                    </div>
-
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="feature-content">
-                            <div class="feature-title">Trusted by Millions</div>
-                        </div>
+                    <div class="slot-card" onclick="selectSlot(this, 0)">
+                        <div class="slot-icon">📅</div>
+                        <div class="slot-name">Standard</div>
+                        <div class="slot-time">2-3 Days</div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Price Section -->
-                <div class="price-section">
-                    <div class="price-label">Choose Delivery Date, Tomorrow</div>
-
-                    <div class="price-display">
-                        <span class="current-price" id="displayPrice">
-                            ₹{% if product.variants.exists %}{{ product.variants.first.final_price|floatformat:0 }}{% else %}{{ product.current_price }}{% endif %}
-                        </span>
-                        {% if product.base_price > product.current_price %}
-                            <span class="original-price" id="displayOriginalPrice">₹{{ product.base_price }}</span>
-                            <span class="discount-badge">{{ product.discount_percentage }}% OFF</span>
-                        {% endif %}
-                    </div>
-
-                    <div class="trust-badges">
-                        <span class="trust-badge">
-                            <i class="fas fa-star"></i>
-                            5.0% positive ratings from 30+ Customers
-                        </span>
-                        <span class="trust-badge">
-                            <i class="fas fa-check-circle"></i>
-                            99.2% reviews ratting this Product
-                        </span>
-                        <span class="trust-badge">
-                            <i class="fas fa-smile"></i>
-                            100% Satisfaction Guarantee, else we make it right
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Same Day Delivery -->
-                <div class="same-delivery">
-                    <i class="fas fa-truck"></i>
-                    <span class="same-delivery-text">
-                        Same delivery date, Tomorrow
-                    </span>
-                </div>
-
-                <!-- Pincode Availability Checker -->
-                <div class="pincode-checker" style="margin-bottom: 20px;">
-                    <div style="background: #F5F5F5; padding: 16px; border-radius: 8px;">
-                        <div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px;">
-                            <i class="fas fa-map-marker-alt" style="color: var(--primary-color);"></i>
-                            Check Delivery Availability
+            <div class="addons-section">
+                <h3 class="section-title">Make it Extra Special:</h3>
+                <div class="addon-grid">
+                    <div class="addon-card" data-addon-name="Chocolate Cake" onclick="toggleAddon(this, 299)">
+                        <img src="{% static 'images/products/chocko cake.jpg' %}" alt="Cake" class="addon-img" 
+                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                        <div class="addon-info">
+                            <div class="addon-name">Chocolate Cake</div>
+                            <div class="addon-desc">500g</div>
                         </div>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="pincodeInput" placeholder="Enter Pincode" maxlength="6"
-                                   style="flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-                            <button type="button" id="checkPincodeBtn"
-                                    style="padding: 12px 20px; background: var(--primary-color); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
-                                CHECK
-                            </button>
+                        <div class="addon-price">+₹299</div>
+                    </div>
+                    <div class="addon-card" data-addon-name="Cute Teddy" onclick="toggleAddon(this, 199)">
+                        <img src="{% static 'images/products/teddy.webp' %}" alt="Teddy" class="addon-img"
+                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                        <div class="addon-info">
+                            <div class="addon-name">Cute Teddy</div>
+                            <div class="addon-desc">12 inch</div>
                         </div>
-                        <div id="pincodeResult" style="margin-top: 10px; font-size: 13px;"></div>
+                        <div class="addon-price">+₹199</div>
+                    </div>
+                    <div class="addon-card" data-addon-name="Greeting Card" onclick="toggleAddon(this, 149)">
+                        <img src="{% static 'images/products/card.jpg' %}" alt="Card" class="addon-img"
+                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                        <div class="addon-info">
+                            <div class="addon-name">Greeting Card</div>
+                            <div class="addon-desc">Premium</div>
+                        </div>
+                        <div class="addon-price">+₹149</div>
+                    </div>
+                    <div class="addon-card" data-addon-name="Balloons" onclick="toggleAddon(this, 99)">
+                        <img src="{% static 'images/products/balloons.jpg' %}" alt="Balloons" class="addon-img"
+                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                        <div class="addon-info">
+                            <div class="addon-name">Balloons</div>
+                            <div class="addon-desc">Pack of 10</div>
+                        </div>
+                        <div class="addon-price">+₹99</div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Action Buttons -->
-                <form method="POST" action="{% url 'cart:add_to_cart' %}" id="addToCartForm">
+            <div class="action-row">
+                <div class="qty-selector">
+                    <button type="button" class="qty-btn" onclick="updateQty(-1)">-</button>
+                    <input type="number" class="qty-input" id="qty" name="quantity" value="1" min="1" max="10" readonly>
+                    <button type="button" class="qty-btn" onclick="updateQty(1)">+</button>
+                </div>
+
+                <!-- Add to Cart Form -->
+                <form method="post" action="{% url 'cart:add_to_cart' %}" class="d-inline-block" id="addToCartForm">
                     {% csrf_token %}
                     <input type="hidden" name="product_id" value="{{ product.id }}">
-                    <input type="hidden" name="variant_id" id="selectedVariantId" value="{% if product.variants.exists %}{{ product.variants.first.id }}{% endif %}">
-                    <input type="hidden" name="quantity" value="1">
-
-                    <!-- Customization fields (hidden, will be populated by JavaScript if needed) -->
-                    {% if product.allow_name_customization %}
-                    <input type="hidden" name="custom_name" id="customNameHidden" value="">
-                    {% endif %}
-                    {% if product.allow_message_customization %}
-                    <input type="hidden" name="custom_message" id="customMessageHidden" value="">
-                    {% endif %}
-                    {% if product.allow_flavor_selection %}
-                    <input type="hidden" name="custom_flavor" id="customFlavorHidden" value="">
-                    {% endif %}
-
-                    <div class="action-buttons">
-                        <button type="submit" class="btn-add-cart" name="action" value="add"
-                                {% if not product.variants.exists and product.stock_quantity <= 0 %}disabled style="opacity: 0.5;"{% endif %}>
-                            {% if not product.variants.exists and product.stock_quantity <= 0 %}
-                            <i class="fas fa-times"></i> OUT OF STOCK
-                            {% else %}
-                            <i class="fas fa-shopping-cart"></i> ADD TO CART
-                            {% endif %}
-                        </button>
-                        <button type="submit" class="btn-buy-now" name="action" value="buy_now"
-                                {% if not product.variants.exists and product.stock_quantity <= 0 %}disabled style="opacity: 0.5;"{% endif %}>
-                            BUY NOW
-                        </button>
-                    </div>
+                    <input type="hidden" name="variant_id" id="formVariantId" value="">
+                    <input type="hidden" name="quantity" id="formQuantity" value="1">
+                    <button type="submit" class="btn-cart" id="addCartBtn">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
                 </form>
+
+                <!-- Buy Now: submit same form but redirect handled server-side or via a query param -->
+                <form method="post" action="{% url 'cart:add_to_cart' %}" class="d-inline-block" id="buyNowForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="variant_id" id="buyVariantId" value="">
+                    <input type="hidden" name="quantity" id="buyQuantity" value="1">
+                    <input type="hidden" name="buy_now" value="1">
+                    <button type="submit" class="btn-buy" id="buyNowBtn">
+                        <i class="fas fa-bolt"></i> Buy Now
+                    </button>
+                </form>
+            </div>
+
+            <div class="usp-row">
+                <div class="usp-item">
+                    <div class="usp-icon">🚚</div>
+                    <div class="usp-text">Free Delivery</div>
+                </div>
+                <div class="usp-item">
+                    <div class="usp-icon">🛡️</div>
+                    <div class="usp-text">Safe Payment</div>
+                </div>
+                <div class="usp-item">
+                    <div class="usp-icon">🏆</div>
+                    <div class="usp-text">Best Quality</div>
+                </div>
+                <div class="usp-item">
+                    <div class="usp-icon">↩️</div>
+                    <div class="usp-text">Easy Returns</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Product Add-Ons Section -->
-    {% if available_addons %}
-    <div class="addons-section">
-        <h2 class="section-title">
-            <i class="fas fa-gift"></i> Make It Extra Special - Add Ons
-        </h2>
-        <p class="addons-subtitle">Personalize your gift with these perfect add-ons</p>
+    <!-- Tabs -->
+    <div class="tabs-section">
+        <div class="tab-headers">
+            <button class="tab-btn active" onclick="switchTab(this, 'description')">Description</button>
+            <button class="tab-btn" onclick="switchTab(this, 'details')">Details</button>
+            <button class="tab-btn" onclick="switchTab(this, 'delivery')">Delivery</button>
+            <button class="tab-btn" onclick="switchTab(this, 'reviews')">Reviews</button>
+        </div>
+        
+        <div class="tab-content active" id="tab-description">
+            <h3>About This Product</h3>
+            <p>{{ product.description|linebreaks }}</p>
+            {% if product.care_instructions %}
+                <h4>Care Instructions</h4>
+                <p>{{ product.care_instructions|linebreaks }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="tab-content" id="tab-details">
+            <h3>Product Details</h3>
+            <table style="width:100%; border-collapse:collapse;">
+                <tr style="border-bottom:1px solid #E0E0E0; padding:10px 0;">
+                    <td style="padding:10px 0;">SKU</td>
+                    <td>{{ product.sku }}</td>
+                </tr>
+                <tr style="border-bottom:1px solid #E0E0E0; padding:10px 0;">
+                    <td style="padding:10px 0;">Category</td>
+                    <td>{{ product.category.name }}</td>
+                </tr>
+                <tr style="border-bottom:1px solid #E0E0E0; padding:10px 0;">
+                    <td style="padding:10px 0;">Stock</td>
+                    <td>{% if product.is_in_stock %}In Stock{% else %}Out of Stock{% endif %}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="tab-content" id="tab-delivery">
+            <h3>Delivery Information</h3>
+            <ul>
+                <li>Same Day Delivery available for orders before 5 PM</li>
+                <li>Midnight delivery available with extra charges</li>
+                <li>Free delivery on orders above ₹999</li>
+                <li>We deliver to 500+ cities across India</li>
+            </ul>
+        </div>
+        
+        <div class="tab-content" id="tab-reviews">
+            <h3>Customer Reviews</h3>
+            <p>No reviews yet. Be the first to review!</p>
+        </div>
+    </div>
 
-        <div class="addons-grid">
-            {% for addon in available_addons %}
-            <div class="addon-card">
-                <div class="addon-checkbox-wrapper">
-                    <input type="checkbox"
-                           id="addon_{{ addon.id }}"
-                           name="addon_{{ addon.id }}"
-                           class="addon-checkbox"
-                           data-addon-id="{{ addon.id }}"
-                           data-addon-name="{{ addon.name }}"
-                           data-addon-price="{{ addon.price }}"
-                           onchange="toggleAddon(this)">
-                    <label for="addon_{{ addon.id }}" class="addon-checkbox-label"></label>
-                </div>
-
-                <div class="addon-image-wrapper">
-                    {% if addon.image %}
-                        <img src="{{ addon.image.url }}"
-                             alt="{{ addon.name }}"
-                             class="addon-image"
-                             loading="lazy">
-                    {% else %}
-                        <div class="addon-image-placeholder">
-                            <i class="fas fa-gift fa-3x"></i>
-                        </div>
-                    {% endif %}
-                </div>
-
-                <div class="addon-info">
-                    <h3 class="addon-name">{{ addon.name }}</h3>
-                    {% if addon.description %}
-                        <p class="addon-description">{{ addon.description|truncatewords:10 }}</p>
-                    {% endif %}
-                    <div class="addon-price">₹{{ addon.price|floatformat:0 }}</div>
+    <!-- Related Products Section -->
+    {% if related_products %}
+    <div class="related-section">
+        <h2 class="related-title">You May Also Like</h2>
+        <div class="related-grid">
+            {% for related in related_products %}
+            <div class="related-card" onclick="window.location.href='{{ related.get_absolute_url }}'">
+                {% if related.primary_image and related.primary_image.get_image_url %}
+                    <img src="{{ related.primary_image.get_image_url }}" alt="{{ related.name }}" class="related-img" data-fallback="{% static 'images/products/default.jpg' %}" onerror="this.src=this.dataset.fallback">
+                {% elif related.all_images and related.all_images.0.get_image_url %}
+                    <img src="{{ related.all_images.0.get_image_url }}" alt="{{ related.name }}" class="related-img" data-fallback="{% static 'images/products/default.jpg' %}" onerror="this.src=this.dataset.fallback">
+                {% else %}
+                    <img src="{% static 'images/products/default.jpg' %}" alt="{{ related.name }}" class="related-img">
+                {% endif %}
+                <div class="related-info">
+                    <div class="related-name">{{ related.name|truncatechars:30 }}</div>
+                    <div class="related-price">₹{{ related.current_price|floatformat:0 }}</div>
                 </div>
             </div>
             {% endfor %}
-        </div>
-
-        <div class="addons-summary">
-            <div class="selected-addons-list" id="selectedAddonsList">
-                <span class="no-addons-text">No add-ons selected</span>
-            </div>
-            <div class="addons-total">
-                <span>Add-ons Total:</span>
-                <strong id="addonsTotal">₹0</strong>
-            </div>
         </div>
     </div>
     {% endif %}
+</div>
 
-    <!-- Care Instructions -->
-    <div class="care-instructions-section">
-        <h2 class="section-title">Care Instructions</h2>
-        <div class="care-steps">
-            <div class="care-step">
-                <div class="step-title">1. Unpack Gently</div>
-                <div class="step-description">
-                    Cautiously remove the bouquet using scissors and any outer plastic or silk from around the stems. Be cautious while doing so to let the flowers breathe and bloom naturally.
-                </div>
-            </div>
-            
-            <div class="care-step">
-                <div class="step-title">2. Trim the Stems</div>
-                <div class="step-description">
-                    Cut 2-3 inches of the stems at a 45-degree angle to help them absorb water more effectively.
-                </div>
-            </div>
-            
-            <div class="care-step">
-                <div class="step-title">3. Prepare the Vase</div>
-                <div class="step-description">
-                    Fill a clean vase with fresh water. For extra nourishment, add a teaspoon of sugar and a few drops of lemon juice or use the included flower food.
-                </div>
-            </div>
-            
-            <div class="care-step">
-                <div class="step-title">4. Remove Dying Foliage</div>
-                <div class="step-description">
-                    Pluck off any leaves that will sit below the waterline to prevent bacterial growth.
-                </div>
-            </div>
-            
-            <div class="care-step">
-                <div class="step-title">5. Choose the Right Spot</div>
-                <div class="step-description">
-                    Place your flowers in a cool area with indirect sunlight – away from heat, direct sun, or cool drafts.
-                </div>
-            </div>
-            
-            <div class="care-step">
-                <div class="step-title">6. Refresh Regularly</div>
-                <div class="step-description">
-                    Change the water every two days and re-trim the stems to keep your blooms fresher for longer.
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Mobile Footer -->
+<div class="mobile-footer">
+    <div class="mobile-price">Total: ₹<span id="mobilePrice">{{ product.current_price|floatformat:0 }}</span></div>
+    <div class="mobile-buttons">
+        <form method="post" action="{% url 'cart:add_to_cart' %}" id="mobileAddForm" class="d-inline-block">
+            {% csrf_token %}
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <input type="hidden" name="variant_id" id="mobileFormVariantId" value="">
+            <input type="hidden" name="quantity" id="mobileFormQuantity" value="1">
+            <button type="submit" class="btn-cart">Add to Cart</button>
+        </form>
 
-    <!-- Recommended Categories -->
-    <div class="recommended-section">
-        <h2 class="section-title">RECOMMENDED CATEGORIES</h2>
-        <div class="category-grid">
-            {% for category in recommended_categories %}
-            <a href="{% url 'products:category_detail' category.slug %}" class="category-card">
-                {% if category.image %}
-                <img src="{{ category.image.url }}" alt="{{ category.name }}" class="category-image">
-                {% else %}
-                <img src="{% static 'images/category/default.png' %}" alt="{{ category.name }}" class="category-image">
-                {% endif %}
-                <div class="category-name">{{ category.name }}</div>
-            </a>
-            {% empty %}
-            <a href="{% url 'products:product_list' %}?search=flower" class="category-card">
-                <img src="{% static 'images/category/flowers.webp' %}" alt="Flowers" class="category-image">
-                <div class="category-name">Flowers</div>
-            </a>
-            <a href="{% url 'products:product_list' %}?search=cake" class="category-card">
-                <img src="{% static 'images/category/cake.webp' %}" alt="Cakes" class="category-image">
-                <div class="category-name">Cakes</div>
-            </a>
-            <a href="{% url 'products:product_list' %}?search=personalized" class="category-card">
-                <img src="{% static 'images/category/gifts.webp' %}" alt="Personalised Gifts" class="category-image">
-                <div class="category-name">Personalised Gifts</div>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- Best Seller Products -->
-    <div class="bestseller-section">
-        <h2 class="section-title">BEST SELLER PRODUCTS</h2>
-        <div class="products-grid">
-            {% for item in bestseller_products %}
-                <a href="{% url 'products:product_detail' item.slug %}" class="product-card">
-                    <div class="product-image-wrapper">
-                        <img src="{{ item|product_image_url }}"
-                             alt="{{ item.name }}"
-                             class="product-image"
-                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
-                    </div>
-                    <div class="product-card-info">
-                        <div class="product-card-name">{{ item.name }}</div>
-                        <div class="product-card-price">
-                            <span class="card-current-price">Rs. {{ item.current_price }}</span>
-                            {% if item.base_price > item.current_price %}
-                                <span class="card-original-price">Rs. {{ item.base_price }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="product-card-delivery">Earliest Delivery Tomorrow</div>
-                    </div>
-                </a>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- Find More Products -->
-    <div class="find-more-section">
-        <h2 class="section-title">RELATED PRODUCTS</h2>
-
-        <div class="products-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
-            {% for item in related_products %}
-            <a href="{% url 'products:product_detail' item.slug %}" class="product-card">
-                <div class="product-image-wrapper">
-                    <img src="{{ item|product_image_url }}"
-                         alt="{{ item.name }}"
-                         class="product-image"
-                         onerror="this.src='{% static 'images/products/default.jpg' %}'">
-                </div>
-                <div class="product-card-info">
-                    <div class="product-card-name">{{ item.name|truncatewords:5 }}</div>
-                    <div class="product-card-price">
-                        <span class="card-current-price">₹{{ item.current_price|floatformat:0 }}</span>
-                        {% if item.base_price > item.current_price %}
-                        <span class="card-original-price">₹{{ item.base_price|floatformat:0 }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </a>
-            {% empty %}
-            <p style="color: #666; grid-column: 1 / -1; text-align: center;">No related products found</p>
-            {% endfor %}
-        </div>
-
-        <div id="flowersContent" class="filter-content" style="display: none;">
-            <div>
-                <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">By Type</h4>
-                <a href="#" class="filter-link">Lilies</a>
-                <a href="#" class="filter-link">Orchids</a>
-                <a href="#" class="filter-link">Roses</a>
-                <span class="view-more-btn">View 2 more</span>
-            </div>
-            
-            <div>
-                <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">By Occasion</h4>
-                <a href="#" class="filter-link">Birthday</a>
-                <a href="#" class="filter-link">Anniversary</a>
-                <a href="#" class="filter-link">Father's Day</a>
-                <span class="view-more-btn">View 2 more</span>
-            </div>
-            
-            <div>
-                <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">By Recipient</h4>
-                <a href="#" class="filter-link">For Her</a>
-                <a href="#" class="filter-link">For Him</a>
-                <a href="#" class="filter-link">For Wife</a>
-                <span class="view-more-btn">View 4 more</span>
-            </div>
-            
-            <div>
-                <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">By Colors</h4>
-                <a href="#" class="filter-link">Red Color</a>
-                <a href="#" class="filter-link">White Color</a>
-                <a href="#" class="filter-link">Pink Color</a>
-                <span class="view-more-btn">View 2 more</span>
-            </div>
-            
-            <div>
-                <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">By Cities</h4>
-                <a href="#" class="filter-link">Delhi</a>
-                <a href="#" class="filter-link">Mumbai</a>
-                <a href="#" class="filter-link">Kolkata</a>
-                <span class="view-more-btn">View 3 more</span>
-            </div>
-        </div>
+        <form method="post" action="{% url 'cart:add_to_cart' %}" id="mobileBuyForm" class="d-inline-block">
+            {% csrf_token %}
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <input type="hidden" name="variant_id" id="mobileBuyVariantId" value="">
+            <input type="hidden" name="quantity" id="mobileBuyQuantity" value="1">
+            <input type="hidden" name="buy_now" value="1">
+            <button type="submit" class="btn-buy">Buy Now</button>
+        </form>
     </div>
 </div>
 
 <script>
-// Image Gallery Navigation
-let currentImageIndex = 0;
-const images = [
-    {% for img in product.all_images %}
-        "{% if img.image_url %}{{ img.image_url }}{% elif img.image %}{{ img.image.url }}{% endif %}"{% if not forloop.last %},{% endif %}
-    {% empty %}
-        "{{ product|product_image_url }}"
-    {% endfor %}
-];
+// Product data
+const productId = {{ product.id }};
+const productName = "{{ product.name|escapejs }}";
+let basePrice = {{ product.current_price|floatformat:0 }};
+let totalPrice = basePrice;
+let selectedAddons = [];
+let quantity = 1;
+let selectedVariantId = null;
+let deliveryCharge = 0;
 
-function nextImage() {
-    if (images.length > 0) {
-        currentImageIndex = (currentImageIndex + 1) % images.length;
-        document.getElementById('mainImage').src = images[currentImageIndex];
-        updateThumbnailBorders();
-    }
-}
-
-function previousImage() {
-    if (images.length > 0) {
-        currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
-        document.getElementById('mainImage').src = images[currentImageIndex];
-        updateThumbnailBorders();
-    }
-}
-
-function changeMainImage(index) {
-    currentImageIndex = index;
-    document.getElementById('mainImage').src = images[index];
-    updateThumbnailBorders();
-}
-
-function updateThumbnailBorders() {
-    const thumbnails = document.querySelectorAll('.thumbnail-img');
-    thumbnails.forEach((thumb, idx) => {
-        thumb.style.borderColor = idx === currentImageIndex ? 'var(--primary-color)' : '#ddd';
-    });
-}
-
-// Check Delivery Availability
-function checkPincodeAvailability() {
-    const pincode = document.getElementById('pincodeInput').value.trim();
-    const resultDiv = document.getElementById('pincodeResult');
-    const checkBtn = document.getElementById('checkPincodeBtn');
-
-    if (!pincode) {
-        resultDiv.innerHTML = '<span style="color: #d32f2f;">Please enter a pincode</span>';
-        return;
-    }
-
-    if (pincode.length !== 6 || !/^\d+$/.test(pincode)) {
-        resultDiv.innerHTML = '<span style="color: #d32f2f;">Please enter a valid 6-digit pincode</span>';
-        return;
-    }
-
-    // Show loading
-    checkBtn.disabled = true;
-    checkBtn.textContent = 'CHECKING...';
-    resultDiv.innerHTML = '<span style="color: #666;">Checking availability...</span>';
-
-    // Get selected variant if any
-    const variantId = document.getElementById('selectedVariantId')?.value || '';
-
-    // Make AJAX request to check delivery availability
-    const url = `/products/api/check-pincode/?pincode=${pincode}&product_id={{ product.id }}${variantId ? '&variant_id=' + variantId : ''}`;
-
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.available) {
-                resultDiv.innerHTML = `
-                    <div style="color: #2e7d32; display: flex; align-items: center; gap: 8px;">
-                        <i class="fas fa-check-circle"></i>
-                        <div>
-                            <strong>${data.message}</strong>
-                            ${data.seller_location ? `<div style="font-size: 12px; color: #666; margin-top: 4px;">Ships from ${data.seller_location.city}, ${data.seller_location.state}</div>` : ''}
-                        </div>
-                    </div>
-                `;
-            } else if (data.success && !data.available) {
-                resultDiv.innerHTML = `
-                    <div style="color: #d32f2f; display: flex; align-items: center; gap: 8px;">
-                        <i class="fas fa-times-circle"></i>
-                        <strong>${data.message}</strong>
-                    </div>
-                `;
-            } else {
-                resultDiv.innerHTML = `<span style="color: #d32f2f;">${data.error || 'Unable to check availability'}</span>`;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            resultDiv.innerHTML = '<span style="color: #d32f2f;">Error checking availability. Please try again.</span>';
-        })
-        .finally(() => {
-            checkBtn.disabled = false;
-            checkBtn.textContent = 'CHECK';
-        });
-}
-
-// Add event listener for pincode check
-document.addEventListener('DOMContentLoaded', function() {
-    const checkPincodeBtn = document.getElementById('checkPincodeBtn');
-    const pincodeInput = document.getElementById('pincodeInput');
-
-    if (checkPincodeBtn) {
-        checkPincodeBtn.addEventListener('click', checkPincodeAvailability);
-    }
-
-    if (pincodeInput) {
-        pincodeInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                checkPincodeAvailability();
-            }
-        });
-
-        // Only allow numbers
-        pincodeInput.addEventListener('input', function(e) {
-            this.value = this.value.replace(/[^0-9]/g, '');
-        });
-    }
-});
-
-// Get CSRF token helper
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -2126,264 +1258,205 @@ function getCookie(name) {
             }
         }
     }
-    // Fallback to meta tag if cookie not found
-    if (!cookieValue) {
-        const meta = document.querySelector('meta[name="csrf-token"]');
-        if (meta) {
-            cookieValue = meta.getAttribute('content');
-        }
-    }
     return cookieValue;
 }
 
-// Form submission handler - sync customization fields before submit
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('addToCartForm');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            // Sync customization data to hidden fields
-            const customNameInput = document.getElementById('customName');
-            const customMessageInput = document.getElementById('customMessage');
-            const customFlavorInput = document.getElementById('customFlavor');
-
-            if (customNameInput) {
-                const hiddenInput = document.getElementById('customNameHidden');
-                if (hiddenInput) hiddenInput.value = customNameInput.value;
-            }
-
-            if (customMessageInput) {
-                const hiddenInput = document.getElementById('customMessageHidden');
-                if (hiddenInput) hiddenInput.value = customMessageInput.value;
-            }
-
-            if (customFlavorInput) {
-                const hiddenInput = document.getElementById('customFlavorHidden');
-                if (hiddenInput) hiddenInput.value = customFlavorInput.value;
-            }
-
-            // Check which button was clicked
-            const clickedButton = e.submitter;
-            if (clickedButton && clickedButton.getAttribute('name') === 'action') {
-                const action = clickedButton.value;
-
-                // For "buy_now", we'll let the form submit normally
-                // The backend will redirect to cart page
-                if (action === 'buy_now') {
-                    // Just let the form submit normally
-                    return true;
-                }
-            }
-
-            // For regular "add to cart", you can optionally use AJAX here
-            // For now, we'll let it submit normally and redirect
-        });
-    }
-});
-
-// Show notification helper
-function showNotification(type, message) {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-        <span>${message}</span>
-    `;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'success' ? '#4CAF50' : '#f44336'};
-        color: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 14px;
-        animation: slideIn 0.3s ease;
-    `;
-
-    document.body.appendChild(notification);
-
-    // Remove after 3 seconds
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+function changeImage(url, thumb) {
+    document.getElementById('mainImage').src = url;
+    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+    if(thumb) thumb.classList.add('active');
 }
 
-// Buy Now functionality is now handled by the form submission
-// When user clicks "BUY NOW" button, the form submits and backend redirects to cart
+function selectVariant(btn, price) {
+    document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    basePrice = price;
+    selectedVariantId = btn.dataset.variantId;
+    updatePrice();
+    // update hidden form fields
+    const formVariant = document.getElementById('formVariantId');
+    const buyVariant = document.getElementById('buyVariantId');
+    if(formVariant) formVariant.value = selectedVariantId || '';
+    if(buyVariant) buyVariant.value = selectedVariantId || '';
+    // mobile forms
+    const mFormVar = document.getElementById('mobileFormVariantId');
+    const mBuyVar = document.getElementById('mobileBuyVariantId');
+    if(mFormVar) mFormVar.value = selectedVariantId || '';
+    if(mBuyVar) mBuyVar.value = selectedVariantId || '';
+}
 
-// Toggle Wishlist
-function toggleWishlist(productId) {
-    const btn = event.currentTarget;
-    const icon = btn.querySelector('i');
+function selectSlot(card, charge) {
+    document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    deliveryCharge = charge;
+    updatePrice();
+}
+
+function toggleAddon(card, price) {
+    const addonName = card.dataset.addonName;
     
-    if (icon.classList.contains('far')) {
-        icon.classList.remove('far');
-        icon.classList.add('fas');
-        btn.style.background = 'var(--primary-color)';
-        btn.style.color = 'white';
-    } else {
-        icon.classList.remove('fas');
-        icon.classList.add('far');
-        btn.style.background = 'white';
-        btn.style.color = '#333';
-    }
-}
-
-// Switch Filter Tabs
-function switchTab(tabName) {
-    // Remove active class from all tabs
-    const tabs = document.querySelectorAll('.filter-tab');
-    tabs.forEach(tab => tab.classList.remove('active'));
-
-    // Add active class to clicked tab
-    event.target.classList.add('active');
-
-    // You can add logic to show different content based on tab
-    console.log('Switched to:', tabName);
-}
-
-// Variant Selection
-function selectVariant(element) {
-    // Remove active class from all variants
-    const variants = document.querySelectorAll('.variant-option');
-    variants.forEach(v => {
-        v.style.borderColor = '#ddd';
-        v.classList.remove('active');
-    });
-
-    // Add active class to selected variant
-    element.style.borderColor = 'var(--primary-color)';
-    element.classList.add('active');
-
-    // Get variant data
-    const variantId = element.getAttribute('data-variant-id');
-    const price = element.getAttribute('data-price');
-    const stock = element.getAttribute('data-stock');
-    const sku = element.getAttribute('data-sku');
-
-    // Update hidden inputs
-    document.getElementById('selectedVariantId').value = variantId;
-    document.getElementById('selectedVariantPrice').value = price;
-    document.getElementById('selectedVariantSku').value = sku;
-
-    // Update displayed price
-    const priceDisplay = document.getElementById('displayPrice');
-    if (priceDisplay) {
-        priceDisplay.textContent = '₹' + parseFloat(price).toFixed(0);
-    }
-
-    // Update product ID in description (optional)
-    const productIdDisplay = document.querySelector('.product-id');
-    if (productIdDisplay) {
-        productIdDisplay.textContent = 'Product ID: ' + sku;
-    }
-
-    // Check stock and update add to cart button
-    const addToCartBtn = document.querySelector('.btn-add-cart');
-    if (addToCartBtn) {
-        if (parseInt(stock) > 0) {
-            addToCartBtn.disabled = false;
-            addToCartBtn.style.opacity = '1';
-            addToCartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> ADD TO CART';
-        } else {
-            addToCartBtn.disabled = true;
-            addToCartBtn.style.opacity = '0.5';
-            addToCartBtn.innerHTML = '<i class="fas fa-times"></i> OUT OF STOCK';
-        }
-    }
-
-    console.log('Selected variant:', { variantId, price, stock, sku });
-}
-
-// Initialize first variant on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const firstVariant = document.querySelector('.variant-option.active');
-    if (firstVariant) {
-        selectVariant(firstVariant);
-    }
-});
-
-// Add-ons functionality
-let selectedAddons = [];
-let addonsTotal = 0;
-
-function toggleAddon(checkbox) {
-    const card = checkbox.closest('.addon-card');
-    const addonId = parseInt(checkbox.dataset.addonId);
-    const addonName = checkbox.dataset.addonName;
-    const addonPrice = parseFloat(checkbox.dataset.addonPrice);
-
-    console.log('Toggle addon:', addonId, addonName, checkbox.checked);
-
-    if (checkbox.checked) {
-        // Add addon
-        card.classList.add('selected');
-        selectedAddons.push({
-            id: addonId,
-            name: addonName,
-            price: addonPrice
-        });
-        addonsTotal += addonPrice;
-    } else {
-        // Remove addon
+    if(card.classList.contains('selected')) {
         card.classList.remove('selected');
-        selectedAddons = selectedAddons.filter(addon => addon.id !== addonId);
-        addonsTotal -= addonPrice;
-    }
-
-    console.log('Selected addons:', selectedAddons);
-    updateAddonsSummary();
-}
-
-function updateAddonsSummary() {
-    const listElement = document.getElementById('selectedAddonsList');
-    const totalElement = document.getElementById('addonsTotal');
-
-    if (selectedAddons.length === 0) {
-        listElement.innerHTML = '<span class="no-addons-text">No add-ons selected</span>';
+        selectedAddons = selectedAddons.filter(a => a.name !== addonName);
     } else {
-        listElement.innerHTML = selectedAddons.map(addon =>
-            `<span class="addon-tag">${addon.name} - ₹${addon.price.toFixed(0)}</span>`
-        ).join('');
+        card.classList.add('selected');
+        selectedAddons.push({name: addonName, price: price});
     }
-
-    totalElement.textContent = '₹' + addonsTotal.toFixed(0);
-
-    // Update hidden form inputs or localStorage for cart submission
-    // You can add hidden inputs to the product form to send selected addons
-    updateAddonFormInputs();
+    updatePrice();
 }
 
-function updateAddonFormInputs() {
-    // Remove existing addon inputs
-    const form = document.getElementById('addToCartForm');
-    if (!form) {
-        console.error('Form not found!');
+function updateQty(change) {
+    quantity = Math.max(1, Math.min(10, quantity + change));
+    document.getElementById('qty').value = quantity;
+    updatePrice();
+    // update hidden form quantity fields
+    const q = document.getElementById('formQuantity');
+    const bq = document.getElementById('buyQuantity');
+    if(q) q.value = quantity;
+    if(bq) bq.value = quantity;
+    // mobile quantity fields
+    const mq = document.getElementById('mobileFormQuantity');
+    const mbq = document.getElementById('mobileBuyQuantity');
+    if(mq) mq.value = quantity;
+    if(mbq) mbq.value = quantity;
+}
+
+function updatePrice() {
+    let addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
+    totalPrice = (basePrice + addonTotal) * quantity + deliveryCharge;
+    document.getElementById('price').textContent = totalPrice;
+    document.getElementById('mobilePrice').textContent = totalPrice;
+}
+
+function switchTab(btn, tabId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tabId).classList.add('active');
+}
+
+function toggleWishlist() {
+    const icon = document.getElementById('wishlistIcon');
+    {% if user.is_authenticated %}
+        // Make AJAX call to toggle wishlist
+        showToast('Wishlist feature coming soon!');
+    {% else %}
+        showToast('Please login to add to wishlist');
+        setTimeout(() => {
+            window.location.href = '{% url "users:login" %}?next={{ request.path }}';
+        }, 1000);
+    {% endif %}
+}
+
+function shareProduct() {
+    if(navigator.share) {
+        navigator.share({
+            title: '{{ product.name|escapejs }}',
+            text: 'Check out this amazing product!',
+            url: window.location.href
+        });
+    } else {
+        navigator.clipboard.writeText(window.location.href);
+        showToast('Link copied to clipboard!');
+    }
+}
+
+function checkPincode() {
+    const pincode = document.getElementById('pincode').value;
+    const messageDiv = document.getElementById('pincode-message');
+    
+    if(pincode.length !== 6) {
+        messageDiv.innerHTML = '<p style="color:red;">Please enter valid 6-digit pincode</p>';
         return;
     }
+    
+    // Simulate pincode check
+    const validPrefixes = ['110', '120', '400', '500', '560', '600'];
+    const isValid = validPrefixes.some(prefix => pincode.startsWith(prefix));
+    
+    if(isValid) {
+        messageDiv.innerHTML = '<p style="color:green;">✓ Delivery available for ' + pincode + '</p>';
+    } else {
+        messageDiv.innerHTML = '<p style="color:red;">✗ Delivery not available for ' + pincode + '</p>';
+    }
+}
 
-    const existingInputs = form.querySelectorAll('input[name="addon_ids[]"]');
-    existingInputs.forEach(input => input.remove());
+function addToCart() {
+    {% if user.is_authenticated %}
+        const btn = document.getElementById('addCartBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        
+        // Prepare cart data
+        const cartData = {
+            product_id: productId,
+            quantity: quantity,
+            variant_id: selectedVariantId,
+            addons: selectedAddons.map(a => a.name),
+            total_price: totalPrice
+        };
+        
+        // For now, just show success (you can implement actual AJAX call later)
+        setTimeout(() => {
+            showToast(productName + ' added to cart!');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+            
+            // Update cart badge
+            const badges = document.querySelectorAll('.cart-badge');
+            badges.forEach(badge => {
+                const count = parseInt(badge.textContent) || 0;
+                badge.textContent = count + quantity;
+            });
+        }, 1000);
+        
+    {% else %}
+        showToast('Please login to add to cart');
+        setTimeout(() => {
+            window.location.href = '{% url "users:login" %}?next={{ request.path }}';
+        }, 1000);
+    {% endif %}
+}
 
-    // Add new addon inputs (using array notation for Django)
-    selectedAddons.forEach(addon => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'addon_ids[]';
-        input.value = addon.id;
-        form.appendChild(input);
-        console.log('Added hidden input:', input.name, input.value);
-    });
+function buyNow() {
+    {% if user.is_authenticated %}
+        // First add to cart
+        addToCart();
+        // Then redirect to cart after a delay
+        setTimeout(() => {
+            window.location.href = '{% url "cart:cart" %}';
+        }, 1500);
+    {% else %}
+        showToast('Please login to continue');
+        setTimeout(() => {
+            window.location.href = '{% url "users:login" %}?next={{ request.path }}';
+        }, 1000);
+    {% endif %}
+}
 
-    console.log('Form inputs updated. Total addon inputs:', form.querySelectorAll('input[name="addon_ids[]"]').length);
+function showToast(message) {
+    // Remove any existing toast
+    const existingToast = document.querySelector('.toast-msg');
+    if(existingToast) existingToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-msg';
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 24px;
+        z-index: 10000;
+        animation: slideUp 0.3s ease;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
 }
 </script>
-
 {% endblock %}

@@ -13,8 +13,12 @@
         {% endif %}
         
         <div class="mobile-logo">
-            <a href="{% url 'core:home' %}" style="text-decoration: none; color: var(--primary-color);">
-                {{ page_title|default:"GiftTree" }}
+            <a href="{% url 'core:home' %}" class="mobile-logo-link">
+                {% if site_settings.site_logo %}
+                    <img src="{{ site_settings.site_logo.url }}" alt="{{ site_settings.site_name }}" class="mobile-site-logo">
+                {% else %}
+                    <span style="color: var(--primary-color); font-weight: 700;">{{ site_settings.site_name|default:"GiftTree" }}</span>
+                {% endif %}
             </a>
         </div>
         
@@ -54,10 +58,10 @@
     {% endif %}
     
     {% if show_location_bar %}
-        <div class="location-bar">
+        <div class="location-bar" onclick="openLocationModal()">
             <div style="display: flex; align-items: center; gap: 6px;">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>Deliver to: {{ user_location|default:"Delhi 110001" }}</span>
+                <i class="fas fa-map-marker-alt location-icon"></i>
+                <span id="deliveryLocation" class="location-text">Detecting location...</span>
             </div>
             <i class="fas fa-chevron-down"></i>
         </div>
@@ -83,7 +87,11 @@
 <div class="mobile-menu-drawer" id="mobileMenuDrawer">
     <div class="mobile-menu-header">
         <div class="mobile-menu-logo">
-            <h3>GiftTree</h3>
+            {% if site_settings.site_logo %}
+                <img src="{{ site_settings.site_logo.url }}" alt="{{ site_settings.site_name }}" class="mobile-drawer-logo">
+            {% else %}
+                <h3>{{ site_settings.site_name|default:"GiftTree" }}</h3>
+            {% endif %}
         </div>
         <button class="mobile-menu-close" onclick="toggleMenu()">
             <i class="fas fa-times"></i>
@@ -218,7 +226,351 @@
     </div>
 </div>
 
+<!-- Location Selection Modal -->
+<div class="location-modal-overlay" id="locationModalOverlay" onclick="closeLocationModal()"></div>
+<div class="location-modal" id="locationModal">
+    <div class="location-modal-header">
+        <h3><i class="fas fa-map-marker-alt"></i> Select Delivery Location</h3>
+        <button class="location-modal-close" onclick="closeLocationModal()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <div class="location-modal-content">
+        <button class="detect-location-btn" onclick="detectUserLocation()">
+            <i class="fas fa-crosshairs"></i>
+            <span>Use My Current Location</span>
+        </button>
+        
+        <div class="location-divider">
+            <span>OR</span>
+        </div>
+        
+        <div class="manual-location-input">
+            <input type="text" id="manualLocationInput" 
+                   placeholder="Enter city or pincode" 
+                   class="location-input">
+            <button class="location-search-btn" onclick="searchLocation()">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+        
+        <div id="locationSearchResults" class="location-results"></div>
+        
+        <div class="popular-cities">
+            <h4>Popular Cities</h4>
+            <div class="cities-grid">
+                <button class="city-btn" onclick="setLocation('Delhi', 'DL')">Delhi</button>
+                <button class="city-btn" onclick="setLocation('Mumbai', 'MH')">Mumbai</button>
+                <button class="city-btn" onclick="setLocation('Bangalore', 'KA')">Bangalore</button>
+                <button class="city-btn" onclick="setLocation('Hyderabad', 'TG')">Hyderabad</button>
+                <button class="city-btn" onclick="setLocation('Chennai', 'TN')">Chennai</button>
+                <button class="city-btn" onclick="setLocation('Kolkata', 'WB')">Kolkata</button>
+                <button class="city-btn" onclick="setLocation('Pune', 'MH')">Pune</button>
+                <button class="city-btn" onclick="setLocation('Ahmedabad', 'GJ')">Ahmedabad</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
+/* Location Bar Styles */
+.location-bar {
+    background: #f8f9fa;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.location-bar:active {
+    background: #e9ecef;
+}
+
+.location-icon {
+    color: var(--primary-color);
+    font-size: 14px;
+}
+
+.location-text {
+    font-size: 13px;
+    color: #333;
+    font-weight: 500;
+}
+
+.location-text.detecting {
+    color: #999;
+    font-style: italic;
+}
+
+/* Location Modal Styles */
+.location-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.location-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.location-modal {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    width: 100%;
+    max-height: 70vh;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    z-index: 10001;
+    transition: bottom 0.3s ease;
+    overflow-y: auto;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.location-modal.active {
+    bottom: 0;
+}
+
+.location-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+}
+
+.location-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.location-modal-header i {
+    color: var(--primary-color);
+}
+
+.location-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #666;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.location-modal-close:hover {
+    background: #f0f0f0;
+}
+
+.location-modal-content {
+    padding: 20px;
+}
+
+.detect-location-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+}
+
+.detect-location-btn:active {
+    transform: scale(0.98);
+}
+
+.detect-location-btn i {
+    font-size: 18px;
+}
+
+.location-divider {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+    color: #999;
+    font-size: 12px;
+}
+
+.location-divider::before,
+.location-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e0e0e0;
+}
+
+.location-divider span {
+    padding: 0 15px;
+}
+
+.manual-location-input {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.location-input {
+    flex: 1;
+    padding: 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.location-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.location-search-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    width: 50px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.location-search-btn:active {
+    transform: scale(0.95);
+}
+
+.location-results {
+    margin-bottom: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.location-result-item {
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.location-result-item:hover {
+    background: #f8f9fa;
+}
+
+.location-result-item i {
+    color: var(--primary-color);
+    margin-right: 10px;
+}
+
+.popular-cities {
+    margin-top: 20px;
+}
+
+.popular-cities h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cities-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.city-btn {
+    padding: 12px;
+    background: #f8f9fa;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.city-btn:hover {
+    background: #fff;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.city-btn:active {
+    transform: scale(0.95);
+}
+
+/* Mobile Logo Styles */
+.mobile-logo-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    height: 100%;
+}
+
+.mobile-site-logo {
+    height: 40px;
+    width: auto;
+    max-width: 150px;
+    object-fit: contain;
+    display: block;
+}
+
+.mobile-drawer-logo {
+    height: 35px;
+    width: auto;
+    max-width: 130px;
+    object-fit: contain;
+    display: block;
+}
+
+.mobile-menu-logo {
+    display: flex;
+    align-items: center;
+}
+
+.mobile-menu-logo h3 {
+    margin: 0;
+    font-size: 20px;
+    color: white;
+}
+
 /* Mobile Menu Styles */
 .mobile-menu-overlay {
     position: fixed;
@@ -262,11 +614,6 @@
     padding: 20px;
     background: var(--primary-color);
     color: white;
-}
-
-.mobile-menu-logo h3 {
-    margin: 0;
-    font-size: 20px;
 }
 
 .mobile-menu-close {
@@ -855,5 +1202,210 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('active');
         });
     });
+    
+    // Auto-detect location on page load
+    autoDetectLocation();
+});
+
+// ==================== LOCATION DETECTION FUNCTIONS ====================
+
+// Auto-detect location when page loads
+function autoDetectLocation() {
+    const savedLocation = localStorage.getItem('deliveryLocation');
+    const locationElement = document.getElementById('deliveryLocation');
+    
+    if (!locationElement) return;
+    
+    if (savedLocation) {
+        // Use saved location
+        locationElement.textContent = `Deliver to: ${savedLocation}`;
+        locationElement.classList.remove('detecting');
+    } else {
+        // Try to detect location
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    // Success - get city name from coordinates
+                    reverseGeocode(position.coords.latitude, position.coords.longitude);
+                },
+                function(error) {
+                    // Error or denied - show default
+                    console.log('Geolocation error:', error);
+                    setLocation('Delhi', 'DL');
+                }
+            );
+        } else {
+            // Geolocation not supported
+            setLocation('Delhi', 'DL');
+        }
+    }
+}
+
+// Reverse geocode coordinates to get city name
+function reverseGeocode(latitude, longitude) {
+    const locationElement = document.getElementById('deliveryLocation');
+    
+    // Using OpenStreetMap's Nominatim API (free, no API key required)
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+        .then(response => response.json())
+        .then(data => {
+            const city = data.address.city || data.address.town || data.address.village || data.address.state_district || 'Your Location';
+            const state = data.address.state;
+            
+            // Save and display location
+            const locationText = city;
+            setLocation(locationText, state);
+        })
+        .catch(error => {
+            console.error('Geocoding error:', error);
+            setLocation('Delhi', 'DL');
+        });
+}
+
+// Detect user's current location
+function detectUserLocation() {
+    const locationElement = document.getElementById('deliveryLocation');
+    
+    if (!('geolocation' in navigator)) {
+        alert('Geolocation is not supported by your browser');
+        return;
+    }
+    
+    locationElement.textContent = 'Detecting location...';
+    locationElement.classList.add('detecting');
+    
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            reverseGeocode(position.coords.latitude, position.coords.longitude);
+            closeLocationModal();
+        },
+        function(error) {
+            console.error('Geolocation error:', error);
+            alert('Unable to detect your location. Please select manually or check location permissions.');
+            locationElement.textContent = 'Deliver to: Select Location';
+            locationElement.classList.remove('detecting');
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+        }
+    );
+}
+
+// Set location manually
+function setLocation(city, state) {
+    const locationElement = document.getElementById('deliveryLocation');
+    const locationText = city;
+    
+    if (locationElement) {
+        locationElement.textContent = `Deliver to: ${locationText}`;
+        locationElement.classList.remove('detecting');
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('deliveryLocation', locationText);
+    localStorage.setItem('deliveryCity', city);
+    localStorage.setItem('deliveryState', state || '');
+    
+    // Close modal
+    closeLocationModal();
+    
+    // Optional: Trigger a custom event that can be listened to elsewhere
+    window.dispatchEvent(new CustomEvent('locationChanged', { 
+        detail: { city, state, locationText } 
+    }));
+}
+
+// Search location (manual input)
+function searchLocation() {
+    const input = document.getElementById('manualLocationInput');
+    const query = input.value.trim();
+    
+    if (!query) {
+        alert('Please enter a city or pincode');
+        return;
+    }
+    
+    // Show loading
+    const resultsDiv = document.getElementById('locationSearchResults');
+    resultsDiv.innerHTML = '<p style="text-align: center; padding: 20px; color: #999;">Searching...</p>';
+    
+    // Search using Nominatim API
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)},India&limit=5`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length === 0) {
+                resultsDiv.innerHTML = '<p style="text-align: center; padding: 20px; color: #999;">No results found</p>';
+                return;
+            }
+            
+            // Display results
+            resultsDiv.innerHTML = data.map(result => {
+                const displayName = result.display_name.split(',')[0];
+                return `
+                    <div class="location-result-item" onclick="selectSearchResult('${displayName}')">
+                        <i class="fas fa-map-marker-alt"></i>
+                        ${result.display_name}
+                    </div>
+                `;
+            }).join('');
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            resultsDiv.innerHTML = '<p style="text-align: center; padding: 20px; color: #f44336;">Search failed. Please try again.</p>';
+        });
+}
+
+// Select a result from search
+function selectSearchResult(locationName) {
+    setLocation(locationName, '');
+}
+
+// Open location modal
+function openLocationModal() {
+    const overlay = document.getElementById('locationModalOverlay');
+    const modal = document.getElementById('locationModal');
+    
+    if (overlay && modal) {
+        overlay.classList.add('active');
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Close location modal
+function closeLocationModal() {
+    const overlay = document.getElementById('locationModalOverlay');
+    const modal = document.getElementById('locationModal');
+    
+    if (overlay && modal) {
+        overlay.classList.remove('active');
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+    
+    // Clear search results
+    const resultsDiv = document.getElementById('locationSearchResults');
+    if (resultsDiv) {
+        resultsDiv.innerHTML = '';
+    }
+    
+    const input = document.getElementById('manualLocationInput');
+    if (input) {
+        input.value = '';
+    }
+}
+
+// Allow Enter key for search
+document.addEventListener('DOMContentLoaded', function() {
+    const locationInput = document.getElementById('manualLocationInput');
+    if (locationInput) {
+        locationInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchLocation();
+            }
+        });
+    }
 });
 </script>

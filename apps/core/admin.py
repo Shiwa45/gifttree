@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SiteSettings, Country, BannerImage
+from .models import SiteSettings, Country, BannerImage, WorldwideDeliveryProduct
 
 
 @admin.register(SiteSettings)
@@ -54,6 +54,33 @@ class BannerImageAdmin(admin.ModelAdmin):
         }),
         ('Display Settings', {
             'fields': ('sort_order', 'is_active')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(WorldwideDeliveryProduct)
+class WorldwideDeliveryProductAdmin(admin.ModelAdmin):
+    list_display = ['product', 'estimated_delivery_days', 'international_shipping_charge', 'is_featured', 'sort_order', 'is_active']
+    list_filter = ['is_featured', 'is_active', 'created_at']
+    search_fields = ['product__name', 'delivery_note']
+    list_editable = ['is_featured', 'sort_order', 'is_active']
+    filter_horizontal = ['countries']
+    autocomplete_fields = ['product']
+    readonly_fields = ['created_at', 'updated_at']
+
+    fieldsets = (
+        ('Product Information', {
+            'fields': ('product', 'delivery_note')
+        }),
+        ('Delivery Details', {
+            'fields': ('countries', 'estimated_delivery_days', 'international_shipping_charge')
+        }),
+        ('Display Settings', {
+            'fields': ('is_featured', 'sort_order', 'is_active')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),

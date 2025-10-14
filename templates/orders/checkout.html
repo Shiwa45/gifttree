@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load product_tags %}
 
 {% block title %}Checkout - Complete Your Order | GiftTree{% endblock %}
 
@@ -23,8 +24,10 @@
         <div class="order-items">
             {% for item in cart_items %}
             <div class="order-item">
-                <img src="{% if item.product.primary_image %}{{ item.product.primary_image.get_image_url }}{% else %}{% static 'images/products/default.jpg' %}{% endif %}"
-                     alt="{{ item.product.name }}" class="item-image">
+                <img src="{{ item.product|product_image_url }}"
+                     alt="{{ item.product.name }}"
+                     class="item-image"
+                     onerror="this.src='{% static 'images/products/default.jpg' %}'">
                 <div class="item-details">
                     <h4 class="item-name">{{ item.product.name }}</h4>
                     {% if item.variant %}

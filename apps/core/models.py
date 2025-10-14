@@ -88,3 +88,27 @@ class BannerImage(BaseModel):
 
     def __str__(self):
         return self.title
+
+
+class WorldwideDeliveryProduct(BaseModel):
+    """Products available for worldwide delivery"""
+    product = models.ForeignKey('products.Product', on_delete=models.CASCADE, related_name='worldwide_delivery')
+    countries = models.ManyToManyField(Country, related_name='deliverable_products', blank=True)
+    delivery_note = models.CharField(max_length=200, blank=True, help_text="Special delivery instructions")
+    estimated_delivery_days = models.PositiveIntegerField(default=7, help_text="Estimated delivery days internationally")
+    international_shipping_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Additional shipping charge for international delivery")
+    is_featured = models.BooleanField(default=False, help_text="Show in featured worldwide delivery section")
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', '-created_at']
+        verbose_name = "Worldwide Delivery Product"
+        verbose_name_plural = "Worldwide Delivery Products"
+
+    def __str__(self):
+        return f"{self.product.name} - Worldwide Delivery"
+
+    @property
+    def available_countries(self):
+        """Get list of country names where this product can be delivered"""
+        return self.countries.filter(is_active=True).values_list('name', flat=True)

@@ -33,11 +33,10 @@
                 <div class="col-lg-3 col-md-6 mb-4">
                     <h4 class="footer-heading">About Us</h4>
                     <ul class="footer-links">
-                        <li><a href="#">Customize Your Bouquet</a></li>
-                        <li><a href="#">Become a Partner</a></li>
-                        <li><a href="#">Blog</a></li>
-                        <li><a href="#">Our Story</a></li>
-                        <li><a href="#">Careers</a></li>
+                        <li><a href="{% url 'core:about_us' %}">Our Story</a></li>
+                        <li><a href="{% url 'blog:blog_list' %}">Blog</a></li>
+                        <li><a href="{% url 'core:contact_us' %}">Contact Us</a></li>
+                        <li><a href="{% url 'products:product_list' %}">Shop Now</a></li>
                     </ul>
                 </div>
 
@@ -45,45 +44,52 @@
                 <div class="col-lg-3 col-md-6 mb-4">
                     <h4 class="footer-heading">Quick Links</h4>
                     <ul class="footer-links">
-                        <li><a href="#">Corporate Gifts</a></li>
-                        <li><a href="#">Offers</a></li>
                         <li><a href="{% url 'products:product_list' %}">All Products</a></li>
-                        <li><a href="#">Terms & Conditions</a></li>
-                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="{% url 'core:offers' %}">Special Offers</a></li>
+                        {% if user.is_authenticated %}
+                        <li><a href="{% url 'orders:order_list' %}">My Orders</a></li>
+                        <li><a href="{% url 'users:wishlist' %}">My Wishlist</a></li>
+                        {% else %}
+                        <li><a href="{% url 'users:login' %}">Login</a></li>
+                        <li><a href="{% url 'users:register' %}">Register</a></li>
+                        {% endif %}
                     </ul>
                 </div>
 
-                <!-- Support -->
+                <!-- Customer Service -->
                 <div class="col-lg-3 col-md-6 mb-4">
-                    <h4 class="footer-heading">Support</h4>
+                    <h4 class="footer-heading">Customer Service</h4>
                     <ul class="footer-links">
-                        <li><a href="#">Franchise</a></li>
-                        <li><a href="#">FAQ</a></li>
-                        <li><a href="#">Contact Us</a></li>
-                        <li><a href="#">Track Order</a></li>
+                        <li><a href="{% url 'core:faq' %}">FAQ</a></li>
+                        <li><a href="{% url 'core:contact_us' %}">Contact Us</a></li>
+                        {% if user.is_authenticated %}
+                        <li><a href="{% url 'orders:order_list' %}">Track Order</a></li>
+                        {% endif %}
+                        <li><a href="{% url 'core:terms_conditions' %}">Terms & Conditions</a></li>
+                        <li><a href="{% url 'core:privacy_policy' %}">Privacy Policy</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact & Social -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <h4 class="footer-heading">Contact Info</h4>
+                    <ul class="footer-contact">
                         <li>
-                            <a href="#" class="whatsapp-link">
-                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            <i class="fas fa-envelope"></i>
+                            <a href="mailto:{{ site_settings.contact_email }}">{{ site_settings.contact_email }}</a>
+                        </li>
+                        <li>
+                            <i class="fas fa-phone"></i>
+                            <a href="tel:{{ site_settings.contact_phone }}">{{ site_settings.contact_phone }}</a>
+                        </li>
+                        <li>
+                            <i class="fab fa-whatsapp whatsapp-icon"></i>
+                            <a href="https://wa.me/{{ site_settings.contact_phone|cut:'+' }}" target="_blank" rel="noopener" class="whatsapp-link">
+                                WhatsApp Us
                             </a>
                         </li>
                     </ul>
-                </div>
 
-                <!-- Download App -->
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <h4 class="footer-heading">Download App</h4>
-                    <p class="app-description">Simplify your gifting experience with our app.</p>
-                    <div class="app-buttons">
-                        <a href="#" class="app-btn">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" 
-                                 alt="Get it on Google Play" class="app-badge">
-                        </a>
-                        <a href="#" class="app-btn">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" 
-                                 alt="Download on App Store" class="app-badge">
-                        </a>
-                    </div>
-                    
                     <h5 class="connect-heading">CONNECT WITH US</h5>
                     <div class="social-links">
                         {% if site_settings.facebook_url %}
@@ -135,29 +141,6 @@
             </div>
         </div>
 
-        <!-- International Delivery Section -->
-        {% if featured_countries %}
-        <div class="footer-countries">
-            <h5 class="countries-heading">
-                <i class="fas fa-globe"></i> We Deliver Worldwide
-            </h5>
-            <div class="countries-grid">
-                {% for country in featured_countries %}
-                <div class="country-item" title="{{ country.name }}">
-                    {% if country.flag_image %}
-                        <img src="{{ country.flag_image.url }}" alt="{{ country.name }}" class="country-flag">
-                    {% else %}
-                        <div class="country-flag-placeholder">
-                            <span>{{ country.code }}</span>
-                        </div>
-                    {% endif %}
-                    <span class="country-name">{{ country.name }}</span>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
         <!-- Footer Bottom -->
         <div class="footer-bottom">
             <div class="row align-items-center">
@@ -165,14 +148,14 @@
                     <p class="copyright-text">
                         {{ site_settings.copyright_text }}
                         <span class="divider">|</span>
-                        <a href="#">Privacy Policy</a>
+                        <a href="{% url 'core:privacy_policy' %}">Privacy Policy</a>
                         <span class="divider">|</span>
-                        <a href="#">Terms of Service</a>
+                        <a href="{% url 'core:terms_conditions' %}">Terms of Service</a>
                     </p>
                 </div>
                 <div class="col-md-6 text-center text-md-end">
                     <p class="tagline">
-                        <i class="fas fa-heart text-danger"></i> 
+                        <i class="fas fa-heart text-danger"></i>
                         Delivering Emotions, Not Just Gifts
                     </p>
                 </div>
@@ -279,6 +262,41 @@
 
 .whatsapp-link:hover {
     color: #128C7E !important;
+}
+
+/* Contact Info */
+.footer-contact {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 25px 0;
+}
+
+.footer-contact li {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.footer-contact i {
+    color: var(--secondary-color);
+    font-size: 16px;
+    width: 20px;
+}
+
+.footer-contact a {
+    color: #bdc3c7;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.3s;
+}
+
+.footer-contact a:hover {
+    color: white;
+}
+
+.whatsapp-icon {
+    color: #25D366 !important;
 }
 
 /* App Download Section */
@@ -389,105 +407,6 @@
     color: var(--secondary-color);
 }
 
-/* International Delivery Section */
-.footer-countries {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 30px 0;
-    margin-top: 0;
-}
-
-.countries-heading {
-    font-size: 16px;
-    font-weight: 600;
-    color: white;
-    text-align: center;
-    margin-bottom: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-.countries-heading i {
-    color: var(--secondary-color);
-    font-size: 18px;
-}
-
-.countries-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 20px;
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-.country-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.country-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.country-flag {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
-}
-
-.country-item:hover .country-flag {
-    border-color: var(--secondary-color);
-    transform: scale(1.1);
-}
-
-.country-flag-placeholder {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 3px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
-}
-
-.country-item:hover .country-flag-placeholder {
-    border-color: var(--secondary-color);
-    transform: scale(1.1);
-}
-
-.country-flag-placeholder span {
-    font-size: 12px;
-    font-weight: 700;
-    color: white;
-}
-
-.country-name {
-    font-size: 13px;
-    color: #bdc3c7;
-    text-align: center;
-    font-weight: 500;
-    transition: color 0.3s ease;
-}
-
-.country-item:hover .country-name {
-    color: white;
-}
-
 /* Footer Bottom */
 .footer-bottom {
     padding: 25px 0;
@@ -596,25 +515,6 @@
         width: 45px;
         height: 45px;
     }
-
-    .countries-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 15px;
-    }
-
-    .country-item {
-        padding: 12px 8px;
-    }
-
-    .country-flag,
-    .country-flag-placeholder {
-        width: 45px;
-        height: 45px;
-    }
-
-    .country-name {
-        font-size: 12px;
-    }
 }
 
 @media (max-width: 576px) {
@@ -636,30 +536,6 @@
         width: 36px;
         height: 36px;
         font-size: 14px;
-    }
-
-    .countries-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-
-    .country-item {
-        padding: 10px 6px;
-    }
-
-    .country-flag,
-    .country-flag-placeholder {
-        width: 40px;
-        height: 40px;
-    }
-
-    .country-name {
-        font-size: 11px;
-    }
-
-    .countries-heading {
-        font-size: 14px;
-        margin-bottom: 20px;
     }
 }
 </style>
