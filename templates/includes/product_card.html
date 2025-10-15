@@ -53,9 +53,14 @@
                 {% endif %}
             </div>
             
-            <button class="add-btn" onclick="addProductToCart({{ product.id }}, '{{ product.name|escapejs }}', {{ product.current_price }})">
-                ADD
-            </button>
+            <form method="post" action="{% url 'cart:add_to_cart' %}" class="d-inline-block w-100">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="add-btn" onclick="event.stopPropagation();">
+                    ADD
+                </button>
+            </form>
         </div>
     </div>
 
@@ -108,9 +113,14 @@
                 {% endif %}
             </div>
             
-            <button class="add-to-cart" onclick="addProductToCart({{ product.id }}, '{{ product.name|escapejs }}', {{ product.current_price }})">
-                ADD TO CART
-            </button>
+            <form method="post" action="{% url 'cart:add_to_cart' %}" class="d-inline-block w-100">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="add-to-cart" onclick="event.stopPropagation();">
+                    ADD TO CART
+                </button>
+            </form>
         </div>
     </div>
 
@@ -163,9 +173,14 @@
                 {% endif %}
             </div>
             
-            <button class="add-btn" onclick="addProductToCart({{ product.id }}, '{{ product.name|escapejs }}', {{ product.current_price }})">
-                ADD TO CART
-            </button>
+            <form method="post" action="{% url 'cart:add_to_cart' %}" class="d-inline-block w-100">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="add-btn" onclick="event.stopPropagation();">
+                    ADD TO CART
+                </button>
+            </form>
         </div>
     </div>
 {% endif %}
@@ -204,48 +219,16 @@ function toggleProductWishlist(productId) {
     }
 }
 
-function addProductToCart(productId, productName, price) {
-    // Create cart item object
-    const cartItem = {
-        id: productId,
-        name: productName,
-        price: price,
-        quantity: 1,
-        addons: [],
-        image: document.querySelector(`[data-product-id="${productId}"] .product-image`).src,
-        total: price
-    };
-    
-    // Add to cart (if cart.js is loaded)
-    if (typeof addItemToCart === 'function') {
-        addItemToCart(cartItem);
-    } else {
-        // Fallback for pages without cart.js
-        showToast(`${productName} added to cart!`);
-        
-        // Update cart badge
-        const cartBadges = document.querySelectorAll('.cart-badge, .cart-count');
-        cartBadges.forEach(badge => {
-            const currentCount = parseInt(badge.textContent) || 0;
-            badge.textContent = currentCount + 1;
-        });
-    }
-    
-    // Haptic feedback
-    if (navigator.vibrate) {
-        navigator.vibrate(50);
-    }
-}
-
 // Add click handler to navigate to product detail
 document.addEventListener('DOMContentLoaded', function() {
     const productCards = document.querySelectorAll('.product-card, .product-card-mobile');
     productCards.forEach(card => {
         card.addEventListener('click', function(e) {
-            // Prevent navigation if clicking on buttons
+            // Prevent navigation if clicking on buttons or forms
             if (e.target.closest('.wishlist-btn') || 
                 e.target.closest('.add-to-cart') || 
-                e.target.closest('.add-btn')) {
+                e.target.closest('.add-btn') ||
+                e.target.closest('form')) {
                 return;
             }
             

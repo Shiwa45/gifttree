@@ -1091,7 +1091,7 @@
                 </div>
 
                 <!-- Add to Cart Form -->
-                <form method="post" action="{% url 'cart:add_to_cart' %}" class="d-inline-block" id="addToCartForm">
+                <form method="post" action="{% url 'cart:add_to_cart' %}" class="d-inline-block" id="addToCartForm" onsubmit="updateFormData()">
                     {% csrf_token %}
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <input type="hidden" name="variant_id" id="formVariantId" value="">
@@ -1216,7 +1216,7 @@
 <div class="mobile-footer">
     <div class="mobile-price">Total: ₹<span id="mobilePrice">{{ product.current_price|floatformat:0 }}</span></div>
     <div class="mobile-buttons">
-        <form method="post" action="{% url 'cart:add_to_cart' %}" id="mobileAddForm" class="d-inline-block">
+        <form method="post" action="{% url 'cart:add_to_cart' %}" id="mobileAddForm" class="d-inline-block" onsubmit="updateFormData()">
             {% csrf_token %}
             <input type="hidden" name="product_id" value="{{ product.id }}">
             <input type="hidden" name="variant_id" id="mobileFormVariantId" value="">
@@ -1382,41 +1382,36 @@ function checkPincode() {
     }
 }
 
-function addToCart() {
-    {% if user.is_authenticated %}
-        const btn = document.getElementById('addCartBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+// Update form data before submission
+function updateFormData() {
+    // Update quantity
+    document.getElementById('formQuantity').value = quantity;
+    document.getElementById('mobileFormQuantity').value = quantity;
+    
+    // Update variant
+    document.getElementById('formVariantId').value = selectedVariantId || '';
+    document.getElementById('mobileFormVariantId').value = selectedVariantId || '';
+    
+    // Clear existing addon inputs
+    const existingAddons = document.querySelectorAll('input[name="addon_ids[]"]');
+    existingAddons.forEach(input => input.remove());
+    
+    // Add new addon inputs
+    selectedAddons.forEach(addon => {
+        // Desktop form
+        const desktopInput = document.createElement('input');
+        desktopInput.type = 'hidden';
+        desktopInput.name = 'addon_ids[]';
+        desktopInput.value = addon.id;
+        document.getElementById('addToCartForm').appendChild(desktopInput);
         
-        // Prepare cart data
-        const cartData = {
-            product_id: productId,
-            quantity: quantity,
-            variant_id: selectedVariantId,
-            addons: selectedAddons.map(a => a.name),
-            total_price: totalPrice
-        };
-        
-        // For now, just show success (you can implement actual AJAX call later)
-        setTimeout(() => {
-            showToast(productName + ' added to cart!');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
-            
-            // Update cart badge
-            const badges = document.querySelectorAll('.cart-badge');
-            badges.forEach(badge => {
-                const count = parseInt(badge.textContent) || 0;
-                badge.textContent = count + quantity;
-            });
-        }, 1000);
-        
-    {% else %}
-        showToast('Please login to add to cart');
-        setTimeout(() => {
-            window.location.href = '{% url "users:login" %}?next={{ request.path }}';
-        }, 1000);
-    {% endif %}
+        // Mobile form
+        const mobileInput = document.createElement('input');
+        mobileInput.type = 'hidden';
+        mobileInput.name = 'addon_ids[]';
+        mobileInput.value = addon.id;
+        document.getElementById('mobileAddForm').appendChild(mobileInput);
+    });
 }
 
 function buyNow() {

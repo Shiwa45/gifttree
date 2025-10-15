@@ -170,10 +170,15 @@
                                         <span class="original-price">₹{{ product.base_price }}</span>
                                         {% endif %}
                                     </div>
-                                    <button class="rec-add-btn" onclick="event.stopPropagation(); quickAddToCart({{ product.id }})">
-                                        <i class="fas fa-shopping-cart"></i>
-                                        Quick Add
-                                    </button>
+                                    <form method="post" action="{% url 'cart:add_to_cart' %}" class="d-inline-block" onsubmit="event.stopPropagation();">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                                        <input type="hidden" name="quantity" value="1">
+                                        <button type="submit" class="rec-add-btn">
+                                            <i class="fas fa-shopping-cart"></i>
+                                            Quick Add
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                             {% endfor %}
@@ -1614,35 +1619,6 @@ function removeCoupon() {
     .catch(error => {
         console.error('Error:', error);
         showToast('Error removing coupon', 3000);
-    });
-}
-
-// Quick Add to Cart
-function quickAddToCart(productId) {
-    showLoading();
-    
-    fetch('/cart/add/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `product_id=${productId}&quantity=1`
-    })
-    .then(response => response.json())
-    .then(data => {
-        hideLoading();
-        if (data.success) {
-            showToast(data.message || 'Product added to cart!');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showToast(data.message || 'Error adding product', 3000);
-        }
-    })
-    .catch(error => {
-        hideLoading();
-        console.error('Error:', error);
-        showToast('Error adding product. Please try again.', 3000);
     });
 }
 

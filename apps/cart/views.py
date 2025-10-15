@@ -93,7 +93,7 @@ def add_to_cart(request):
             # Regular form submission - redirect to cart
             from django.contrib import messages
             messages.success(request, f'{product.name} added to cart!')
-            return redirect('cart:cart_view')
+            return redirect('cart:cart')
 
     except Product.DoesNotExist:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
