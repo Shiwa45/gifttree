@@ -8,6 +8,7 @@ from django.contrib.auth import views as auth_views
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.db import transaction
+from django.urls import reverse
 from .models import CustomUser, Address, Wishlist, UserProfile
 from apps.products.models import Product
 
@@ -335,3 +336,64 @@ def set_default_address(request, address_id):
             'success': False,
             'message': str(e)
         }, status=500)
+
+
+def google_auth_view(request):
+    """Handle Google OAuth authentication"""
+    if request.method == 'POST':
+        import json
+        import requests
+        from django.contrib.auth import login
+        from django.http import JsonResponse
+        
+        try:
+            data = json.loads(request.body)
+            credential = data.get('credential')
+            
+            if not credential:
+                return JsonResponse({'success': False, 'message': 'No credential provided'})
+            
+            # Verify the credential with Google
+            google_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}"
+            response = requests.get(google_url)
+            
+            if response.status_code == 200:
+                user_info = response.json()
+                
+                # Extract user information
+                email = user_info.get('email')
+                name = user_info.get('name')
+                google_id = user_info.get('sub')
+                
+                if not email:
+                    return JsonResponse({'success': False, 'message': 'No email found in Google response'})
+                
+                # Get or create user
+                user, created = CustomUser.objects.get_or_create(
+                    email=email,
+                    defaults={
+                        'first_name': name.split(' ')[0] if name else '',
+                        'last_name': ' '.join(name.split(' ')[1:]) if name and len(name.split(' ')) > 1 else '',
+                        'is_active': True,
+                        'is_verified': True,
+                    }
+                )
+                
+                # Login the user
+                login(request, user)
+                
+                # Get redirect URL
+                next_url = request.GET.get('next', '/')
+                
+                return JsonResponse({
+                    'success': True, 
+                    'message': 'Login successful',
+                    'redirect_url': next_url
+                })
+            else:
+                return JsonResponse({'success': False, 'message': 'Invalid Google credential'})
+                
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})

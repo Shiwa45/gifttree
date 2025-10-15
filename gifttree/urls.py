@@ -31,7 +31,7 @@ urlpatterns = [
     path('reviews/', include('apps.reviews.urls')),
     path('blog/', include('apps.blog.urls')),
     path('wallet/', include('apps.wallet.urls')),
-    
+
     # Sitemap URLs
     path('sitemap.xml', index, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.index'),
     path('sitemap-<section>.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),

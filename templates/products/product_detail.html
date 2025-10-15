@@ -573,10 +573,52 @@
     z-index: 100;
 }
 
+/* Force mobile footer to show on mobile devices */
+@media screen and (max-width: 768px) {
+    .mobile-footer {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 9999 !important;
+        background: white !important;
+        border-top: 2px solid #e91e63 !important;
+    }
+}
+
+/* Debug: Make mobile footer always visible for testing */
+@media screen and (max-width: 1024px) {
+    .mobile-footer {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 9999 !important;
+        background: white !important;
+        border-top: 2px solid #e91e63 !important;
+    }
+}
+
+/* Temporary: Make mobile footer visible on all screen sizes for debugging */
+.mobile-footer {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 9999 !important;
+    background: white !important;
+    border-top: 2px solid #e91e63 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding: 12px 16px !important;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.1) !important;
+}
+
 .mobile-price {
     font-size: 20px;
     font-weight: 700;
     margin-bottom: 8px;
+    color: #333 !important;
+    text-align: center !important;
 }
 
 .mobile-buttons {
@@ -796,9 +838,7 @@
         font-size: 16px;
     }
     
-    .mobile-footer {
-        display: block;
-    }
+    /* Mobile footer is now handled by more specific CSS above */
     
     .action-row {
         display: none;
@@ -812,12 +852,32 @@
         gap: 8px;
     }
     
-    .mobile-buttons .btn-cart,
-    .mobile-buttons .btn-buy {
-        padding: 10px 16px;
-        font-size: 14px;
-        border-radius: 8px;
-    }
+.mobile-buttons .btn-cart,
+.mobile-buttons .btn-buy {
+    padding: 10px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+    background: #e91e63 !important;
+    color: white !important;
+    border: none !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    display: block !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.mobile-buttons .btn-buy {
+    background: #ff5722 !important;
+}
+
+.mobile-buttons {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    margin-top: 8px !important;
+}
     
     body {
         padding-bottom: 120px;
