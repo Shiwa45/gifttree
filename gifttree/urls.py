@@ -31,6 +31,9 @@ urlpatterns = [
     path('reviews/', include('apps.reviews.urls')),
     path('blog/', include('apps.blog.urls')),
     path('wallet/', include('apps.wallet.urls')),
+    
+    # Django Allauth (Google OAuth)
+    path('accounts/', include('allauth.urls')),
 
     # Sitemap URLs
     path('sitemap.xml', index, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.index'),

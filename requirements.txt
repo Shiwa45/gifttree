@@ -20,7 +20,7 @@ razorpay==1.4.1
 requests==2.31.0
 
 # Social Authentication
-# django-allauth==0.52.0
+django-allauth==0.52.0
 
 # Database (uncomment if using PostgreSQL)
 # psycopg2-binary==2.9.9
