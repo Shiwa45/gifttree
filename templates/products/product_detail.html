@@ -573,7 +573,7 @@
     z-index: 100;
 }
 
-/* Force mobile footer to show on mobile devices */
+/* Show mobile footer only on mobile devices */
 @media screen and (max-width: 768px) {
     .mobile-footer {
         display: block !important;
@@ -583,34 +583,6 @@
         background: white !important;
         border-top: 2px solid #e91e63 !important;
     }
-}
-
-/* Debug: Make mobile footer always visible for testing */
-@media screen and (max-width: 1024px) {
-    .mobile-footer {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        z-index: 9999 !important;
-        background: white !important;
-        border-top: 2px solid #e91e63 !important;
-    }
-}
-
-/* Temporary: Make mobile footer visible on all screen sizes for debugging */
-.mobile-footer {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    z-index: 9999 !important;
-    background: white !important;
-    border-top: 2px solid #e91e63 !important;
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    padding: 12px 16px !important;
-    box-shadow: 0 -4px 12px rgba(0,0,0,0.1) !important;
 }
 
 .mobile-price {
@@ -1101,47 +1073,32 @@
                 </div>
             </div>
 
+            {% if available_addons %}
             <div class="addons-section">
                 <h3 class="section-title">Make it Extra Special:</h3>
                 <div class="addon-grid">
-                    <div class="addon-card" data-addon-name="Chocolate Cake" onclick="toggleAddon(this, 299)">
-                        <img src="{% static 'images/products/chocko cake.jpg' %}" alt="Cake" class="addon-img" 
-                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                    {% for addon in available_addons %}
+                    <div class="addon-card" 
+                         data-addon-id="{{ addon.id }}"
+                         data-addon-name="{{ addon.name }}" 
+                         data-addon-price="{{ addon.price }}"
+                         onclick="toggleAddon(this)">
+                        {% if addon.image %}
+                            <img src="{{ addon.image.url }}" alt="{{ addon.name }}" class="addon-img"
+                                 onerror="this.src='{% static 'images/products/default.jpg' %}'">
+                        {% else %}
+                            <img src="{% static 'images/products/default.jpg' %}" alt="{{ addon.name }}" class="addon-img">
+                        {% endif %}
                         <div class="addon-info">
-                            <div class="addon-name">Chocolate Cake</div>
-                            <div class="addon-desc">500g</div>
+                            <div class="addon-name">{{ addon.name }}</div>
+                            <div class="addon-desc">{{ addon.description|truncatewords:5 }}</div>
                         </div>
-                        <div class="addon-price">+₹299</div>
+                        <div class="addon-price">+₹{{ addon.price|floatformat:0 }}</div>
                     </div>
-                    <div class="addon-card" data-addon-name="Cute Teddy" onclick="toggleAddon(this, 199)">
-                        <img src="{% static 'images/products/teddy.webp' %}" alt="Teddy" class="addon-img"
-                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
-                        <div class="addon-info">
-                            <div class="addon-name">Cute Teddy</div>
-                            <div class="addon-desc">12 inch</div>
-                        </div>
-                        <div class="addon-price">+₹199</div>
-                    </div>
-                    <div class="addon-card" data-addon-name="Greeting Card" onclick="toggleAddon(this, 149)">
-                        <img src="{% static 'images/products/card.jpg' %}" alt="Card" class="addon-img"
-                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
-                        <div class="addon-info">
-                            <div class="addon-name">Greeting Card</div>
-                            <div class="addon-desc">Premium</div>
-                        </div>
-                        <div class="addon-price">+₹149</div>
-                    </div>
-                    <div class="addon-card" data-addon-name="Balloons" onclick="toggleAddon(this, 99)">
-                        <img src="{% static 'images/products/balloons.jpg' %}" alt="Balloons" class="addon-img"
-                             onerror="this.src='{% static 'images/products/default.jpg' %}'">
-                        <div class="addon-info">
-                            <div class="addon-name">Balloons</div>
-                            <div class="addon-desc">Pack of 10</div>
-                        </div>
-                        <div class="addon-price">+₹99</div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
+            {% endif %}
 
             <div class="action-row">
                 <div class="qty-selector">
@@ -1151,24 +1108,24 @@
                 </div>
 
                 <!-- Add to Cart Form -->
-                <form method="post" action="{% url 'cart:add_to_cart' %}" class="d-inline-block" id="addToCartForm" onsubmit="updateFormData()">
+                <form method="POST" action="{% url 'cart:add_to_cart' %}" class="d-inline-block" id="addToCartForm">
                     {% csrf_token %}
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <input type="hidden" name="variant_id" id="formVariantId" value="">
                     <input type="hidden" name="quantity" id="formQuantity" value="1">
-                    <button type="submit" class="btn-cart" id="addCartBtn">
+                    <button type="submit" class="btn-cart" id="addCartBtn" onclick="updateFormDataBeforeSubmit(event, 'addToCartForm')">
                         <i class="fas fa-shopping-cart"></i> Add to Cart
                     </button>
                 </form>
 
                 <!-- Buy Now: submit same form but redirect handled server-side or via a query param -->
-                <form method="post" action="{% url 'cart:add_to_cart' %}" class="d-inline-block" id="buyNowForm">
+                <form method="POST" action="{% url 'cart:add_to_cart' %}" class="d-inline-block" id="buyNowForm">
                     {% csrf_token %}
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <input type="hidden" name="variant_id" id="buyVariantId" value="">
                     <input type="hidden" name="quantity" id="buyQuantity" value="1">
                     <input type="hidden" name="buy_now" value="1">
-                    <button type="submit" class="btn-buy" id="buyNowBtn">
+                    <button type="submit" class="btn-buy" id="buyNowBtn" onclick="updateFormDataBeforeSubmit(event, 'buyNowForm')">
                         <i class="fas fa-bolt"></i> Buy Now
                     </button>
                 </form>
@@ -1276,21 +1233,21 @@
 <div class="mobile-footer">
     <div class="mobile-price">Total: ₹<span id="mobilePrice">{{ product.current_price|floatformat:0 }}</span></div>
     <div class="mobile-buttons">
-        <form method="post" action="{% url 'cart:add_to_cart' %}" id="mobileAddForm" class="d-inline-block" onsubmit="updateFormData()">
+        <form method="POST" action="{% url 'cart:add_to_cart' %}" id="mobileAddForm" class="d-inline-block">
             {% csrf_token %}
             <input type="hidden" name="product_id" value="{{ product.id }}">
             <input type="hidden" name="variant_id" id="mobileFormVariantId" value="">
             <input type="hidden" name="quantity" id="mobileFormQuantity" value="1">
-            <button type="submit" class="btn-cart">Add to Cart</button>
+            <button type="submit" class="btn-cart" onclick="updateFormDataBeforeSubmit(event, 'mobileAddForm')">Add to Cart</button>
         </form>
 
-        <form method="post" action="{% url 'cart:add_to_cart' %}" id="mobileBuyForm" class="d-inline-block">
+        <form method="POST" action="{% url 'cart:add_to_cart' %}" id="mobileBuyForm" class="d-inline-block">
             {% csrf_token %}
             <input type="hidden" name="product_id" value="{{ product.id }}">
             <input type="hidden" name="variant_id" id="mobileBuyVariantId" value="">
             <input type="hidden" name="quantity" id="mobileBuyQuantity" value="1">
             <input type="hidden" name="buy_now" value="1">
-            <button type="submit" class="btn-buy">Buy Now</button>
+            <button type="submit" class="btn-buy" onclick="updateFormDataBeforeSubmit(event, 'mobileBuyForm')">Buy Now</button>
         </form>
     </div>
 </div>
@@ -1352,16 +1309,27 @@ function selectSlot(card, charge) {
     updatePrice();
 }
 
-function toggleAddon(card, price) {
+function toggleAddon(card) {
+    const addonId = card.dataset.addonId;
     const addonName = card.dataset.addonName;
+    const addonPrice = parseFloat(card.dataset.addonPrice);
+    
+    console.log('Toggling addon:', addonName, 'ID:', addonId, 'Price:', addonPrice);
     
     if(card.classList.contains('selected')) {
         card.classList.remove('selected');
-        selectedAddons = selectedAddons.filter(a => a.name !== addonName);
+        selectedAddons = selectedAddons.filter(a => a.id !== addonId);
+        console.log('Removed addon:', addonName);
     } else {
         card.classList.add('selected');
-        selectedAddons.push({name: addonName, price: price});
+        selectedAddons.push({
+            id: addonId,
+            name: addonName,
+            price: addonPrice
+        });
+        console.log('Added addon:', addonName);
     }
+    console.log('Currently selected addons:', selectedAddons);
     updatePrice();
 }
 
@@ -1442,36 +1410,77 @@ function checkPincode() {
     }
 }
 
-// Update form data before submission
-function updateFormData() {
-    // Update quantity
-    document.getElementById('formQuantity').value = quantity;
-    document.getElementById('mobileFormQuantity').value = quantity;
+// Update form data before submission (called by button onclick)
+function updateFormDataBeforeSubmit(event, formId) {
+    console.log('updateFormDataBeforeSubmit called for form:', formId);
+    console.log('Current quantity:', quantity);
+    console.log('Selected variant:', selectedVariantId);
+    console.log('Selected addons:', selectedAddons);
     
-    // Update variant
-    document.getElementById('formVariantId').value = selectedVariantId || '';
-    document.getElementById('mobileFormVariantId').value = selectedVariantId || '';
+    // Check if user is authenticated
+    {% if not user.is_authenticated %}
+        event.preventDefault();
+        showToast('Please login to add items to cart');
+        setTimeout(() => {
+            window.location.href = '{% url "users:login" %}?next={{ request.path }}';
+        }, 1000);
+        return false;
+    {% endif %}
     
-    // Clear existing addon inputs
-    const existingAddons = document.querySelectorAll('input[name="addon_ids[]"]');
-    existingAddons.forEach(input => input.remove());
-    
-    // Add new addon inputs
-    selectedAddons.forEach(addon => {
-        // Desktop form
-        const desktopInput = document.createElement('input');
-        desktopInput.type = 'hidden';
-        desktopInput.name = 'addon_ids[]';
-        desktopInput.value = addon.id;
-        document.getElementById('addToCartForm').appendChild(desktopInput);
+    try {
+        const form = document.getElementById(formId);
+        if (!form) {
+            console.error('Form not found:', formId);
+            return true; // Allow submission anyway
+        }
         
-        // Mobile form
-        const mobileInput = document.createElement('input');
-        mobileInput.type = 'hidden';
-        mobileInput.name = 'addon_ids[]';
-        mobileInput.value = addon.id;
-        document.getElementById('mobileAddForm').appendChild(mobileInput);
-    });
+        // Get form-specific elements
+        const quantityInput = form.querySelector('input[name="quantity"]');
+        const variantInput = form.querySelector('input[name="variant_id"]');
+        
+        // Update quantity
+        if (quantityInput) {
+            quantityInput.value = quantity;
+            console.log('Updated quantity to:', quantity);
+        }
+        
+        // Update variant
+        if (variantInput) {
+            variantInput.value = selectedVariantId || '';
+            console.log('Updated variant to:', selectedVariantId);
+        }
+        
+        // Clear existing addon inputs in this form
+        const existingAddons = form.querySelectorAll('input[name="addon_ids[]"]');
+        existingAddons.forEach(input => input.remove());
+        
+        // Add new addon inputs to this form
+        console.log('Number of selected addons:', selectedAddons.length);
+        selectedAddons.forEach(addon => {
+            const addonInput = document.createElement('input');
+            addonInput.type = 'hidden';
+            addonInput.name = 'addon_ids[]';
+            addonInput.value = addon.id;
+            form.appendChild(addonInput);
+            console.log('Added addon to form:', addon.name, 'with ID:', addon.id);
+        });
+        
+        // Log all form data for debugging
+        const formData = new FormData(form);
+        console.log('=== FORM DATA BEFORE SUBMISSION ===');
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
+        console.log('===================================');
+        
+        console.log('Form data updated successfully for', formId);
+        // Don't prevent default, let form submit normally
+        return true;
+    } catch (error) {
+        console.error('Error in updateFormDataBeforeSubmit:', error);
+        // Still allow form submission even if there's an error
+        return true;
+    }
 }
 
 function buyNow() {

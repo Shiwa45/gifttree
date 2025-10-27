@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import razorpay_handler
+from . import seller_views
 
 app_name = 'orders'
 
@@ -28,4 +29,10 @@ urlpatterns = [
     path('payment/create-razorpay-order/', razorpay_handler.create_razorpay_order, name='create_razorpay_order'),
     path('payment/verify/', razorpay_handler.verify_payment, name='verify_payment'),
     path('payment/failed/', razorpay_handler.payment_failed, name='payment_failed'),
+    
+    # Seller portal URLs
+    path('seller/dashboard/', seller_views.seller_dashboard, name='seller_dashboard'),
+    path('seller/order/<str:order_number>/', seller_views.seller_order_detail, name='seller_order_detail'),
+    path('seller/order/<str:order_number>/update-status/', seller_views.seller_update_order_status, name='seller_update_order_status'),
+    path('seller/order/<str:order_number>/add-tracking/', seller_views.seller_add_tracking, name='seller_add_tracking'),
 ]

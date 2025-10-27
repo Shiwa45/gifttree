@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Logged Out - GiftTree{% endblock %}
+
+{% block meta_description %}You have been successfully logged out from GiftTree. Come back soon!{% endblock %}
+
+{% block content %}
+<style>
+/* Auth Page Styles */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #FFF8F0 0%, #FFE8E8 100%);
+}
+
+.auth-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.auth-header {
+    background: var(--pink-gradient);
+    padding: 40px 30px;
+    text-align: center;
+    color: white;
+}
+
+.auth-header i {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.auth-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.auth-header p {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.auth-body {
+    padding: 40px 30px;
+    text-align: center;
+}
+
+.logout-message {
+    font-size: 16px;
+    color: var(--text-light);
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 14px 24px;
+    background: var(--pink-gradient);
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(233, 30, 99, 0.3);
+    color: white;
+}
+
+.btn-secondary {
+    width: 100%;
+    padding: 14px 24px;
+    background: white;
+    color: var(--primary-color);
+    text-decoration: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    border: 2px solid var(--primary-color);
+    cursor: pointer;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-secondary:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.feature-list {
+    margin: 30px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.feature-list li {
+    padding: 12px 0;
+    color: var(--text-dark);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.feature-list li i {
+    color: var(--secondary-color);
+    font-size: 18px;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .auth-container {
+        padding: 10px;
+    }
+    
+    .auth-card {
+        max-width: 100%;
+    }
+    
+    .auth-header {
+        padding: 30px 20px;
+    }
+    
+    .auth-header i {
+        font-size: 48px;
+    }
+    
+    .auth-header h1 {
+        font-size: 24px;
+    }
+    
+    .auth-body {
+        padding: 30px 20px;
+    }
+}
+</style>
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <i class="fas fa-sign-out-alt"></i>
+            <h1>Successfully Logged Out</h1>
+            <p>You have been safely logged out of your account</p>
+        </div>
+        
+        <div class="auth-body">
+            <p class="logout-message">
+                Thank you for visiting GiftTree! We hope to see you again soon. 
+                Your session has been securely ended.
+            </p>
+            
+            <ul class="feature-list">
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Your data is safe and secure</span>
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>No active sessions remaining</span>
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Come back anytime!</span>
+                </li>
+            </ul>
+            
+            <div class="action-buttons">
+                <a href="{% url 'users:login' %}" class="btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Login Again
+                </a>
+                <a href="{% url 'core:home' %}" class="btn-secondary">
+                    <i class="fas fa-home"></i> Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

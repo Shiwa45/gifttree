@@ -41,18 +41,39 @@ def cart_view(request):
 
 
 @login_required
-@require_POST
 def add_to_cart(request):
     """Add item to cart"""
+    # Handle GET requests (from login redirect) - redirect to cart
+    if request.method == 'GET':
+        from django.contrib import messages
+        messages.info(request, 'Please add items to your cart from the product page.')
+        return redirect('cart:cart')
+    
+    # Handle POST requests (actual add to cart)
+    if request.method != 'POST':
+        from django.contrib import messages
+        messages.error(request, 'Invalid request method.')
+        return redirect('cart:cart')
+    
     product_id = request.POST.get('product_id')
     variant_id = request.POST.get('variant_id')
     quantity = int(request.POST.get('quantity', 1))
     addon_ids = request.POST.getlist('addon_ids[]')  # Get list of addon IDs
-    action = request.POST.get('action', 'add')  # 'add' or 'buy_now'
+    buy_now = request.POST.get('buy_now', '0')  # Check if it's a "Buy Now" action
 
     # Debug: Print all POST data
-    print(f"POST data: {dict(request.POST)}")
+    print("\n" + "="*60)
+    print("ADD TO CART REQUEST RECEIVED")
+    print("="*60)
+    print(f"Product ID: {product_id}")
+    print(f"Variant ID: {variant_id}")
+    print(f"Quantity: {quantity}")
+    print(f"Buy Now: {buy_now}")
     print(f"Addon IDs received: {addon_ids}")
+    print(f"Addon IDs type: {type(addon_ids)}")
+    print(f"Number of addons: {len(addon_ids)}")
+    print(f"Full POST data: {dict(request.POST)}")
+    print("="*60 + "\n")
 
     try:
         product = Product.objects.get(id=product_id, is_active=True)
@@ -64,20 +85,46 @@ def add_to_cart(request):
         # Get or create cart
         cart, created = Cart.objects.get_or_create(user=request.user)
 
-        # Create new cart item (always create new to handle different addon combinations)
-        cart_item = CartItem.objects.create(
-            cart=cart,
-            product=product,
-            variant=variant,
-            quantity=quantity
-        )
+        # Check if item already exists in cart
+        existing_item = None
+        if variant:
+            existing_item = cart.items.filter(product=product, variant=variant).first()
+        else:
+            existing_item = cart.items.filter(product=product, variant__isnull=True).first()
+
+        if existing_item:
+            # Update quantity if item exists
+            existing_item.quantity += quantity
+            existing_item.save()
+            cart_item = existing_item
+        else:
+            # Create new cart item
+            cart_item = CartItem.objects.create(
+                cart=cart,
+                product=product,
+                variant=variant,
+                quantity=quantity
+            )
 
         # Add selected add-ons to the cart item
         if addon_ids:
+            print(f"\n🎁 Processing {len(addon_ids)} addon IDs: {addon_ids}")
             addons = ProductAddOn.objects.filter(id__in=addon_ids, is_active=True)
-            cart_item.addons.set(addons)
-            # Debug: print to console
-            print(f"Added {addons.count()} add-ons to cart item: {[a.name for a in addons]}")
+            print(f"🔍 Found {addons.count()} active addons in database")
+            for addon in addons:
+                print(f"   - {addon.name} (ID: {addon.id}, Price: ₹{addon.price})")
+            
+            cart_item.addons.add(*addons)
+            
+            # Verify addons were saved
+            saved_addons = cart_item.addons.all()
+            print(f"✅ Cart item now has {saved_addons.count()} addons:")
+            for addon in saved_addons:
+                print(f"   - {addon.name} (₹{addon.price})")
+            print(f"💰 Addons total price: ₹{cart_item.addons_price}")
+            print(f"💰 Cart item total price: ₹{cart_item.total_price}\n")
+        else:
+            print("⚠️ No addon IDs received in request\n")
 
         # Check if it's an AJAX request
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
@@ -92,7 +139,10 @@ def add_to_cart(request):
         else:
             # Regular form submission - redirect to cart
             from django.contrib import messages
-            messages.success(request, f'{product.name} added to cart!')
+            if buy_now == '1':
+                messages.success(request, f'{product.name} added to cart! Proceed to checkout.')
+            else:
+                messages.success(request, f'{product.name} added to cart!')
             return redirect('cart:cart')
 
     except Product.DoesNotExist:
@@ -107,6 +157,8 @@ def add_to_cart(request):
             return redirect('products:product_list')
     except Exception as e:
         print(f"Error in add_to_cart: {str(e)}")  # Debug
+        import traceback
+        traceback.print_exc()  # Print full traceback for debugging
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,

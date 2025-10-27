@@ -3,7 +3,7 @@
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth import views as auth_views
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -80,10 +80,24 @@ def profile_view(request):
 class CustomLoginView(auth_views.LoginView):
     template_name = 'users/login.html'
     redirect_authenticated_user = True
+    
+    def get_success_url(self):
+        """Override to handle cart/add redirect issue"""
+        next_url = self.request.GET.get('next') or self.request.POST.get('next')
+        
+        # If trying to redirect to cart/add (POST-only URL), redirect to cart instead
+        if next_url and '/cart/add' in next_url:
+            messages.info(self.request, 'Please log in to add items to your cart.')
+            return reverse('cart:cart')
+        
+        # Otherwise use default behavior
+        return super().get_success_url()
 
 
-class CustomLogoutView(auth_views.LogoutView):
-    next_page = '/'
+def logout_view(request):
+    """Custom logout view that logs out the user and shows confirmation"""
+    logout(request)
+    return render(request, 'users/logged_out.html')
 
 
 # ============================================

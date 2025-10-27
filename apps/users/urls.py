@@ -11,7 +11,7 @@ urlpatterns = [
     
     # Authentication
     path('login/', views.CustomLoginView.as_view(), name='login'),
-    path('logout/', views.CustomLogoutView.as_view(), name='logout'),
+    path('logout/', views.logout_view, name='logout'),
     path('google-auth/', views.google_auth_view, name='google_auth'),
     
     # Password Reset
