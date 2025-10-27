@@ -10,6 +10,16 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # Get allowed hosts from environment variable
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
+# Site Configuration for Production
+SITE_DOMAIN = config('SITE_DOMAIN', default='mygiftstree.com')
+SITE_NAME = 'MyGiftTree'
+
+# CSRF and CORS Settings for production domain
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='https://mygiftstree.com,https://www.mygiftstree.com'
+).split(',')
+
 # Database Configuration - Flexible (SQLite or PostgreSQL)
 # If DB_ENGINE is not set or is 'sqlite3', use SQLite (same as development)
 # Otherwise, use the configured database (PostgreSQL, MySQL, etc.)
