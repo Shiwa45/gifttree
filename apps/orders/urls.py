@@ -34,6 +34,11 @@ urlpatterns = [
     # COD order processing
     path('payment/process-cod/', razorpay_views.process_cod_order, name='process_cod_order'),
     
+    # Multi-step checkout Razorpay endpoints
+    path('ajax/save-payment-data/', views.save_payment_data, name='save_payment_data'),
+    path('ajax/create-razorpay-order-session/', views.create_razorpay_order_session, name='create_razorpay_order_session'),
+    path('ajax/verify-payment-and-create-order/', views.verify_payment_and_create_order, name='verify_payment_and_create_order'),
+    
     # Seller portal URLs
     path('seller/dashboard/', seller_views.seller_dashboard, name='seller_dashboard'),
     path('seller/order/<str:order_number>/', seller_views.seller_order_detail, name='seller_order_detail'),

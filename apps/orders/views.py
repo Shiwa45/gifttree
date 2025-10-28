@@ -7,6 +7,7 @@ from django.db import transaction
 from django.conf import settings
 from decimal import Decimal
 from datetime import datetime, timedelta
+import json
 from .models import Order, OrderItem, OrderTracking
 from .forms import (
     CheckoutAddressForm, 
@@ -501,3 +502,231 @@ def remove_coupon(request):
         'success': True,
         'message': 'Coupon removed.',
     })
+
+
+@login_required
+@require_POST
+def save_payment_data(request):
+    """Save payment data to session (for multi-step checkout)"""
+    try:
+        data = json.loads(request.body)
+        
+        request.session['checkout_payment'] = {
+            'payment_method': data.get('payment_method', 'online'),
+            'billing_same_as_shipping': data.get('billing_same_as_shipping', True),
+        }
+        
+        # If billing same as shipping, copy shipping data to billing
+        if data.get('billing_same_as_shipping'):
+            shipping_address = request.session.get('checkout_address', {})
+            request.session['checkout_billing'] = {
+                'billing_name': shipping_address.get('full_name', ''),
+                'billing_email': request.user.email,
+                'billing_phone': shipping_address.get('phone', ''),
+                'billing_address_line_1': shipping_address.get('address_line_1', ''),
+                'billing_address_line_2': shipping_address.get('address_line_2', ''),
+                'billing_city': shipping_address.get('city', ''),
+                'billing_state': shipping_address.get('state', ''),
+                'billing_pincode': shipping_address.get('pincode', ''),
+            }
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+@login_required
+@require_POST
+def create_razorpay_order_session(request):
+    """Create Razorpay order using session data"""
+    try:
+        import razorpay
+        
+        # Get cart
+        cart = Cart.objects.get(user=request.user)
+        cart_items = cart.items.all()
+        
+        if not cart_items.exists():
+            return JsonResponse({
+                'success': False,
+                'message': 'Your cart is empty'
+            }, status=400)
+        
+        # Calculate total
+        subtotal = cart.total_price
+        delivery_charge = Decimal(request.session.get('delivery_charge', '0.00'))
+        total_amount = subtotal + delivery_charge
+        
+        # Initialize Razorpay client
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+        
+        # Create Razorpay order
+        razorpay_order = client.order.create({
+            'amount': int(total_amount * 100),  # Amount in paise
+            'currency': 'INR',
+            'payment_capture': 1,  # Auto capture
+            'notes': {
+                'user_id': request.user.id,
+                'email': request.user.email,
+            }
+        })
+        
+        # Store Razorpay order ID in session
+        request.session['razorpay_order_id'] = razorpay_order['id']
+        
+        return JsonResponse({
+            'success': True,
+            'order_id': razorpay_order['id'],
+            'amount': razorpay_order['amount'],
+            'currency': razorpay_order['currency'],
+            'key_id': settings.RAZORPAY_KEY_ID,
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=400)
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def verify_payment_and_create_order(request):
+    """Verify Razorpay payment and create the order"""
+    try:
+        import razorpay
+        import json
+        
+        data = json.loads(request.body)
+        
+        # Verify payment signature
+        razorpay_payment_id = data.get('razorpay_payment_id')
+        razorpay_order_id = data.get('razorpay_order_id')
+        razorpay_signature = data.get('razorpay_signature')
+        
+        # Verify signature
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+        
+        params_dict = {
+            'razorpay_order_id': razorpay_order_id,
+            'razorpay_payment_id': razorpay_payment_id,
+            'razorpay_signature': razorpay_signature
+        }
+        
+        try:
+            client.utility.verify_payment_signature(params_dict)
+        except razorpay.errors.SignatureVerificationError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Payment verification failed'
+            }, status=400)
+        
+        # Payment verified, now create the order
+        # Get data from session
+        shipping_address = request.session.get('checkout_address', {})
+        delivery_data = request.session.get('checkout_delivery', {})
+        billing_data = request.session.get('checkout_billing', {})
+        
+        # Get cart
+        cart = Cart.objects.get(user=request.user)
+        cart_items = cart.items.select_related('product', 'variant').prefetch_related('addons').all()
+        
+        if not cart_items.exists():
+            return JsonResponse({
+                'success': False,
+                'message': 'Your cart is empty'
+            }, status=400)
+        
+        # Calculate totals
+        subtotal = cart.total_price
+        delivery_charge = Decimal(request.session.get('delivery_charge', '0.00'))
+        total_amount = subtotal + delivery_charge
+        
+        # Create order
+        order = Order.objects.create(
+            user=request.user,
+            status='confirmed',
+            payment_status='paid',
+            payment_method='razorpay',
+            razorpay_order_id=razorpay_order_id,
+            razorpay_payment_id=razorpay_payment_id,
+            razorpay_signature=razorpay_signature,
+            
+            # Billing info
+            billing_name=billing_data.get('billing_name', ''),
+            billing_email=billing_data.get('billing_email', request.user.email),
+            billing_phone=billing_data.get('billing_phone', ''),
+            billing_address_line_1=billing_data.get('billing_address_line_1', ''),
+            billing_address_line_2=billing_data.get('billing_address_line_2', ''),
+            billing_city=billing_data.get('billing_city', ''),
+            billing_state=billing_data.get('billing_state', ''),
+            billing_pincode=billing_data.get('billing_pincode', ''),
+            
+            # Shipping info
+            shipping_name=shipping_address.get('full_name', ''),
+            shipping_phone=shipping_address.get('phone', ''),
+            shipping_address_line_1=shipping_address.get('address_line_1', ''),
+            shipping_address_line_2=shipping_address.get('address_line_2', ''),
+            shipping_city=shipping_address.get('city', ''),
+            shipping_state=shipping_address.get('state', ''),
+            shipping_pincode=shipping_address.get('pincode', ''),
+            
+            # Pricing
+            subtotal=subtotal,
+            delivery_charge=delivery_charge,
+            total_amount=total_amount,
+            
+            # Delivery details
+            special_instructions=delivery_data.get('special_instructions', ''),
+            delivery_date=datetime.fromisoformat(delivery_data['delivery_date']).date() if delivery_data.get('delivery_date') else None,
+            delivery_time_slot=delivery_data.get('delivery_time_slot', ''),
+        )
+        
+        # Create order items
+        for cart_item in cart_items:
+            order_item = OrderItem.objects.create(
+                order=order,
+                product=cart_item.product,
+                variant=cart_item.variant,
+                product_name=cart_item.product.name,
+                variant_name=cart_item.variant.name if cart_item.variant else '',
+                quantity=cart_item.quantity,
+                unit_price=cart_item.unit_price,
+                total_price=cart_item.total_price
+            )
+            # Add addons
+            if cart_item.addons.exists():
+                order_item.addons.set(cart_item.addons.all())
+        
+        # Create tracking entry
+        OrderTracking.objects.create(
+            order=order,
+            status='confirmed',
+            message='Order confirmed and payment received via Razorpay',
+            location=shipping_address.get('city', '')
+        )
+        
+        # Clear cart
+        cart_items.delete()
+        
+        # Clear checkout session
+        for key in ['checkout_address', 'checkout_delivery', 'checkout_payment', 'checkout_billing', 'delivery_charge', 'discount_amount', 'razorpay_order_id']:
+            if key in request.session:
+                del request.session[key]
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Payment successful and order created',
+            'order_number': order.order_number,
+            'redirect': f'/orders/confirmation/{order.order_number}/'
+        })
+        
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Error verifying payment and creating order: {str(e)}', exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=400)

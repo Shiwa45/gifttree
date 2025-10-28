@@ -362,6 +362,7 @@
 {% endblock %}
 
 {% block page_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 // Toggle billing address form
 document.getElementById('id_billing_same_as_shipping').addEventListener('change', function() {
@@ -382,5 +383,145 @@ document.addEventListener('DOMContentLoaded', function() {
         billingForm.style.display = 'block';
     }
 });
+
+// Handle form submission for Razorpay
+document.getElementById('paymentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const selectedPaymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+    console.log('Payment method selected:', selectedPaymentMethod);
+    
+    if (selectedPaymentMethod === 'online') {
+        // Handle Razorpay payment
+        processRazorpayPayment();
+    } else {
+        // Submit form normally for COD
+        this.submit();
+    }
+});
+
+function processRazorpayPayment() {
+    console.log('Processing Razorpay payment...');
+    
+    // Show loading
+    showLoading(true);
+    
+    // First, save payment data to session
+    fetch('{% url "orders:save_payment_data" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            payment_method: 'online',
+            billing_same_as_shipping: document.getElementById('id_billing_same_as_shipping').checked
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Now create Razorpay order
+            return fetch('{% url "orders:create_razorpay_order_session" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                }
+            });
+        } else {
+            throw new Error(data.message || 'Failed to save payment data');
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        showLoading(false);
+        console.log('Razorpay order created:', data);
+        
+        if (data.success) {
+            // Open Razorpay payment modal
+            const options = {
+                key: data.key_id,
+                amount: data.amount,
+                currency: data.currency,
+                order_id: data.order_id,
+                name: 'MyGiftTree',
+                description: 'Order Payment',
+                handler: function(response) {
+                    console.log('Payment success:', response);
+                    verifyPayment(response);
+                },
+                prefill: {
+                    name: '{{ user.get_full_name }}',
+                    email: '{{ user.email }}',
+                },
+                theme: {
+                    color: '#E91E63'
+                },
+                modal: {
+                    ondismiss: function() {
+                        console.log('Payment cancelled');
+                        alert('Payment was cancelled');
+                    }
+                }
+            };
+            
+            const razorpay = new Razorpay(options);
+            razorpay.open();
+        } else {
+            alert(data.message || 'Failed to create payment order');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        console.error('Error:', error);
+        alert('Error processing payment: ' + error.message);
+    });
+}
+
+function verifyPayment(razorpayResponse) {
+    showLoading(true);
+    
+    fetch('{% url "orders:verify_payment_and_create_order" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+            razorpay_order_id: razorpayResponse.razorpay_order_id,
+            razorpay_signature: razorpayResponse.razorpay_signature,
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        showLoading(false);
+        console.log('Payment verification response:', data);
+        
+        if (data.success) {
+            window.location.href = data.redirect;
+        } else {
+            alert(data.message || 'Payment verification failed');
+        }
+    })
+    .catch(error => {
+        showLoading(false);
+        console.error('Error:', error);
+        alert('Error verifying payment: ' + error.message);
+    });
+}
+
+function showLoading(show) {
+    let loader = document.getElementById('loadingOverlay');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'loadingOverlay';
+        loader.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
+        loader.innerHTML = '<div style="background:white;padding:30px;border-radius:10px;text-align:center;"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div><p style="margin-top:15px;">Processing payment...</p></div>';
+        document.body.appendChild(loader);
+    }
+    loader.style.display = show ? 'flex' : 'none';
+}
 </script>
 {% endblock %}
