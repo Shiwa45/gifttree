@@ -877,6 +877,10 @@
 
     // Place Order
     function placeOrder() {
+        console.log('=== Place Order Clicked ===');
+        console.log('Selected Payment Method:', selectedPaymentMethod);
+        console.log('Selected Address ID:', selectedAddressId);
+        
         // Validate address
         if (!selectedAddressId) {
             showToast('Please select or add a delivery address');
@@ -903,15 +907,22 @@
             Object.assign(orderData, window.newAddressData);
         }
 
+        console.log('Final Order Data:', orderData);
+
         if (selectedPaymentMethod === 'razorpay') {
+            console.log('→ Routing to Razorpay Payment');
             processRazorpayPayment(orderData);
         } else {
+            console.log('→ Routing to COD Order');
             processCODOrder(orderData);
         }
     }
 
     // Process Razorpay Payment
     function processRazorpayPayment(orderData) {
+        console.log('=== Razorpay Payment Process Started ===');
+        console.log('Order Data:', orderData);
+        console.log('Razorpay Key ID:', razorpayKeyId);
         showLoading(true);
 
         fetch('{% url "orders:create_razorpay_order" %}', {
@@ -922,20 +933,29 @@
             },
             body: JSON.stringify(orderData)
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response Status:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('Server Response:', data);
             showLoading(false);
 
             if (data.success) {
+                console.log('✅ Razorpay order created successfully');
+                console.log('Razorpay Order ID:', data.order_id);
+                console.log('Amount:', data.amount);
+                
                 const options = {
                     key: data.key_id,
                     amount: data.amount,
                     currency: data.currency,
                     order_id: data.order_id,
-                    name: 'GiftTree',
+                    name: 'MyGiftTree',
                     description: 'Order Payment',
                     image: '{% static "images/logo.png" %}',
                     handler: function(response) {
+                        console.log('Payment Success Response:', response);
                         verifyPayment(response, orderData);
                     },
                     prefill: {
@@ -948,20 +968,23 @@
                     },
                     modal: {
                         ondismiss: function() {
+                            console.log('Payment modal dismissed');
                             showToast('Payment cancelled');
                         }
                     }
                 };
 
+                console.log('Opening Razorpay modal with options:', options);
                 const razorpay = new Razorpay(options);
                 razorpay.open();
             } else {
-                showToast(data.message);
+                console.error('❌ Razorpay order creation failed:', data.message);
+                showToast(data.message || 'Error creating payment order');
             }
         })
         .catch(error => {
             showLoading(false);
-            console.error('Error:', error);
+            console.error('❌ Fetch Error:', error);
             showToast('Error creating order');
         });
     }
