@@ -10,7 +10,7 @@ class OrderItemInline(admin.TabularInline):
     def get_queryset(self, request):
         """Optimize inline queries"""
         qs = super().get_queryset(request)
-        return qs.select_related('product', 'variant').prefetch_related('addons')
+        return qs.select_related('product', 'variant')
 
 
 class OrderTrackingInline(admin.TabularInline):
@@ -43,7 +43,6 @@ class OrderAdmin(admin.ModelAdmin):
         ).prefetch_related(
             'items__product',
             'items__variant',
-            'items__addons',
             'tracking'
         )
 
