@@ -6,6 +6,11 @@ class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
     readonly_fields = ['total_price']
+    
+    def get_queryset(self, request):
+        """Optimize inline queries"""
+        qs = super().get_queryset(request)
+        return qs.select_related('product', 'variant').prefetch_related('addons')
 
 
 class OrderTrackingInline(admin.TabularInline):
@@ -21,8 +26,26 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = ['order_number', 'subtotal', 'total_amount', 'created_at', 'updated_at']
     list_editable = []  # Can be ['assigned_seller'] for quick assignment
     
+    # Query optimization
+    list_select_related = ['user', 'assigned_seller', 'coupon']
+    
     # Actions
     actions = ['assign_to_seller', 'mark_as_confirmed', 'mark_as_processing']
+    
+    def get_queryset(self, request):
+        """Optimize queries by prefetching related objects"""
+        qs = super().get_queryset(request)
+        return qs.select_related(
+            'user', 
+            'assigned_seller', 
+            'assigned_location',
+            'coupon'
+        ).prefetch_related(
+            'items__product',
+            'items__variant',
+            'items__addons',
+            'tracking'
+        )
 
     fieldsets = (
         ('Order Information', {
