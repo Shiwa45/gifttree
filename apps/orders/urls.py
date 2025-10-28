@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import razorpay_handler
+from . import razorpay_views
 from . import seller_views
 
 app_name = 'orders'
@@ -25,10 +26,13 @@ urlpatterns = [
     path('ajax/apply-coupon/', views.apply_coupon, name='apply_coupon'),
     path('ajax/remove-coupon/', views.remove_coupon, name='remove_coupon'),
 
-    # Razorpay payment endpoints
-    path('payment/create-razorpay-order/', razorpay_handler.create_razorpay_order, name='create_razorpay_order'),
-    path('payment/verify/', razorpay_handler.verify_payment, name='verify_payment'),
+    # Razorpay payment endpoints (using razorpay_views which works with cart directly)
+    path('payment/create-razorpay-order/', razorpay_views.create_razorpay_order, name='create_razorpay_order'),
+    path('payment/verify/', razorpay_views.verify_razorpay_payment, name='verify_payment'),
     path('payment/failed/', razorpay_handler.payment_failed, name='payment_failed'),
+    
+    # COD order processing
+    path('payment/process-cod/', razorpay_views.process_cod_order, name='process_cod_order'),
     
     # Seller portal URLs
     path('seller/dashboard/', seller_views.seller_dashboard, name='seller_dashboard'),

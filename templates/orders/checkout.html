@@ -977,7 +977,7 @@
             razorpay_signature: razorpayResponse.razorpay_signature,
         };
 
-        fetch('{% url "orders:verify_razorpay_payment" %}', {
+        fetch('{% url "orders:verify_payment" %}', {
             method: 'POST',
             headers: {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -1009,7 +1009,7 @@
     function processCODOrder(orderData) {
         showLoading(true);
 
-        fetch('{% url "orders:process_checkout" %}', {
+        fetch('{% url "orders:process_cod_order" %}', {
             method: 'POST',
             headers: {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
