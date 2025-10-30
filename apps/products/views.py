@@ -478,23 +478,54 @@ def product_search(request):
 
 @staff_member_required
 def import_csv_view(request):
-    """CSV import interface for admin users"""
+    """CSV/Excel import interface for admin users"""
     if request.method == 'POST':
         csv_file = request.FILES.get('csv_file')
         file_type = request.POST.get('file_type', 'auto')
         
         if not csv_file:
-            messages.error(request, 'Please select a CSV file to upload.')
-            return redirect('products:import_csv')
+            messages.error(request, 'Please select a file to upload.')
+            return redirect(reverse('admin:import_csv'))
         
-        if not csv_file.name.endswith('.csv'):
-            messages.error(request, 'Please upload a valid CSV file.')
-            return redirect('products:import_csv')
+        # Check file extension
+        allowed_extensions = ['.csv', '.xlsx', '.xls']
+        file_ext = '.' + csv_file.name.split('.')[-1].lower()
+        if file_ext not in allowed_extensions:
+            messages.error(request, 'Please upload a valid CSV or Excel file (.csv, .xlsx, .xls)')
+            return redirect(reverse('admin:import_csv'))
         
         # Check file size (10MB limit)
         if csv_file.size > 10 * 1024 * 1024:
             messages.error(request, 'File too large. Maximum size is 10MB.')
-            return redirect('products:import_csv')
+            return redirect(reverse('admin:import_csv'))
+        
+        # Convert Excel to CSV if needed
+        if file_ext in ['.xlsx', '.xls']:
+            try:
+                import openpyxl
+                import io
+                import csv as csv_module
+                
+                # Read Excel file
+                wb = openpyxl.load_workbook(csv_file)
+                ws = wb.active
+                
+                # Convert to CSV in memory
+                output = io.StringIO()
+                csv_writer = csv_module.writer(output)
+                for row in ws.iter_rows(values_only=True):
+                    csv_writer.writerow(row)
+                
+                # Create a new file-like object with CSV data
+                output.seek(0)
+                csv_file = io.BytesIO(output.getvalue().encode('utf-8'))
+                csv_file.name = csv_file.name.rsplit('.', 1)[0] + '.csv'
+            except ImportError:
+                messages.error(request, 'Excel support not installed. Please install openpyxl: pip install openpyxl')
+                return redirect(reverse('admin:import_csv'))
+            except Exception as e:
+                messages.error(request, f'Error reading Excel file: {str(e)}')
+                return redirect(reverse('admin:import_csv'))
         
         # Process the import
         try:
@@ -520,12 +551,12 @@ def import_csv_view(request):
         except Exception as e:
             messages.error(request, f"Unexpected error: {str(e)}")
         
-        return redirect('products:import_csv')
+        return redirect(reverse('admin:import_csv'))
     
     # GET request - show import form
     recent_imports = CSVImportLog.objects.all()[:10]
     context = {
-        'title': 'Import Products from CSV',
+        'title': 'Bulk Product Upload',
         'recent_imports': recent_imports,
         'has_permission': True,
         'site_header': 'GiftTree Administration',
@@ -570,6 +601,196 @@ def reset_database_view(request):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+@staff_member_required
+def download_template(request):
+    """Download sample CSV/Excel template for bulk upload"""
+    import csv
+    
+    format_type = request.GET.get('format', 'gifttree')  # gifttree or shopify
+    file_type = request.GET.get('type', 'csv')  # csv or excel
+    
+    # Define template headers and sample data
+    if format_type == 'gifttree':
+        headers = [
+            'SKU', 'Name', 'Description', 'Category', 'Base Price', 'Sale Price', 
+            'Discount Price', 'MRP', 'Stock Quantity', 'Weight', 'Size', 'Color',
+            'Brand', 'Vendor', 'Tags', 'Is Featured', 'Is Bestseller', 'Is Active',
+            'Meta Title', 'Meta Description', 'Image1', 'Image2', 'Image3'
+        ]
+        sample_data = [
+            [
+                'GIFT-001', 
+                'Chocolate Gift Box', 
+                'Delicious assorted chocolates in a premium gift box', 
+                'Chocolates', 
+                '999.00', 
+                '899.00', 
+                '799.00', 
+                '1099.00', 
+                '50', 
+                '0.5', 
+                'Medium', 
+                'Brown', 
+                'Sweet Delights', 
+                'Gift Vendor', 
+                'chocolate,gift,premium', 
+                'TRUE', 
+                'TRUE', 
+                'TRUE', 
+                'Premium Chocolate Gift Box - Best Gift for Any Occasion',
+                'Buy premium chocolate gift box with assorted chocolates. Perfect gift for birthdays, anniversaries.',
+                'https://example.com/image1.jpg',
+                'https://example.com/image2.jpg',
+                'https://example.com/image3.jpg'
+            ],
+            [
+                'GIFT-002', 
+                'Red Roses Bouquet', 
+                'Beautiful bouquet of 12 fresh red roses', 
+                'Flowers', 
+                '599.00', 
+                '549.00', 
+                '499.00', 
+                '699.00', 
+                '100', 
+                '0.3', 
+                'Standard', 
+                'Red', 
+                'Fresh Flowers Co', 
+                'Flower Vendor', 
+                'roses,flowers,romantic,gift', 
+                'TRUE', 
+                'FALSE', 
+                'TRUE', 
+                '12 Red Roses Bouquet - Express Your Love',
+                'Fresh red roses bouquet, perfect for expressing love and affection. Same day delivery available.',
+                'https://example.com/roses1.jpg',
+                'https://example.com/roses2.jpg',
+                ''
+            ]
+        ]
+    else:  # Shopify format
+        headers = [
+            'Handle', 'Title', 'Body (HTML)', 'Vendor', 'Product Category', 'Type', 
+            'Tags', 'Published', 'Option1 Name', 'Option1 Value', 'Variant SKU', 
+            'Variant Price', 'Variant Compare At Price', 'Variant Inventory Qty', 
+            'Variant Weight', 'Variant Weight Unit', 'Variant Taxable', 
+            'Image Src', 'Image Position', 'SEO Title', 'SEO Description', 'Status'
+        ]
+        sample_data = [
+            [
+                'chocolate-gift-box',
+                'Chocolate Gift Box',
+                '<p>Delicious assorted chocolates in a premium gift box</p>',
+                'Sweet Delights',
+                'Gifts',
+                'Chocolates',
+                'chocolate, gift, premium',
+                'TRUE',
+                'Size',
+                'Medium',
+                'CHO-001-M',
+                '899.00',
+                '1099.00',
+                '50',
+                '0.5',
+                'kg',
+                'TRUE',
+                'https://example.com/image1.jpg',
+                '1',
+                'Premium Chocolate Gift Box',
+                'Buy premium chocolate gift box with assorted chocolates',
+                'active'
+            ],
+            [
+                'red-roses-bouquet',
+                'Red Roses Bouquet',
+                '<p>Beautiful bouquet of 12 fresh red roses</p>',
+                'Fresh Flowers Co',
+                'Gifts',
+                'Flowers',
+                'roses, flowers, romantic, gift',
+                'TRUE',
+                'Quantity',
+                '12 Roses',
+                'ROS-002-12',
+                '549.00',
+                '699.00',
+                '100',
+                '0.3',
+                'kg',
+                'TRUE',
+                'https://example.com/roses1.jpg',
+                '1',
+                '12 Red Roses Bouquet',
+                'Fresh red roses bouquet, perfect for expressing love',
+                'active'
+            ]
+        ]
+    
+    # Generate CSV or Excel
+    if file_type == 'excel':
+        try:
+            import openpyxl
+            from openpyxl.styles import Font, PatternFill
+            from django.http import HttpResponse
+            
+            # Create workbook
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Products"
+            
+            # Add headers with styling
+            header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+            header_font = Font(bold=True, color="FFFFFF")
+            
+            for col_num, header in enumerate(headers, 1):
+                cell = ws.cell(row=1, column=col_num, value=header)
+                cell.fill = header_fill
+                cell.font = header_font
+            
+            # Add sample data
+            for row_num, row_data in enumerate(sample_data, 2):
+                for col_num, value in enumerate(row_data, 1):
+                    ws.cell(row=row_num, column=col_num, value=value)
+            
+            # Auto-adjust column widths
+            for column in ws.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)
+                ws.column_dimensions[column_letter].width = adjusted_width
+            
+            # Save to response
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{format_type}_products_template.xlsx"'
+            wb.save(response)
+            return response
+            
+        except ImportError:
+            messages.error(request, 'Excel support not installed. Downloading as CSV instead.')
+            file_type = 'csv'
+    
+    # Generate CSV (default or fallback)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{format_type}_products_template.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(headers)
+    for row in sample_data:
+        writer.writerow(row)
+    
+    return response
 
 
 # ============================================

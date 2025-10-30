@@ -1,0 +1,454 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Bulk Product Upload - {{ site_title }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .import-container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 0 20px;
+    }
+    
+    .import-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .import-header h1 {
+        margin: 0 0 10px 0;
+        font-size: 32px;
+        font-weight: 600;
+    }
+    
+    .import-header p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 16px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .stat-card h3 {
+        margin: 0 0 5px 0;
+        font-size: 14px;
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .stat-card p {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+    }
+    
+    .upload-section {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .upload-section h2 {
+        margin: 0 0 20px 0;
+        font-size: 22px;
+        color: #333;
+    }
+    
+    .file-upload-area {
+        border: 3px dashed #667eea;
+        border-radius: 8px;
+        padding: 40px;
+        text-align: center;
+        background: #f8f9ff;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .file-upload-area:hover {
+        border-color: #764ba2;
+        background: #f0f2ff;
+    }
+    
+    .file-upload-area.drag-over {
+        border-color: #4CAF50;
+        background: #e8f5e9;
+    }
+    
+    .upload-icon {
+        font-size: 48px;
+        color: #667eea;
+        margin-bottom: 15px;
+    }
+    
+    .file-input {
+        display: none;
+    }
+    
+    .btn-download {
+        display: inline-block;
+        padding: 12px 24px;
+        background: #4CAF50;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        margin-right: 10px;
+        margin-top: 10px;
+        transition: background 0.3s;
+        font-weight: 500;
+    }
+    
+    .btn-download:hover {
+        background: #45a049;
+        color: white;
+    }
+    
+    .btn-upload {
+        background: #667eea;
+        color: white;
+        padding: 14px 32px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s;
+        margin-top: 20px;
+    }
+    
+    .btn-upload:hover {
+        background: #764ba2;
+    }
+    
+    .btn-upload:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+    
+    .instructions {
+        background: #fff9e6;
+        border: 1px solid #ffd740;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 30px;
+    }
+    
+    .instructions h3 {
+        margin: 0 0 15px 0;
+        color: #f57c00;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .instructions ol {
+        margin: 0;
+        padding-left: 20px;
+    }
+    
+    .instructions li {
+        margin-bottom: 10px;
+        line-height: 1.6;
+    }
+    
+    .recent-imports {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .recent-imports h2 {
+        margin: 0 0 20px 0;
+        font-size: 22px;
+        color: #333;
+    }
+    
+    .import-log {
+        border-bottom: 1px solid #e0e0e0;
+        padding: 15px 0;
+    }
+    
+    .import-log:last-child {
+        border-bottom: none;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-completed {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .status-processing {
+        background: #fff9e6;
+        color: #f57c00;
+    }
+    
+    .status-failed {
+        background: #ffebee;
+        color: #c62828;
+    }
+    
+    .selected-file-info {
+        margin-top: 20px;
+        padding: 15px;
+        background: #e8f5e9;
+        border: 1px solid #4CAF50;
+        border-radius: 6px;
+        display: none;
+    }
+    
+    .selected-file-info.show {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="import-container">
+    <div class="import-header">
+        <h1>📦 Bulk Product Upload</h1>
+        <p>Upload products in bulk using CSV or Excel files</p>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Products</h3>
+            <p>{{ total_products }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Active Products</h3>
+            <p>{{ active_products }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Last Import</h3>
+            <p>{% if recent_imports.first %}{{ recent_imports.first.created_at|date:"M d" }}{% else %}Never{% endif %}</p>
+        </div>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="upload-section">
+        <h2>📁 Upload File</h2>
+        
+        <form method="post" enctype="multipart/form-data" id="uploadForm">
+            {% csrf_token %}
+            
+            <div class="file-upload-area" id="dropArea">
+                <div class="upload-icon">☁️</div>
+                <h3>Drag & Drop your file here</h3>
+                <p style="color: #666; margin: 10px 0;">or click to browse</p>
+                <p style="color: #999; font-size: 14px;">Supports CSV and Excel (.xlsx) files (Max 10MB)</p>
+                <input type="file" name="csv_file" id="fileInput" class="file-input" accept=".csv,.xlsx,.xls" required>
+            </div>
+            
+            <div class="selected-file-info" id="selectedFileInfo">
+                <strong>Selected File:</strong> <span id="fileName"></span>
+                <br>
+                <strong>Size:</strong> <span id="fileSize"></span>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <label><strong>File Format:</strong></label>
+                <select name="file_type" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; margin-left: 10px;">
+                    <option value="auto">Auto-detect</option>
+                    <option value="shopify">Shopify Format</option>
+                    <option value="gift_tree">GiftTree Format</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-upload" id="uploadBtn" disabled>
+                🚀 Upload & Import
+            </button>
+        </form>
+        
+        <div style="margin-top: 30px; padding-top: 30px; border-top: 1px solid #e0e0e0;">
+            <h3 style="margin-bottom: 15px;">📥 Download Sample Templates</h3>
+            <a href="{% url 'admin:download_template' %}?format=gifttree" class="btn-download">
+                📄 Download GiftTree Template (CSV)
+            </a>
+            <a href="{% url 'admin:download_template' %}?format=shopify" class="btn-download">
+                📄 Download Shopify Template (CSV)
+            </a>
+            <a href="{% url 'admin:download_template' %}?format=gifttree&type=excel" class="btn-download">
+                📊 Download GiftTree Template (Excel)
+            </a>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        <h3>
+            <span>💡</span>
+            How to Use Bulk Upload
+        </h3>
+        <ol>
+            <li><strong>Download a template</strong> - Choose the format that matches your data (GiftTree or Shopify)</li>
+            <li><strong>Fill in your product data</strong> - Open the template in Excel or Google Sheets and add your products</li>
+            <li><strong>Save as CSV or Excel</strong> - Save your file (CSV recommended for best compatibility)</li>
+            <li><strong>Upload</strong> - Drag & drop your file or click to browse, then click "Upload & Import"</li>
+            <li><strong>Review</strong> - Check the import log below to see results and any errors</li>
+        </ol>
+        
+        <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 6px;">
+            <h4 style="margin: 0 0 10px 0;">Required Fields:</h4>
+            <ul style="margin: 0; padding-left: 20px;">
+                <li><strong>SKU</strong> - Unique product identifier (required)</li>
+                <li><strong>Name/Title</strong> - Product name (required)</li>
+                <li><strong>Category</strong> - Product category (required)</li>
+                <li><strong>Base Price/Price</strong> - Product price (required)</li>
+                <li><strong>Description</strong> - Product description (recommended)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Recent Imports -->
+    {% if recent_imports %}
+    <div class="recent-imports">
+        <h2>📋 Recent Imports</h2>
+        {% for import_log in recent_imports %}
+        <div class="import-log">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <strong style="font-size: 16px;">{{ import_log.filename }}</strong>
+                    <div style="margin-top: 5px; color: #666;">
+                        <span style="margin-right: 15px;">📊 {{ import_log.total_rows }} rows</span>
+                        <span style="margin-right: 15px;">✅ {{ import_log.products_created }} created</span>
+                        <span>🔄 {{ import_log.products_updated }} updated</span>
+                    </div>
+                    <div style="margin-top: 5px; font-size: 13px; color: #999;">
+                        {{ import_log.created_at|date:"M d, Y g:i A" }} by {{ import_log.uploaded_by.get_full_name|default:import_log.uploaded_by.username }}
+                    </div>
+                </div>
+                <div>
+                    <span class="status-badge status-{{ import_log.status }}">{{ import_log.status }}</span>
+                </div>
+            </div>
+            {% if import_log.errors %}
+            <details style="margin-top: 10px;">
+                <summary style="cursor: pointer; color: #c62828;">⚠️ View Errors</summary>
+                <pre style="margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 4px; overflow-x: auto; font-size: 12px;">{{ import_log.errors }}</pre>
+            </details>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropArea = document.getElementById('dropArea');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const selectedFileInfo = document.getElementById('selectedFileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+
+    // Click to browse
+    dropArea.addEventListener('click', () => fileInput.click());
+
+    // Drag & Drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.add('drag-over'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.remove('drag-over'), false);
+    });
+
+    dropArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        fileInput.files = files;
+        handleFiles(files);
+    }
+
+    fileInput.addEventListener('change', function(e) {
+        handleFiles(this.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            const file = files[0];
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            selectedFileInfo.classList.add('show');
+            uploadBtn.disabled = false;
+            
+            // Check file type
+            const validTypes = ['.csv', '.xlsx', '.xls'];
+            const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+            if (!validTypes.includes(fileExt)) {
+                alert('Please upload a valid CSV or Excel file');
+                fileInput.value = '';
+                selectedFileInfo.classList.remove('show');
+                uploadBtn.disabled = true;
+            }
+            
+            // Check file size (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File is too large. Maximum size is 10MB');
+                fileInput.value = '';
+                selectedFileInfo.classList.remove('show');
+                uploadBtn.disabled = true;
+            }
+        }
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    // Form submission
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        uploadBtn.textContent = '⏳ Uploading...';
+        uploadBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %}
+

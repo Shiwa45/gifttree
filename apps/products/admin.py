@@ -405,6 +405,7 @@ def get_admin_urls(urls):
     
     custom_urls = [
         path('import-csv/', views.import_csv_view, name='import_csv'),
+        path('download-template/', views.download_template, name='download_template'),
         path('reset-database/', views.reset_database_view, name='reset_database'),
     ]
     return custom_urls + urls

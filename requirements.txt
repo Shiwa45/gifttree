@@ -22,6 +22,9 @@ requests==2.31.0
 # Social Authentication
 django-allauth==0.52.0
 
+# Excel File Support
+openpyxl==3.1.2
+
 # Database (uncomment if using PostgreSQL)
 # psycopg2-binary==2.9.9
 
