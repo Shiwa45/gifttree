@@ -607,6 +607,7 @@ def reset_database_view(request):
 def download_template(request):
     """Download sample CSV/Excel template for bulk upload"""
     import csv
+    from django.http import HttpResponse
     
     format_type = request.GET.get('format', 'gifttree')  # gifttree or shopify
     file_type = request.GET.get('type', 'csv')  # csv or excel
@@ -735,7 +736,6 @@ def download_template(request):
         try:
             import openpyxl
             from openpyxl.styles import Font, PatternFill
-            from django.http import HttpResponse
             
             # Create workbook
             wb = openpyxl.Workbook()
